@@ -109,6 +109,7 @@ async function handleMessage(request, sender) {
       case 'register':            return await apiRegister(request.email, request.password);
       case 'login':               return await apiLogin(request.email, request.password);
       case 'logout':              clearCache(); return await logout();
+      case 'setTokenFromSSO':     return await setTokenFromSSO(request.token, request.email);
       case 'verifyAuth': {
         const c = getCached('verifyAuth');
         if (c) return c;
@@ -268,6 +269,18 @@ async function logout() {
   authToken = null;
   await chrome.storage.local.remove(['authToken', 'userEmail']);
   await broadcastAuthStatus(false);
+  return { success: true };
+}
+
+// Wires an SSO-borrowed token through the same code path a normal apiLogin
+// would take, so content scripts (badge, fans trend, verdict, etc.) start
+// using it immediately without a tab reload.
+async function setTokenFromSSO(token, email) {
+  if (!token) return { success: false, error: 'Missing token' };
+  authToken = token;
+  await chrome.storage.local.set({ authToken: token, userEmail: email || null });
+  clearCache();
+  await broadcastAuthStatus(true);
   return { success: true };
 }
 

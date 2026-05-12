@@ -129,15 +129,13 @@ async function doSSO() {
     }
 
     // Hand the borrowed token to background so it lives in the same place a
-    // normal login would put it (in-memory + chrome.storage), and content
-    // scripts pick it up automatically.
-    await new Promise((resolve) => {
-      chrome.storage.local.set(
-        { authToken: resp.token, userEmail: resp.email },
-        () => resolve()
-      );
-    });
-    await send('clearCache'); // make sure background reads the fresh token next call
+    // normal login would put it (in-memory + chrome.storage + broadcast to
+    // OnlyFans tabs), and content scripts pick it up immediately.
+    const stored = await send('setTokenFromSSO', { token: resp.token, email: resp.email });
+    if (!stored.success) {
+      setError('loginError', stored.error || 'Failed to store token');
+      return;
+    }
     await enterMainScreen({ email: resp.email });
   } finally {
     setLoading('loginBtn', false);
