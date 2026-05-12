@@ -100,11 +100,7 @@ function _sendOnce(action, payload) {
   });
 }
 
-// MV3 service workers can be asleep when popup opens; the very first message
-// occasionally lands before the worker is fully alive and the callback fires
-// with 'Could not establish connection' or with an empty response. Retry once
-// after a short delay to mask that cold-start race.
-async // Promise-based custom confirm dialog (replaces native window.confirm).
+// Promise-based custom confirm dialog (replaces native window.confirm).
 function showConfirm({ title = 'Confirm', message = '', confirmText = 'Confirm', cancelText = 'Cancel', danger = true } = {}) {
   return new Promise((resolve) => {
     const overlay = document.getElementById('confirmOverlay');
