@@ -187,14 +187,144 @@ function activateTab(name) {
   if (name === 'notes') loadNotesTab();
 }
 
+// Score -> grade letter (matches the grading used inside the badge).
+function gradeFor(score) {
+  const s = Number(score) || 0;
+  if (s >= 90) return 'S';
+  if (s >= 80) return 'A+';
+  if (s >= 70) return 'A';
+  if (s >= 60) return 'B+';
+  if (s >= 50) return 'B';
+  if (s >= 40) return 'C';
+  if (s >= 30) return 'D';
+  return 'F';
+}
+
+// Grade -> hue used for the round badge. Mirrors the badge color scale.
+function gradeColor(grade) {
+  switch (grade) {
+    case 'S':  return '#10b981';
+    case 'A+': return '#22c55e';
+    case 'A':  return '#84cc16';
+    case 'B+': return '#facc15';
+    case 'B':  return '#f59e0b';
+    case 'C':  return '#fb923c';
+    case 'D':  return '#ef4444';
+    default:   return '#dc2626';
+  }
+}
+
+function formatFans(model) {
+  if (model.fansText) return model.fansText;
+  const c = model.fansCount;
+  if (!c) return '—';
+  if (c >= 1_000_000) return (c / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (c >= 1_000) return (c / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(c);
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function modelRowHtml(model, extras = {}) {
+  const grade = gradeFor(model.score);
+  const color = gradeColor(grade);
+  const avatar = model.avatarUrl
+    ? `<img class="list-item-avatar" src="${escapeHtml(model.avatarUrl)}" alt="" referrerpolicy="no-referrer">`
+    : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml((model.username || '?').charAt(0).toUpperCase())}</div>`;
+  const meta = extras.meta || `Fans: ${escapeHtml(formatFans(model))}`;
+  const score = Math.round(Number(model.score) || 0);
+  return `
+    <div class="list-item" data-username="${escapeHtml(model.username)}">
+      ${avatar}
+      <div class="list-item-main">
+        <div class="list-item-name">@${escapeHtml(model.username)}</div>
+        <div class="list-item-meta">${meta}</div>
+      </div>
+      <div class="list-item-score" style="background: ${color}; box-shadow: 0 2px 8px ${color}55;" title="Grade ${grade}">
+        ${score} <span style="opacity:.8; font-weight:600; font-size:11px;">${grade}</span>
+      </div>
+    </div>`;
+}
+
+function bindRowClicks(container) {
+  container.querySelectorAll('.list-item[data-username]').forEach(el => {
+    el.addEventListener('click', () => {
+      const u = el.dataset.username;
+      if (u) chrome.tabs.create({ url: `https://onlyfans.com/${encodeURIComponent(u)}` });
+    });
+  });
+}
+
 async function loadTopTab() {
+  const list = document.getElementById('topList');
   const empty = document.getElementById('topEmpty');
-  empty.textContent = 'Top Models — coming in the next update.';
+  empty.textContent = 'Loading…';
+  empty.style.display = '';
+  list.querySelectorAll('.list-item').forEach(n => n.remove());
+
+  const r = await send('getTopModels', { limit: 100 });
+  if (!r.success) {
+    empty.textContent = r.error || 'Failed to load top models';
+    return;
+  }
+  const models = r.models || [];
+  if (models.length === 0) {
+    empty.textContent = 'No data yet — open a few OnlyFans profiles to seed the leaderboard.';
+    return;
+  }
+  empty.style.display = 'none';
+  const html = models.map(m => modelRowHtml(m)).join('');
+  list.insertAdjacentHTML('beforeend', html);
+  bindRowClicks(list);
 }
 
 async function loadNotesTab() {
+  const list = document.getElementById('notesList');
   const empty = document.getElementById('notesEmpty');
-  empty.textContent = 'Notes — coming in the next update.';
+  empty.textContent = 'Loading…';
+  empty.style.display = '';
+  list.querySelectorAll('.list-item').forEach(n => n.remove());
+
+  const r = await send('getNotes');
+  if (!r.success) {
+    empty.textContent = r.error || 'Failed to load notes';
+    return;
+  }
+  const notesObj = r.notes || {};
+  const avatars = r.avatars || {};
+  const entries = Object.entries(notesObj)
+    .filter(([, n]) => n && ((n.text && n.text.trim()) || (Array.isArray(n.tags) && n.tags.length)))
+    .sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+
+  if (entries.length === 0) {
+    empty.textContent = 'No notes yet — write notes on model profiles to see them here.';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const html = entries.map(([username, note]) => {
+    const noteText = escapeHtml((note.text || '').slice(0, 120));
+    const dateStr = note.date ? new Date(note.date).toLocaleDateString() : '';
+    const avatarUrl = avatars[username] || null;
+    const tagsCount = Array.isArray(note.tags) ? note.tags.length : 0;
+    const tagsBadge = tagsCount ? `<span style="margin-left:6px; opacity:.7;">·  ${tagsCount} tag${tagsCount > 1 ? 's' : ''}</span>` : '';
+    return `
+      <div class="list-item" data-username="${escapeHtml(username)}">
+        ${avatarUrl
+          ? `<img class="list-item-avatar" src="${escapeHtml(avatarUrl)}" alt="" referrerpolicy="no-referrer">`
+          : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
+        <div class="list-item-main">
+          <div class="list-item-name">@${escapeHtml(username)}</div>
+          <div class="list-item-meta">${noteText || '<em style="opacity:.6;">(no text)</em>'} <span style="color:var(--text-muted);">${escapeHtml(dateStr)}</span>${tagsBadge}</div>
+        </div>
+      </div>`;
+  }).join('');
+  list.insertAdjacentHTML('beforeend', html);
+  bindRowClicks(list);
 }
 
 // ============ Plugin enabled toggle ============

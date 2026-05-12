@@ -143,6 +143,7 @@ async function handleMessage(request, sender) {
       case 'addModel':    clearCache('getModels'); return await apiAddModel(request.username, request.displayName, request.avatarUrl);
       case 'removeModel': clearCache('getModels'); return await apiRemoveModel(request.username);
       case 'checkModel':                          return await apiCheckModel(request.username);
+      case 'getTopModels':                         return await apiGetTopModels(request.limit);
 
       // ---- Farmed Models (Profile Stats backend) ----
       case 'checkFarmedModel':    return await apiCheckFarmedModel(request.username);
@@ -393,6 +394,16 @@ async function apiRemoveModel(username) {
   if (!authToken) return { success: false, error: 'Not authenticated' };
   try {
     const r = await authFetch(`${PROFILE_STATS_API}/models/${encodeURIComponent(username)}`, { method: 'DELETE' });
+    const data = await r.json();
+    return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiGetTopModels(limit = 100) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/models/top?limit=${limit}`);
+    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
     const data = await r.json();
     return { success: r.ok, ...data };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
