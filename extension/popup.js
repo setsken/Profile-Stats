@@ -481,7 +481,12 @@ const lbState = {
   offset: 0,
   total: 0,
   loading: false,
-  filters: { search: '', sort: 'score', minScore: '', maxScore: '', minFans: '', minQuality: '' }
+  filters: {
+    search: '', sort: 'score',
+    minScore: '', maxScore: '', minFans: '', minQuality: '',
+    minPosts: '', minVideos: '', minStreams: '', minAge: '',
+    minPrice: '', maxPrice: '', hasSocials: ''
+  }
 };
 
 function currentLeaderboardParams() {
@@ -492,6 +497,13 @@ function currentLeaderboardParams() {
   if (f.maxScore !== '') params.maxScore = f.maxScore;
   if (f.minFans !== '')  params.minFans  = f.minFans;
   if (f.minQuality !== '') params.minQuality = (Number(f.minQuality) / 100).toFixed(2);
+  if (f.minPosts !== '')   params.minPosts   = f.minPosts;
+  if (f.minVideos !== '')  params.minVideos  = f.minVideos;
+  if (f.minStreams !== '') params.minStreams = f.minStreams;
+  if (f.minAge !== '')     params.minAgeMonths = f.minAge;
+  if (f.minPrice !== '')   params.minPrice   = f.minPrice;
+  if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
+  if (f.hasSocials !== '') params.hasSocials = f.hasSocials;
   return params;
 }
 
@@ -1234,21 +1246,66 @@ wire('filterToggleBtn', 'click', () => {
   adv.style.display = open ? '' : 'none';
   btn.classList.toggle('active', open);
 });
+const FILTER_FIELD_MAP = {
+  filterMinScore:   'minScore',
+  filterMaxScore:   'maxScore',
+  filterMinFans:    'minFans',
+  filterMinQuality: 'minQuality',
+  filterMinPosts:   'minPosts',
+  filterMinVideos:  'minVideos',
+  filterMinStreams: 'minStreams',
+  filterMinAge:     'minAge',
+  filterMinPrice:   'minPrice',
+  filterMaxPrice:   'maxPrice'
+};
 wire('filterApplyBtn', 'click', () => {
-  lbState.filters.minScore   = document.getElementById('filterMinScore').value;
-  lbState.filters.maxScore   = document.getElementById('filterMaxScore').value;
-  lbState.filters.minFans    = document.getElementById('filterMinFans').value;
-  lbState.filters.minQuality = document.getElementById('filterMinQuality').value;
+  for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
+    lbState.filters[key] = document.getElementById(inputId)?.value || '';
+  }
   loadTopTab(true);
 });
 wire('filterResetBtn', 'click', () => {
-  ['filterMinScore', 'filterMaxScore', 'filterMinFans', 'filterMinQuality'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  lbState.filters.minScore = lbState.filters.maxScore = lbState.filters.minFans = lbState.filters.minQuality = '';
+  for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
+    const el = document.getElementById(inputId); if (el) el.value = '';
+    lbState.filters[key] = '';
+  }
+  // Reset Socials dropdown to "Any"
+  lbState.filters.hasSocials = '';
+  const sd = document.getElementById('socialsDropdown');
+  const sdLabel = document.getElementById('socialsDropdownLabel');
+  if (sd && sdLabel) {
+    sd.querySelectorAll('.custom-dropdown-option').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
+    sdLabel.textContent = 'Any';
+  }
   loadTopTab(true);
 });
 wire('loadMoreBtn', 'click', () => loadTopTab(false));
+
+// Socials dropdown
+(function setupSocialsDropdown() {
+  const wrap = document.getElementById('socialsDropdown');
+  const btn = document.getElementById('socialsDropdownBtn');
+  const label = document.getElementById('socialsDropdownLabel');
+  if (!wrap || !btn) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    wrap.classList.toggle('open');
+    btn.classList.toggle('open', wrap.classList.contains('open'));
+  });
+  wrap.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = opt.dataset.value;
+      wrap.querySelectorAll('.custom-dropdown-option').forEach(o => o.classList.toggle('selected', o === opt));
+      label.textContent = opt.textContent.trim();
+      wrap.classList.remove('open');
+      btn.classList.remove('open');
+      lbState.filters.hasSocials = val;
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) { wrap.classList.remove('open'); btn.classList.remove('open'); }
+  });
+})();
 
 // Notes sub-tabs
 document.querySelectorAll('.notes-subtab').forEach(btn => {

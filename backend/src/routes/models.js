@@ -148,6 +148,13 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     const maxScore  = Math.max(0, Math.min(100, Number(req.query.maxScore) || 100));
     const minQuality = Math.max(0, Math.min(1, Number(req.query.minQuality) || 0));
     const minFans   = Math.max(0, parseInt(req.query.minFans) || 0);
+    const minPosts   = req.query.minPosts   != null && req.query.minPosts !== ''   ? Math.max(0, parseInt(req.query.minPosts))   : null;
+    const minVideos  = req.query.minVideos  != null && req.query.minVideos !== ''  ? Math.max(0, parseInt(req.query.minVideos))  : null;
+    const minStreams = req.query.minStreams != null && req.query.minStreams !== '' ? Math.max(0, parseInt(req.query.minStreams)) : null;
+    const minPrice   = req.query.minPrice   != null && req.query.minPrice !== ''   ? Math.max(0, Number(req.query.minPrice))   : null;
+    const maxPrice   = req.query.maxPrice   != null && req.query.maxPrice !== ''   ? Math.max(0, Number(req.query.maxPrice))   : null;
+    const hasSocials = req.query.hasSocials === '1' ? true : req.query.hasSocials === '0' ? false : null;
+    const minAgeMonths = req.query.minAgeMonths != null && req.query.minAgeMonths !== '' ? Math.max(0, parseInt(req.query.minAgeMonths)) : null;
 
     const params = [];
     const where = [];
@@ -160,6 +167,16 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     if (search) {
       params.push(`%${search}%`);
       where.push(`ms.model_username ILIKE $${params.length}`);
+    }
+    if (minPosts != null)   { params.push(minPosts);   where.push(`COALESCE(ms.posts_count, 0)   >= $${params.length}`); }
+    if (minVideos != null)  { params.push(minVideos);  where.push(`COALESCE(ms.videos_count, 0)  >= $${params.length}`); }
+    if (minStreams != null) { params.push(minStreams); where.push(`COALESCE(ms.streams_count, 0) >= $${params.length}`); }
+    if (minPrice != null)   { params.push(minPrice);   where.push(`COALESCE(ms.subscribe_price, 0) >= $${params.length}`); }
+    if (maxPrice != null)   { params.push(maxPrice);   where.push(`COALESCE(ms.subscribe_price, 0) <= $${params.length}`); }
+    if (minAgeMonths != null) { params.push(minAgeMonths); where.push(`COALESCE(ms.account_months, 0) >= $${params.length}`); }
+    if (hasSocials !== null) {
+      params.push(hasSocials);
+      where.push(`COALESCE(ms.has_socials, false) = $${params.length}`);
     }
 
     // Inner select pulls the last fan count per model so we can both filter
@@ -193,6 +210,14 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
           ms.quality_score,
           ms.organicity,
           ms.engagement_rate,
+          ms.posts_count,
+          ms.videos_count,
+          ms.photos_count,
+          ms.streams_count,
+          ms.subscribe_price,
+          ms.account_months,
+          ms.fans_visible,
+          ms.has_socials,
           ms.updated_at,
           (
             SELECT mfh.fans_count
@@ -250,6 +275,14 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
         fansCount: r.last_fans,
         fansText: r.last_fans_text,
         avatarUrl: r.avatar_url,
+        postsCount: r.posts_count,
+        videosCount: r.videos_count,
+        photosCount: r.photos_count,
+        streamsCount: r.streams_count,
+        subscribePrice: r.subscribe_price != null ? Number(r.subscribe_price) : null,
+        accountMonths: r.account_months,
+        fansVisible: r.fans_visible,
+        hasSocials: r.has_socials,
         updatedAt: r.updated_at,
         globalRank: Number(r.global_rank)
       }))
