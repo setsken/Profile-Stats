@@ -12,6 +12,7 @@ const farmedModelsRoutes = require('./routes/farmed-models');
 const alertsRoutes = require('./routes/alerts');
 const notesRoutes = require('./routes/notes');
 const verdictRoutes = require('./routes/verdict');
+const billingRoutes = require('./routes/billing');
 
 const app = express();
 
@@ -199,6 +200,7 @@ app.use('/api/farmed-models', farmedModelsRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/verdict', verdictRoutes);
+app.use('/api/billing', billingRoutes);
 
 // 404
 app.use((req, res) => {
