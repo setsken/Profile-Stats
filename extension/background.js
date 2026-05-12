@@ -145,6 +145,7 @@ async function handleMessage(request, sender) {
       case 'checkModel':                          return await apiCheckModel(request.username);
       case 'getTopModels':                         return await apiGetTopModels(request.limit);
       case 'getLeaderboard':                       return await apiGetLeaderboard(request.params);
+      case 'getModelInfo':                         return await apiGetModelInfo(request.username);
 
       // ---- Farmed Models (Profile Stats backend) ----
       case 'checkFarmedModel':    return await apiCheckFarmedModel(request.username);
@@ -419,6 +420,16 @@ async function apiGetLeaderboard(params = {}) {
     }
     const r = await authFetch(`${PROFILE_STATS_API}/models/leaderboard?${qs.toString()}`);
     if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
+    const data = await r.json();
+    return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiGetModelInfo(username) {
+  try {
+    const headers = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const r = await fetch(`${PROFILE_STATS_API}/models/info/${encodeURIComponent(username)}`, { headers });
     const data = await r.json();
     return { success: r.ok, ...data };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }

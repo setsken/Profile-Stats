@@ -669,6 +669,31 @@ body { background: var(--gradient-page); }
 .notes-model-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .notes-model-arrow { color: var(--text-muted); flex-shrink: 0; }
 
+/* Trash button on a model row (quick delete in Models sub-tab) */
+.notes-model-delete {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; flex-shrink: 0;
+  transition: all 0.12s;
+}
+.notes-model-delete:hover { color: var(--error); background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); }
+
+/* Editor footer: Save (primary, fills the row) and Delete (matching height). */
+.editor-actions { display: flex; gap: 8px; align-items: stretch; }
+.editor-actions .auth-btn { flex: 1; }
+.editor-action-delete {
+  width: 42px; height: 42px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  color: var(--error);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.editor-action-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--error); }
+
 /* ============ Forms (note edit, tag create) ============ */
 .form-field { margin-bottom: 14px; }
 .form-label {
@@ -712,10 +737,18 @@ body { background: var(--gradient-page); }
 .tag-chip.selected { opacity: 1; transform: scale(1.02); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18); }
 
 /* ============ Tags manager ============ */
-.tag-create-row { display: flex; gap: 8px; align-items: center; }
-.tag-create-row .form-input { flex: 1; }
+/* Tag create row — input takes most of the width, palette + Add are compact. */
+.tag-create-row {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.tag-create-row .form-input { width: 100%; }
+.tag-create-row-bottom {
+  display: flex; gap: 8px; align-items: center;
+}
+.tag-create-row-bottom .color-picker { flex: 1; }
+.tag-create-row-bottom .toolbar-btn { flex-shrink: 0; }
 
-.color-picker { display: flex; gap: 5px; flex-shrink: 0; }
+.color-picker { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
 .color-dot {
   width: 22px; height: 22px; border-radius: 50%;
   cursor: pointer; border: 2px solid transparent;

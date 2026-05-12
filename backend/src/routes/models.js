@@ -319,6 +319,54 @@ router.get('/top', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /info/:username — lookup model in quality_snapshots (avatar + scores).
+// Public; used by the popup to auto-fill the avatar when starting a new note.
+router.get('/info/:username', async (req, res) => {
+  try {
+    const username = req.params.username.trim().toLowerCase().replace(/^@/, '');
+    if (!username) return res.status(400).json({ error: 'Missing username' });
+
+    const row = await getOne(`
+      SELECT
+        ms.model_username,
+        ms.score,
+        ms.quality_score,
+        ms.avatar_url,
+        ms.updated_at,
+        (
+          SELECT mfh.fans_count
+          FROM model_fans_history mfh
+          WHERE mfh.model_username = ms.model_username
+          ORDER BY mfh.recorded_at DESC LIMIT 1
+        ) AS last_fans,
+        (
+          SELECT un.avatar_url
+          FROM user_notes un
+          WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
+          LIMIT 1
+        ) AS notes_avatar
+      FROM model_quality_snapshots ms
+      WHERE ms.model_username = $1
+    `, [username]);
+
+    if (!row) {
+      return res.json({ found: false, username });
+    }
+    res.json({
+      found: true,
+      username: row.model_username,
+      score: Number(row.score),
+      qualityScore: Number(row.quality_score),
+      avatarUrl: row.avatar_url || row.notes_avatar || null,
+      fansCount: row.last_fans,
+      updatedAt: row.updated_at
+    });
+  } catch (error) {
+    console.error('Get model info error:', error);
+    res.status(500).json({ error: 'Failed to get model info' });
+  }
+});
+
 // GET /check/:username — check whether model is in user's list
 router.get('/check/:username', authenticateToken, async (req, res) => {
   try {

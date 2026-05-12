@@ -31,11 +31,33 @@ const notesState = {
   tags: [],         // [ { id, name, ci } ]
   activeView: 'models',
   editingUsername: null,
+  editingTagIds: null, // staged tag ids for the current editor session
   draftText: '',
   draftTagName: '',
   newTagColorIndex: 0,
   modelsSearch: ''
 };
+
+// Persist the active editor session so a closed popup does not eat the draft.
+const DRAFT_STORAGE_KEY = 'psNoteDraft';
+async function persistDraft() {
+  const payload = {
+    activeView: notesState.activeView,
+    editingUsername: notesState.editingUsername,
+    draftText: notesState.draftText,
+    editingTagIds: notesState.editingTagIds
+  };
+  try { await chrome.storage.local.set({ [DRAFT_STORAGE_KEY]: payload }); } catch {}
+}
+async function loadDraft() {
+  try {
+    const r = await chrome.storage.local.get(DRAFT_STORAGE_KEY);
+    return r[DRAFT_STORAGE_KEY] || null;
+  } catch { return null; }
+}
+async function clearDraft() {
+  try { await chrome.storage.local.remove(DRAFT_STORAGE_KEY); } catch {}
+}
 
 function show(name) {
   for (const [k, el] of Object.entries(screens)) {
@@ -387,7 +409,11 @@ async function loadNotesTab() {
   const content = document.getElementById('notesContent');
   content.innerHTML = '<div class="list-empty">Loading…</div>';
 
-  const [notesResp, tagsResp] = await Promise.all([send('getNotes'), send('getNoteTags')]);
+  const [notesResp, tagsResp, savedDraft] = await Promise.all([
+    send('getNotes'),
+    send('getNoteTags'),
+    loadDraft()
+  ]);
   if (!notesResp.success) {
     content.innerHTML = `<div class="list-empty">${escapeHtml(notesResp.error || 'Failed to load notes')}</div>`;
     return;
@@ -396,6 +422,17 @@ async function loadNotesTab() {
   notesState.avatars = notesResp.avatars || {};
   notesState.tags = tagsResp.success ? (tagsResp.tags || []) : [];
   notesState.loaded = true;
+
+  // Restore the in-progress editor session if the popup was closed mid-edit.
+  if (savedDraft && savedDraft.editingUsername) {
+    notesState.editingUsername = savedDraft.editingUsername;
+    notesState.draftText = savedDraft.draftText || '';
+    notesState.editingTagIds = Array.isArray(savedDraft.editingTagIds) ? savedDraft.editingTagIds : null;
+    notesState.activeView = savedDraft.activeView || 'editor';
+    document.querySelectorAll('.notes-subtab').forEach(b => {
+      b.classList.toggle('active', b.dataset.subview === notesState.activeView);
+    });
+  }
   renderNotesView();
 }
 
@@ -438,7 +475,10 @@ function renderEditorView(content) {
       if (!u) return;
       notesState.editingUsername = u;
       notesState.draftText = '';
+      notesState.editingTagIds = null;
+      persistDraft();
       renderEditorView(content);
+      ensureAvatar(u);
     });
     return;
   }
@@ -449,9 +489,11 @@ function renderEditorView(content) {
 
   content.innerHTML = `
     <div class="editor-header">
-      ${avatarUrl
-        ? `<img class="editor-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="" id="editorAvatar">`
-        : `<div class="editor-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-weight:700;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
+      <div class="editor-avatar-slot" id="editorAvatarSlot">
+        ${avatarUrl
+          ? `<img class="editor-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="" id="editorAvatar">`
+          : `<div class="editor-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-weight:700;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
+      </div>
       <span class="editor-label" id="editorOpenProfile">@${escapeHtml(username)}</span>
       <span style="flex:1;"></span>
       <button class="header-icon-btn" id="editorCloseBtn" title="Pick another">
@@ -465,13 +507,13 @@ function renderEditorView(content) {
       <div class="tag-picker" id="editorTagPicker"></div>
     </div>
     <div class="auth-error" id="editorError"></div>
-    <div style="display:flex; gap:8px;">
-      <button class="auth-btn" id="editorSaveBtn" style="flex:1;">
+    <div class="editor-actions">
+      <button class="auth-btn" id="editorSaveBtn">
         <span class="btn-text">Save</span>
         <div class="btn-loader" style="display:none;"></div>
       </button>
-      ${note.date ? `<button class="toolbar-btn" id="editorDeleteBtn" style="color: var(--error); border-color: rgba(239,68,68,0.3);" title="Delete">
-        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+      ${note.date ? `<button class="editor-action-delete" id="editorDeleteBtn" title="Delete">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
         </svg>
       </button>` : ''}
@@ -479,23 +521,47 @@ function renderEditorView(content) {
   `;
 
   // Tag chips: assigned first (full opacity), available second (dimmed). Click toggles.
-  renderEditorTagPicker(note.tags || []);
+  const initialTagIds = notesState.editingTagIds || note.tags || [];
+  renderEditorTagPicker(initialTagIds);
+
+  // Auto-load avatar from server if we don't have one locally yet.
+  if (!avatarUrl) ensureAvatar(username);
 
   // Wire up
   document.getElementById('editorOpenProfile').addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
-  if (avatarUrl) document.getElementById('editorAvatar').addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
+  const av = document.getElementById('editorAvatar');
+  if (av && avatarUrl) av.addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
   document.getElementById('editorCloseBtn').addEventListener('click', () => {
     notesState.editingUsername = null;
     notesState.draftText = '';
+    notesState.editingTagIds = null;
+    persistDraft();
     renderEditorView(content);
   });
   document.getElementById('editorTextarea').addEventListener('input', (e) => {
     notesState.draftText = e.target.value;
     document.getElementById('editorCharCount').textContent = e.target.value.length;
+    persistDraft();
   });
   document.getElementById('editorSaveBtn').addEventListener('click', () => saveCurrentNote());
   const delBtn = document.getElementById('editorDeleteBtn');
   if (delBtn) delBtn.addEventListener('click', () => deleteCurrentNote());
+}
+
+async function ensureAvatar(username) {
+  if (!username) return;
+  if (notesState.avatars[username]) return;
+  const r = await send('getModelInfo', { username });
+  if (r && r.success && r.avatarUrl) {
+    notesState.avatars[username] = r.avatarUrl;
+    // Swap the placeholder avatar element in place if the editor is still open.
+    const slot = document.getElementById('editorAvatarSlot');
+    if (slot && notesState.editingUsername === username) {
+      const profileUrl = `https://onlyfans.com/${encodeURIComponent(username)}`;
+      slot.innerHTML = `<img class="editor-avatar" src="${escapeHtml(r.avatarUrl)}" referrerpolicy="no-referrer" alt="" id="editorAvatar">`;
+      document.getElementById('editorAvatar').addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
+    }
+  }
 }
 
 function renderEditorTagPicker(selectedIds) {
@@ -516,6 +582,10 @@ function renderEditorTagPicker(selectedIds) {
     chip.textContent = t.name;
     chip.addEventListener('click', () => {
       chip.classList.toggle('selected');
+      // Capture the staged tag set so the draft survives a popup close.
+      notesState.editingTagIds = Array.from(picker.querySelectorAll('.tag-chip.selected'))
+        .map(el => Number(el.dataset.tagId)).filter(n => !Number.isNaN(n));
+      persistDraft();
     });
     picker.appendChild(chip);
   });
@@ -537,7 +607,8 @@ async function saveCurrentNote() {
     if (!r.success) { setError('editorError', r.error || 'Failed to save'); return; }
     notesState.notes[username] = { text, tags, date: Date.now() };
     notesState.draftText = '';
-    // Switch to Models tab so the user sees their save landed
+    notesState.editingTagIds = null;
+    await clearDraft();
     setNotesView('models');
   } finally { setLoading('editorSaveBtn', false); }
 }
@@ -545,13 +616,31 @@ async function saveCurrentNote() {
 async function deleteCurrentNote() {
   const username = notesState.editingUsername;
   if (!username) return;
-  if (!confirm('Delete this note?')) return;
+  if (!confirm(`Delete the note for @${username}? This cannot be undone.`)) return;
   const r = await send('deleteNote', { username });
   if (!r.success) { setError('editorError', r.error || 'Failed to delete'); return; }
   delete notesState.notes[username];
   notesState.editingUsername = null;
   notesState.draftText = '';
+  notesState.editingTagIds = null;
+  await clearDraft();
   setNotesView('models');
+}
+
+// Quick delete from the Models list row.
+async function deleteNoteByUsername(username) {
+  if (!username) return;
+  if (!confirm(`Delete the note for @${username}? This cannot be undone.`)) return;
+  const r = await send('deleteNote', { username });
+  if (!r.success) { alert(r.error || 'Failed to delete'); return; }
+  delete notesState.notes[username];
+  if (notesState.editingUsername === username) {
+    notesState.editingUsername = null;
+    notesState.draftText = '';
+    notesState.editingTagIds = null;
+    await clearDraft();
+  }
+  renderModelsListBody();
 }
 
 // ---- Tags view ----
@@ -560,9 +649,11 @@ function renderTagsView(content) {
     <div class="form-field">
       <label class="form-label">Create tag</label>
       <div class="tag-create-row">
-        <input type="text" id="newTagName" class="form-input" placeholder="Tag name" maxlength="50" value="${escapeHtml(notesState.draftTagName || '')}">
-        <div class="color-picker" id="newTagColorPicker"></div>
-        <button class="toolbar-btn primary" id="addTagBtn">Add</button>
+        <input type="text" id="newTagName" class="form-input" placeholder="Tag name (e.g. 'Top performer')" maxlength="50" value="${escapeHtml(notesState.draftTagName || '')}">
+        <div class="tag-create-row-bottom">
+          <div class="color-picker" id="newTagColorPicker"></div>
+          <button class="toolbar-btn primary" id="addTagBtn">Add</button>
+        </div>
       </div>
       <div class="auth-error" id="tagError"></div>
     </div>
@@ -573,7 +664,9 @@ function renderTagsView(content) {
   `;
   renderColorPicker();
   renderTagList();
-  document.getElementById('newTagName').addEventListener('input', (e) => { notesState.draftTagName = e.target.value; });
+  const nameInput = document.getElementById('newTagName');
+  nameInput.addEventListener('input', (e) => { notesState.draftTagName = e.target.value; });
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTag(); });
   document.getElementById('addTagBtn').addEventListener('click', () => addTag());
 }
 
@@ -641,6 +734,9 @@ async function addTag() {
 }
 
 async function deleteTag(tagId) {
+  const target = notesState.tags.find(t => t.id === tagId);
+  const name = target ? target.name : 'this tag';
+  if (!confirm(`Delete the tag "${name}"? It will be removed from every note that uses it.`)) return;
   const before = notesState.tags;
   notesState.tags = notesState.tags.filter(t => t.id !== tagId);
   if (!(await syncTags())) { notesState.tags = before; return; }
@@ -704,13 +800,27 @@ function renderModelsListBody() {
           <div class="notes-model-preview">${preview || '<em style="opacity:.6;">(no text)</em>'}</div>
           ${chips ? `<div class="notes-model-tags">${chips}</div>` : ''}
         </div>
-        <svg class="notes-model-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <button class="notes-model-delete" data-delete-username="${escapeHtml(username)}" title="Delete note">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+          </svg>
+        </button>
       </div>`;
   }).join('');
+  // Delete buttons first (stop propagation so click does not also open editor).
+  wrap.querySelectorAll('.notes-model-delete[data-delete-username]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteNoteByUsername(btn.dataset.deleteUsername);
+    });
+  });
+  // Row click anywhere else opens the editor for that model.
   wrap.querySelectorAll('.notes-model-row[data-username]').forEach(el => {
     el.addEventListener('click', () => {
       notesState.editingUsername = el.dataset.username;
       notesState.draftText = '';
+      notesState.editingTagIds = null;
+      persistDraft();
       setNotesView('editor');
     });
   });
