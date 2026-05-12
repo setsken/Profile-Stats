@@ -29,6 +29,25 @@
   "side_panel": {
     "default_path": "popup.html"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["chart.min.js", "chart-drawer.js", "page-interceptor.js"],
+      "matches": ["https://onlyfans.com/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://onlyfans.com/*"],
+      "js": ["inject-early.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://onlyfans.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

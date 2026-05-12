@@ -1,0 +1,145 @@
+/* Content script styles - minimal */
+/* Elements are replaced instantly via inject-early.js */
+/* Tooltip repositioning handled by JS */
+
+/* Chart tooltip styles - scoped to .of-stats-tooltip to avoid affecting original OF tooltips */
+.of-stats-tooltip.b-chart__tooltip {
+  position: absolute;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px 12px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 0.15s ease;
+}
+
+.of-stats-tooltip .b-chart__tooltip__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+  font-size: 11px;
+}
+
+.of-stats-tooltip .b-chart__tooltip__text {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  color: #555;
+  font-size: 11px;
+}
+
+.of-stats-tooltip .b-chart__tooltip__text:last-child {
+  margin-bottom: 0;
+}
+
+.of-stats-tooltip .b-chart__tooltip__circle {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.of-stats-tooltip .b-chart__tooltip__text__title {
+  margin-right: auto;
+  color: #666;
+}
+
+.of-stats-tooltip .b-chart__tooltip__text__value {
+  font-weight: 400;
+  color: #333;
+  margin-left: auto;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Dark mode tooltip - applied via JS class */
+.of-stats-tooltip.dark-mode {
+  background: #161618;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.of-stats-tooltip.dark-mode .b-chart__tooltip__title {
+  color: #fff;
+}
+.of-stats-tooltip.dark-mode .b-chart__tooltip__text {
+  color: #e8e8e8;
+}
+.of-stats-tooltip.dark-mode .b-chart__tooltip__text__title {
+  color: #e8e8e8;
+}
+.of-stats-tooltip.dark-mode .b-chart__tooltip__text__value {
+  color: #fff;
+}
+
+/* Loading spinner for earnings table - match OnlyFans original */
+tr[data-of-stats-loading] td {
+  padding: 20px 0 !important;
+}
+
+tr[data-of-stats-loading] .infinite-loading-container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+tr[data-of-stats-loading] .infinite-status-prompt:first-child {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+tr[data-of-stats-loading] .b-posts_preloader {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+tr[data-of-stats-loading] .g-icon {
+  fill: rgb(138, 150, 163) !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Prevent fans/following text wrapping on Russian site */
+.l-sidebar__user-data {
+  white-space: nowrap !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Status tooltip styles for earnings table */
+.of-stats-status-tooltip {
+  position: fixed;
+  background: #242529;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: #fff;
+  pointer-events: none;
+  z-index: 10000;
+  white-space: normal;
+  word-wrap: break-word;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  max-width: 300px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.of-stats-status-tooltip.visible {
+  opacity: 1;
+}
+
+.of-stats-status-tooltip::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: #242529;
+  transform: translate(-50%, 50%) rotate(45deg);
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+}

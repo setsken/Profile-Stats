@@ -1,9 +1,7 @@
 // Profile Stats — popup script (skeleton stage).
-// Handles auth (login/register/forgot) against Stats Editor backend and shows a
-// minimal main screen. Real product UI (models / notes / tags / badges) lands
-// in follow-up phases.
+// All API calls go through background.js so the service worker keeps the
+// in-memory token + cache hot for content scripts and side panel reloads.
 
-const STATS_EDITOR_API = 'https://stats-editor-production.up.railway.app/api';
 const PROFILE_STATS_API = 'https://profile-stats-production.up.railway.app/api';
 
 const screens = {
@@ -38,39 +36,16 @@ function setLoading(btnId, on) {
   btn.querySelector('.btn-loader').style.display = on ? 'inline-block' : 'none';
 }
 
-// ============ Token storage ============
-async function saveToken(token, user) {
-  await chrome.storage.local.set({ authToken: token, authUser: user });
-}
-async function loadToken() {
-  const { authToken, authUser } = await chrome.storage.local.get(['authToken', 'authUser']);
-  return { token: authToken, user: authUser };
-}
-async function clearToken() {
-  await chrome.storage.local.remove(['authToken', 'authUser']);
-}
-
-// ============ API calls ============
-async function apiPost(base, path, body, token) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const r = await fetch(`${base}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
+function send(action, payload = {}) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action, ...payload }, (resp) => {
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(resp || { success: false, error: 'Empty response' });
+      }
+    });
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(data.error || `HTTP ${r.status}`), { code: data.code, status: r.status });
-  return data;
-}
-
-async function apiGet(base, path, token) {
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const r = await fetch(`${base}${path}`, { headers });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(new Error(data.error || `HTTP ${r.status}`), { code: data.code, status: r.status });
-  return data;
 }
 
 // ============ Flows ============
@@ -78,11 +53,9 @@ async function doLogin(email, password) {
   setError('loginError', '');
   setLoading('loginBtn', true);
   try {
-    const data = await apiPost(STATS_EDITOR_API, '/auth/login', { email, password });
-    await saveToken(data.token, data.user);
-    await enterMainScreen(data.token, data.user);
-  } catch (e) {
-    setError('loginError', e.message || 'Login failed');
+    const r = await send('login', { email, password });
+    if (!r.success) { setError('loginError', r.error || 'Login failed'); return; }
+    await enterMainScreen(r.user);
   } finally {
     setLoading('loginBtn', false);
   }
@@ -92,17 +65,14 @@ async function doRegister(email, password) {
   setError('registerError', '');
   setLoading('registerBtn', true);
   try {
-    const data = await apiPost(STATS_EDITOR_API, '/auth/register', { email, password });
-    if (data.token) {
-      await saveToken(data.token, data.user);
-      await enterMainScreen(data.token, data.user);
-    } else {
-      // If backend requires email verification, send user back to login.
-      setError('registerError', 'Account created. Check your email and then sign in.');
+    const r = await send('register', { email, password });
+    if (!r.success) { setError('registerError', r.error || 'Registration failed'); return; }
+    if (r.requiresVerification) {
+      setError('registerError', 'Account created. Check your email then sign in.');
       show('login');
+      return;
     }
-  } catch (e) {
-    setError('registerError', e.message || 'Registration failed');
+    await enterMainScreen(r.user);
   } finally {
     setLoading('registerBtn', false);
   }
@@ -113,48 +83,49 @@ async function doForgot(email) {
   setSuccess('forgotSuccess', '');
   setLoading('forgotBtn', true);
   try {
-    await apiPost(STATS_EDITOR_API, '/auth/forgot-password', { email });
-    setSuccess('forgotSuccess', 'Reset code sent. Check your email.');
-  } catch (e) {
-    setError('forgotError', e.message || 'Failed to send reset code');
+    const r = await send('forgotPassword', { email });
+    if (!r.success) { setError('forgotError', r.error || 'Failed to send reset code'); return; }
+    setSuccess('forgotSuccess', r.message || 'Reset code sent. Check your email.');
   } finally {
     setLoading('forgotBtn', false);
   }
 }
 
 async function doLogout() {
-  await clearToken();
+  await send('logout');
   show('login');
 }
 
-// ============ SSO placeholder ============
 async function doSSO() {
-  // In a later phase this will message the Stats Editor extension via
-  // chrome.runtime.sendMessage with its extension ID and externally_connectable
-  // declared on both sides. For the skeleton we surface a friendly message.
   setError('loginError', 'SSO with Stats Editor coming in the next update. Use email/password for now.');
 }
 
-// ============ Main screen bootstrap ============
-async function enterMainScreen(token, user) {
-  document.getElementById('userEmail').textContent = user?.email || '';
+// ============ Main screen ============
+async function enterMainScreen(user) {
+  const email = user?.email || (await send('getAuthStatus')).email || '';
+  document.getElementById('userEmail').textContent = email;
   show('main');
+
+  // Subscription status via Profile Stats backend (the background-cached one
+  // routes to /subscription/status?product=profile_stats on Stats Editor; the
+  // direct hit here uses our richer /api/health/check-access view).
+  const { authToken } = await chrome.storage.local.get('authToken');
   try {
-    const access = await apiGet(PROFILE_STATS_API, '/health/check-access', token);
-    const sub = access.subscription || {};
-    let line = 'No active subscription';
+    const r = await fetch(`${PROFILE_STATS_API}/health/check-access`, {
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    if (r.status === 401) { await doLogout(); return; }
+    const data = await r.json();
+    const sub = data.subscription || {};
     if (sub.hasAccess) {
       const exp = sub.expiresAt ? new Date(sub.expiresAt).toLocaleDateString() : '?';
       const via = sub.grantedVia === 'stats_editor_pro' ? ' (via Stats Editor Pro)' : '';
-      line = `${(sub.plan || 'Active').toUpperCase()} until ${exp}${via}`;
+      document.getElementById('userSub').textContent = `${(sub.plan || 'Active').toUpperCase()} until ${exp}${via}`;
+    } else {
+      document.getElementById('userSub').textContent = 'No active subscription';
     }
-    document.getElementById('userSub').textContent = line;
   } catch (e) {
-    if (e.status === 401) {
-      await doLogout();
-      return;
-    }
-    document.getElementById('userSub').textContent = 'Subscription check failed (you can still sign out)';
+    document.getElementById('userSub').textContent = 'Subscription check failed';
   }
 }
 
@@ -164,18 +135,15 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
   doLogin(document.getElementById('loginEmail').value.trim(),
           document.getElementById('loginPassword').value);
 });
-
 document.getElementById('registerForm').addEventListener('submit', (e) => {
   e.preventDefault();
   doRegister(document.getElementById('registerEmail').value.trim(),
              document.getElementById('registerPassword').value);
 });
-
 document.getElementById('forgotForm').addEventListener('submit', (e) => {
   e.preventDefault();
   doForgot(document.getElementById('forgotEmail').value.trim());
 });
-
 document.getElementById('showRegister').addEventListener('click', (e) => { e.preventDefault(); show('register'); });
 document.getElementById('showLogin').addEventListener('click', (e) => { e.preventDefault(); show('login'); });
 document.getElementById('forgotLink').addEventListener('click', (e) => { e.preventDefault(); show('forgot'); });
@@ -185,9 +153,9 @@ document.getElementById('logoutBtn').addEventListener('click', () => doLogout())
 
 // ============ Boot ============
 (async () => {
-  const { token, user } = await loadToken();
-  if (token && user) {
-    await enterMainScreen(token, user);
+  const auth = await send('getAuthStatus');
+  if (auth.isAuthenticated) {
+    await enterMainScreen({ email: auth.email });
   } else {
     show('login');
   }
