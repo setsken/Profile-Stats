@@ -1300,6 +1300,8 @@ function closePaymentScreen() {
 
 // ============ Side panel toggle ============
 const isSidePanel = new URLSearchParams(location.search).get('mode') === 'sidepanel';
+if (isSidePanel) document.documentElement.classList.add('mode-sidepanel');
+
 function applySidePanelButtons() {
   const expand = document.getElementById('expandPanelBtn');
   const collapse = document.getElementById('collapsePanelBtn');
