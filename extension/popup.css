@@ -301,6 +301,41 @@ body { background: var(--gradient-page); }
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
+/* Compact note button inside a leaderboard row */
+.row-note-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  color: var(--text-muted);
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.row-note-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.08);
+}
+.row-note-btn.active {
+  color: white;
+  background: var(--gradient-accent);
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+.row-note-btn.active:hover { filter: brightness(1.08); }
+
+/* Subtle highlight on the row when there's already a note */
+.list-item.has-note { border-color: var(--border-soft); }
+.list-item.has-note .list-item-name::after {
+  content: ""; display: inline-block;
+  width: 5px; height: 5px; margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+  box-shadow: 0 0 6px var(--accent);
+}
+
 /* ============ Subscription / Upgrade card ============ */
 .user-card {
   padding: 14px 16px;

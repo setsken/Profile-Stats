@@ -263,6 +263,10 @@ async function enterMainScreen(user) {
   applySubscriptionHeader();
   await loadPluginEnabled();
 
+  // Warm the notes/tags cache so the Top Models tab can light up models that
+  // already have notes without a second round-trip.
+  ensureNotesLoaded().catch(() => {});
+
   // Pull saved UI state to decide where to land. Default = main / Top Models.
   const saved = await loadUiState();
   const targetScreen = saved && ['main', 'subscription', 'settings', 'support'].includes(saved.screen)
@@ -387,14 +391,33 @@ function modelRowHtml(model, extras = {}) {
   const rank = extras.rank;
   const rankHtml = rank ? `<div class="list-item-rank">${rank}</div>` : '';
   const itemRankClass = rank && rank <= 3 ? ` rank-${rank}` : '';
+
+  // Has-note indicator. notesState.loaded becomes true once ensureNotesLoaded
+  // resolves; before that we render the button in its empty state.
+  const username = model.username;
+  const note = notesState.notes[username];
+  const hasNote = !!(note && ((note.text && note.text.trim()) || (Array.isArray(note.tags) && note.tags.length)));
+  const noteBtnTitle = hasNote ? 'Edit your note' : 'Write a note';
+  const noteIcon = hasNote
+    ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/>
+       </svg>`
+    : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+         <polyline points="14 2 14 8 20 8"/>
+       </svg>`;
+
   return `
-    <div class="list-item${itemRankClass}" data-username="${escapeHtml(model.username)}">
+    <div class="list-item${itemRankClass}${hasNote ? ' has-note' : ''}" data-username="${escapeHtml(username)}">
       ${rankHtml}
       ${avatar}
       <div class="list-item-main">
-        <div class="list-item-name">@${escapeHtml(model.username)}</div>
+        <div class="list-item-name">@${escapeHtml(username)}</div>
         <div class="list-item-meta">${meta}</div>
       </div>
+      <button class="row-note-btn${hasNote ? ' active' : ''}" data-note-username="${escapeHtml(username)}" title="${noteBtnTitle}">
+        ${noteIcon}
+      </button>
       <div class="list-item-score" style="background: ${color}; box-shadow: 0 2px 8px ${color}55;" title="Grade ${grade}">
         ${score} <span style="opacity:.8; font-weight:600; font-size:11px;">${grade}</span>
       </div>
@@ -402,6 +425,21 @@ function modelRowHtml(model, extras = {}) {
 }
 
 function bindRowClicks(container) {
+  // Note button — must come first so stopPropagation prevents the row from
+  // also opening the profile.
+  container.querySelectorAll('.row-note-btn[data-note-username]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const u = btn.dataset.noteUsername;
+      if (!u) return;
+      notesState.editingUsername = u;
+      notesState.draftText = '';
+      notesState.editingTagIds = null;
+      notesState.activeView = 'editor';
+      persistDraft();
+      activateTab('notes');
+    });
+  });
   container.querySelectorAll('.list-item[data-username]').forEach(el => {
     el.addEventListener('click', () => {
       const u = el.dataset.username;
@@ -433,6 +471,8 @@ function currentLeaderboardParams() {
 async function loadTopTab(reset = true) {
   if (lbState.loading) return;
   lbState.loading = true;
+  // Make sure we know which models already have notes before rendering rows.
+  await ensureNotesLoaded().catch(() => {});
 
   const list = document.getElementById('topList');
   const empty = document.getElementById('topEmpty');
@@ -487,6 +527,19 @@ async function loadTopTab(reset = true) {
 
 // ============ Notes Tab (sub-tabs: editor / tags / models) ============
 
+// Loads notes/tags into notesState without touching any UI. Safe to call from
+// other tabs that need to know which models the user has noted.
+async function ensureNotesLoaded() {
+  if (notesState.loaded) return;
+  const [notesResp, tagsResp] = await Promise.all([send('getNotes'), send('getNoteTags')]);
+  if (notesResp.success) {
+    notesState.notes = notesResp.notes || {};
+    notesState.avatars = notesResp.avatars || {};
+  }
+  if (tagsResp.success) notesState.tags = tagsResp.tags || [];
+  notesState.loaded = true;
+}
+
 async function loadNotesTab() {
   const content = document.getElementById('notesContent');
   content.innerHTML = '<div class="list-empty">Loading…</div>';
@@ -523,6 +576,7 @@ function setNotesView(view) {
   document.querySelectorAll('.notes-subtab').forEach(b => {
     b.classList.toggle('active', b.dataset.subview === view);
   });
+  persistDraft();
   renderNotesView();
 }
 
