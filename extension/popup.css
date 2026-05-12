@@ -591,6 +591,94 @@ body { background: var(--gradient-page); }
 .load-more-btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
 .load-more-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 
+/* ============ Notes toolbar ============ */
+.notes-toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+.toolbar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px; height: 34px;
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;
+  color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.toolbar-btn:hover { border-color: var(--accent); background: var(--bg-card-hover); color: var(--accent); }
+.toolbar-btn.primary {
+  background: var(--gradient-accent); border-color: transparent; color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+.toolbar-btn.primary:hover { filter: brightness(1.06); color: white; }
+.toolbar-btn svg { flex-shrink: 0; }
+
+/* ============ Forms (note edit, tag create) ============ */
+.form-field { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 11px; color: var(--text-secondary); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.form-input {
+  width: 100%; height: 38px; padding: 0 12px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px;
+  color: var(--text-primary); font-size: 13px; outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.form-textarea {
+  height: auto; padding: 10px 12px; resize: vertical; min-height: 90px; line-height: 1.5;
+}
+.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; text-align: right; }
+
+/* ============ Tag picker (in note edit) ============ */
+.tag-picker {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px;
+  min-height: 44px;
+}
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  font-size: 11px; font-weight: 600;
+  color: white;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, transform 0.15s;
+  user-select: none;
+}
+.tag-chip:hover { opacity: 0.85; }
+.tag-chip.selected { opacity: 1; transform: scale(1.02); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18); }
+
+/* ============ Tags manager ============ */
+.tag-create-row { display: flex; gap: 8px; align-items: center; }
+.tag-create-row .form-input { flex: 1; }
+
+.color-picker { display: flex; gap: 5px; flex-shrink: 0; }
+.color-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.color-dot:hover { transform: scale(1.1); }
+.color-dot.selected { border-color: white; box-shadow: 0 0 0 1px var(--text-primary); }
+
+.tag-list { display: flex; flex-direction: column; gap: 6px; }
+.tag-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px;
+}
+.tag-row-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.tag-row-name { flex: 1; font-size: 13px; color: var(--text-primary); }
+.tag-row-delete {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 4px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+.tag-row-delete:hover { color: var(--error); background: rgba(239, 68, 68, 0.08); }
+
 /* ============ Scrollbar ============ */
 .main-body::-webkit-scrollbar { width: 6px; }
 .main-body::-webkit-scrollbar-track { background: transparent; }

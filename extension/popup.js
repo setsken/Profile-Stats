@@ -13,7 +13,24 @@ const screens = {
   subscription: document.getElementById('subscriptionScreen'),
   settings:     document.getElementById('settingsScreen'),
   support:      document.getElementById('supportScreen'),
-  payment:      document.getElementById('paymentScreen')
+  payment:      document.getElementById('paymentScreen'),
+  noteEdit:     document.getElementById('noteEditScreen'),
+  tagsManager:  document.getElementById('tagsManagerScreen')
+};
+
+const TAG_COLORS = [
+  '#8b5cf6', '#10b981', '#ef4444', '#f59e0b',
+  '#3b82f6', '#ec4899', '#14b8a6', '#6b7280'
+];
+function tagColor(ci) { return TAG_COLORS[((ci % TAG_COLORS.length) + TAG_COLORS.length) % TAG_COLORS.length]; }
+
+// Notes / tags state shared between screens
+const notesState = {
+  notes: {},        // { username: { text, tags: [tagId], date } }
+  avatars: {},      // { username: avatar_url }
+  tags: [],         // [ { id, name, ci } ]
+  editingUsername: null,
+  newTagColorIndex: 0
 };
 
 function show(name) {
@@ -344,44 +361,229 @@ async function loadNotesTab() {
   const empty = document.getElementById('notesEmpty');
   empty.textContent = 'Loading…';
   empty.style.display = '';
-  list.querySelectorAll('.list-item').forEach(n => n.remove());
+  list.querySelectorAll('.list-item, .note-row').forEach(n => n.remove());
 
-  const r = await send('getNotes');
-  if (!r.success) {
-    empty.textContent = r.error || 'Failed to load notes';
+  // Load notes and tags in parallel — both required for proper rendering.
+  const [notesResp, tagsResp] = await Promise.all([send('getNotes'), send('getNoteTags')]);
+  if (!notesResp.success) {
+    empty.textContent = notesResp.error || 'Failed to load notes';
     return;
   }
-  const notesObj = r.notes || {};
-  const avatars = r.avatars || {};
-  const entries = Object.entries(notesObj)
+
+  notesState.notes = notesResp.notes || {};
+  notesState.avatars = notesResp.avatars || {};
+  notesState.tags = tagsResp.success ? (tagsResp.tags || []) : [];
+
+  const entries = Object.entries(notesState.notes)
     .filter(([, n]) => n && ((n.text && n.text.trim()) || (Array.isArray(n.tags) && n.tags.length)))
     .sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
 
   if (entries.length === 0) {
-    empty.textContent = 'No notes yet — write notes on model profiles to see them here.';
+    empty.textContent = 'No notes yet — tap "New note" or write one from a model profile badge.';
     return;
   }
   empty.style.display = 'none';
 
+  const tagsById = new Map(notesState.tags.map(t => [t.id, t]));
+
   const html = entries.map(([username, note]) => {
     const noteText = escapeHtml((note.text || '').slice(0, 120));
     const dateStr = note.date ? new Date(note.date).toLocaleDateString() : '';
-    const avatarUrl = avatars[username] || null;
-    const tagsCount = Array.isArray(note.tags) ? note.tags.length : 0;
-    const tagsBadge = tagsCount ? `<span style="margin-left:6px; opacity:.7;">·  ${tagsCount} tag${tagsCount > 1 ? 's' : ''}</span>` : '';
+    const avatarUrl = notesState.avatars[username] || null;
+    const tagIds = Array.isArray(note.tags) ? note.tags : [];
+    const tagsHtml = tagIds
+      .map(tid => tagsById.get(tid))
+      .filter(Boolean)
+      .map(t => `<span class="tag-chip selected" style="background:${tagColor(t.ci)}; cursor: default; padding: 2px 8px; font-size:10px;">${escapeHtml(t.name)}</span>`)
+      .join('');
     return `
-      <div class="list-item" data-username="${escapeHtml(username)}">
+      <div class="list-item" data-edit-username="${escapeHtml(username)}">
         ${avatarUrl
           ? `<img class="list-item-avatar" src="${escapeHtml(avatarUrl)}" alt="" referrerpolicy="no-referrer">`
           : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
         <div class="list-item-main">
           <div class="list-item-name">@${escapeHtml(username)}</div>
-          <div class="list-item-meta">${noteText || '<em style="opacity:.6;">(no text)</em>'} <span style="color:var(--text-muted);">${escapeHtml(dateStr)}</span>${tagsBadge}</div>
+          <div class="list-item-meta">${noteText || '<em style="opacity:.6;">(no text)</em>'} <span style="color:var(--text-muted);">${escapeHtml(dateStr)}</span></div>
+          ${tagsHtml ? `<div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">${tagsHtml}</div>` : ''}
         </div>
       </div>`;
   }).join('');
   list.insertAdjacentHTML('beforeend', html);
-  bindRowClicks(list);
+  list.querySelectorAll('.list-item[data-edit-username]').forEach(el => {
+    el.addEventListener('click', () => openNoteEdit(el.dataset.editUsername));
+  });
+}
+
+// ============ Note edit ============
+function openNoteEdit(username) {
+  notesState.editingUsername = username || null;
+  const existing = username ? (notesState.notes[username] || null) : null;
+  document.getElementById('noteEditTitle').textContent = username ? 'Edit note' : 'New note';
+  document.getElementById('noteDeleteBtn').style.display = username ? '' : 'none';
+  const usernameInput = document.getElementById('noteUsername');
+  usernameInput.value = username || '';
+  usernameInput.disabled = !!username; // can't rename an existing note
+  document.getElementById('noteText').value = existing?.text || '';
+  document.getElementById('noteCharCount').textContent = (existing?.text || '').length;
+  setError('noteError', '');
+
+  renderTagPicker(Array.isArray(existing?.tags) ? existing.tags.slice() : []);
+  show('noteEdit');
+}
+
+function renderTagPicker(selectedIds) {
+  const picker = document.getElementById('noteTagPicker');
+  const hint = document.getElementById('noteTagHint');
+  picker.innerHTML = '';
+  if (notesState.tags.length === 0) {
+    picker.style.display = 'none';
+    hint.style.display = '';
+    return;
+  }
+  picker.style.display = '';
+  hint.style.display = 'none';
+  const selectedSet = new Set(selectedIds);
+  notesState.tags.forEach(t => {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip' + (selectedSet.has(t.id) ? ' selected' : '');
+    chip.style.background = tagColor(t.ci);
+    chip.dataset.tagId = t.id;
+    chip.textContent = t.name;
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+    picker.appendChild(chip);
+  });
+}
+
+function collectSelectedTagIds() {
+  return Array.from(document.querySelectorAll('#noteTagPicker .tag-chip.selected'))
+    .map(el => Number(el.dataset.tagId))
+    .filter(n => !Number.isNaN(n));
+}
+
+async function saveNote() {
+  const usernameRaw = document.getElementById('noteUsername').value.trim().toLowerCase().replace(/^@/, '');
+  const text = document.getElementById('noteText').value.trim();
+  if (!usernameRaw) { setError('noteError', 'Username is required'); return; }
+  const tags = collectSelectedTagIds();
+  setError('noteError', '');
+  setLoading('noteSaveBtn', true);
+  try {
+    const r = await send('saveNote', {
+      username: usernameRaw, text, tags,
+      date: Date.now(),
+      avatarUrl: notesState.avatars[usernameRaw] || null
+    });
+    if (!r.success) { setError('noteError', r.error || 'Failed to save'); return; }
+    // Optimistic refresh
+    notesState.notes[usernameRaw] = { text, tags, date: Date.now() };
+    show('main');
+    await loadNotesTab();
+  } finally { setLoading('noteSaveBtn', false); }
+}
+
+async function deleteNote() {
+  if (!notesState.editingUsername) return;
+  if (!confirm('Delete this note?')) return;
+  const username = notesState.editingUsername;
+  const r = await send('deleteNote', { username });
+  if (!r.success) { setError('noteError', r.error || 'Failed to delete'); return; }
+  delete notesState.notes[username];
+  show('main');
+  await loadNotesTab();
+}
+
+// ============ Tags manager ============
+function openTagsManager() {
+  notesState.newTagColorIndex = 0;
+  document.getElementById('newTagName').value = '';
+  setError('tagError', '');
+  renderColorPicker();
+  renderTagList();
+  show('tagsManager');
+}
+
+function renderColorPicker() {
+  const wrap = document.getElementById('newTagColorPicker');
+  wrap.innerHTML = '';
+  TAG_COLORS.forEach((c, idx) => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (idx === notesState.newTagColorIndex ? ' selected' : '');
+    dot.style.background = c;
+    dot.addEventListener('click', () => {
+      notesState.newTagColorIndex = idx;
+      renderColorPicker();
+    });
+    wrap.appendChild(dot);
+  });
+}
+
+function renderTagList() {
+  const list = document.getElementById('tagList');
+  list.innerHTML = '';
+  if (notesState.tags.length === 0) {
+    list.innerHTML = '<div class="list-empty">No tags yet. Create one above.</div>';
+    return;
+  }
+  notesState.tags.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'tag-row';
+    row.innerHTML = `
+      <div class="tag-row-dot" style="background:${tagColor(t.ci)}"></div>
+      <div class="tag-row-name">${escapeHtml(t.name)}</div>
+      <button class="tag-row-delete" data-tag-id="${t.id}" title="Delete">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+        </svg>
+      </button>`;
+    row.querySelector('.tag-row-delete').addEventListener('click', () => deleteTag(t.id));
+    list.appendChild(row);
+  });
+}
+
+async function syncTags() {
+  // PUT /api/notes/tags replaces all the user's tags — send the current list.
+  const r = await send('syncNoteTags', { tags: notesState.tags });
+  if (!r.success) { setError('tagError', r.error || 'Failed to sync tags'); return false; }
+  // Server returns canonical list with assigned IDs.
+  notesState.tags = r.tags || notesState.tags;
+  return true;
+}
+
+async function addTag() {
+  const name = document.getElementById('newTagName').value.trim().slice(0, 50);
+  if (!name) { setError('tagError', 'Name is required'); return; }
+  if (notesState.tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+    setError('tagError', 'A tag with this name already exists');
+    return;
+  }
+  setError('tagError', '');
+  // Use a negative id to mark "new"; server will assign a real one.
+  notesState.tags.push({ id: -Date.now(), name, ci: notesState.newTagColorIndex });
+  if (await syncTags()) {
+    document.getElementById('newTagName').value = '';
+    renderTagList();
+  } else {
+    // Roll back local addition on failure.
+    notesState.tags.pop();
+  }
+}
+
+async function deleteTag(tagId) {
+  const before = notesState.tags;
+  notesState.tags = notesState.tags.filter(t => t.id !== tagId);
+  if (!(await syncTags())) {
+    notesState.tags = before;
+    return;
+  }
+  // Strip the deleted id from any cached notes so the picker stays sane.
+  for (const u of Object.keys(notesState.notes)) {
+    const n = notesState.notes[u];
+    if (Array.isArray(n?.tags) && n.tags.includes(tagId)) {
+      n.tags = n.tags.filter(id => id !== tagId);
+    }
+  }
+  renderTagList();
 }
 
 // ============ Plugin enabled toggle ============
@@ -604,6 +806,18 @@ wire('filterResetBtn', 'click', () => {
   loadTopTab(true);
 });
 wire('loadMoreBtn', 'click', () => loadTopTab(false));
+
+// Notes
+wire('addNoteBtn', 'click', () => openNoteEdit(null));
+wire('manageTagsBtn', 'click', () => openTagsManager());
+wire('noteEditBackBtn', 'click', () => show('main'));
+wire('noteSaveBtn', 'click', () => saveNote());
+wire('noteDeleteBtn', 'click', () => deleteNote());
+wire('tagsBackBtn', 'click', () => { show('main'); loadNotesTab(); });
+wire('addTagBtn', 'click', () => addTag());
+wire('noteText', 'input', (e) => {
+  document.getElementById('noteCharCount').textContent = e.target.value.length;
+});
 
 // ============ Boot ============
 (async () => {
