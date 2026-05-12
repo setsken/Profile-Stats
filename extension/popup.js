@@ -145,7 +145,10 @@ function showConfirm({ title = 'Confirm', message = '', confirmText = 'Confirm',
   });
 }
 
-function send(action, payload = {}) {
+// MV3 service workers can be asleep when popup opens; the first message
+// occasionally lands before the worker is fully alive. Retry once after a
+// short delay to mask that cold-start race.
+async function send(action, payload = {}) {
   let resp = await _sendOnce(action, payload);
   const dead = !resp || (resp.success === false &&
     typeof resp.error === 'string' &&
