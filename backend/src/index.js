@@ -133,6 +133,17 @@ async function runMigrations() {
       )
     `).catch(() => {});
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)').catch(() => {});
+    // Extended profile signals collected from the badge so the leaderboard can
+    // filter by streams / socials / posts / subscription price etc.
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS posts_count INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS videos_count INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS photos_count INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS streams_count INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS likes_count INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS subscribe_price NUMERIC(8,2)').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS account_months INTEGER').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS fans_visible BOOLEAN').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS has_socials BOOLEAN').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).

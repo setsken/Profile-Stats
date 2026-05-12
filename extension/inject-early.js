@@ -3522,13 +3522,30 @@
           chrome.runtime.sendMessage({
             action: 'getEngagementPercentile',
             username: profileData.username,
-            metrics: {
-              score: Number(scoreResult.score || 0),
-              organicity: Number(components.organicity || 0),
-              engagementRate: Number(engagementRate || 0),
-              negativeFlagsCount: Number(negativeFlagsCount || 0),
-              avatarUrl: profileData.avatar || null
-            }
+            metrics: (function buildMetrics(){
+              var m = {
+                score: Number(scoreResult.score || 0),
+                organicity: Number(components.organicity || 0),
+                engagementRate: Number(engagementRate || 0),
+                negativeFlagsCount: Number(negativeFlagsCount || 0),
+                avatarUrl: profileData.avatar || null,
+                postsCount: Number(profileData.postsCount) || 0,
+                videosCount: Number(profileData.videosCount) || 0,
+                photosCount: Number(profileData.photosCount) || 0,
+                streamsCount: Number(profileData.finishedStreamsCount) || 0,
+                likesCount: Number(profileData.favoritedCount) || 0,
+                subscribePrice: Number(profileData.subscribePrice) || 0
+              };
+              if (profileData.joined) {
+                var t = Date.parse(profileData.joined);
+                if (!isNaN(t)) m.accountMonths = Math.max(1, Math.floor((Date.now() - t) / (1000*60*60*24*30)));
+              }
+              if (typeof scoreResult.fansVisible === 'boolean') m.fansVisible = scoreResult.fansVisible;
+              else if (typeof profileData.subscribers === 'number') m.fansVisible = profileData.subscribers > 0;
+              // _detectedSocials is populated by the badge's late social-link scan.
+              if (Array.isArray(profileData._detectedSocials)) m.hasSocials = profileData._detectedSocials.length > 0;
+              return m;
+            })()
           }).then(function(resp) {
             if (!resp || !resp.success) return;
             var dbModels = Math.max(1, Number(resp.modelsAnalyzed || 1));

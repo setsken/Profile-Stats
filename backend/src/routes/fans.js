@@ -124,6 +124,26 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
       ? req.body.avatarUrl.slice(0, 500)
       : null;
 
+    // Extended profile signals — all optional, validated/clamped before save.
+    const intOrNull = (v, max = 10_000_000) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n), max) : null;
+    };
+    const boolOrNull = (v) => (typeof v === 'boolean' ? v : null);
+    const priceOrNull = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n * 100) / 100, 99999) : null;
+    };
+    const postsCount    = intOrNull(req.body?.postsCount);
+    const videosCount   = intOrNull(req.body?.videosCount);
+    const photosCount   = intOrNull(req.body?.photosCount);
+    const streamsCount  = intOrNull(req.body?.streamsCount);
+    const likesCount    = intOrNull(req.body?.likesCount, 1_000_000_000);
+    const subscribePrice = priceOrNull(req.body?.subscribePrice);
+    const accountMonths = intOrNull(req.body?.accountMonths, 600);
+    const fansVisible   = boolOrNull(req.body?.fansVisible);
+    const hasSocials    = boolOrNull(req.body?.hasSocials);
+
     const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : null;
     const organicity = Number.isFinite(rawOrganicity) ? Math.max(0, Math.min(25, rawOrganicity)) : null;
     const engagementRate = Number.isFinite(rawEngagementRate) ? Math.max(0, rawEngagementRate) : null;
@@ -141,8 +161,10 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
 
     await query(
       `INSERT INTO model_quality_snapshots
-        (model_username, quality_score, score, organicity, engagement_rate, negative_flags, avatar_url, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
+         avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
+         subscribe_price, account_months, fans_visible, has_socials, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          quality_score = EXCLUDED.quality_score,
@@ -151,8 +173,21 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
          engagement_rate = EXCLUDED.engagement_rate,
          negative_flags = EXCLUDED.negative_flags,
          avatar_url = COALESCE(EXCLUDED.avatar_url, model_quality_snapshots.avatar_url),
+         posts_count = COALESCE(EXCLUDED.posts_count, model_quality_snapshots.posts_count),
+         videos_count = COALESCE(EXCLUDED.videos_count, model_quality_snapshots.videos_count),
+         photos_count = COALESCE(EXCLUDED.photos_count, model_quality_snapshots.photos_count),
+         streams_count = COALESCE(EXCLUDED.streams_count, model_quality_snapshots.streams_count),
+         likes_count = COALESCE(EXCLUDED.likes_count, model_quality_snapshots.likes_count),
+         subscribe_price = COALESCE(EXCLUDED.subscribe_price, model_quality_snapshots.subscribe_price),
+         account_months = COALESCE(EXCLUDED.account_months, model_quality_snapshots.account_months),
+         fans_visible = COALESCE(EXCLUDED.fans_visible, model_quality_snapshots.fans_visible),
+         has_socials = COALESCE(EXCLUDED.has_socials, model_quality_snapshots.has_socials),
          updated_at = NOW()`,
-      [cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount, avatarUrl]
+      [
+        cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount,
+        avatarUrl, postsCount, videosCount, photosCount, streamsCount, likesCount,
+        subscribePrice, accountMonths, fansVisible, hasSocials
+      ]
     );
 
     const MIN_MODELS_FOR_PERCENTILE = 20;
