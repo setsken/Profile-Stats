@@ -238,9 +238,11 @@ function modelRowHtml(model, extras = {}) {
   const qPct = Math.round((Number(model.qualityScore) || 0) * 100);
   const meta = extras.meta || `Fans: ${escapeHtml(formatFans(model))} · Quality: ${qPct}%`;
   const score = Math.round(Number(model.score) || 0);
-  const rankHtml = extras.rank ? `<div class="list-item-rank rank-${extras.rank <= 3 ? extras.rank : 'n'}" ${extras.rank > 3 ? 'class="list-item-rank"' : ''}>${extras.rank}</div>` : '';
+  const rank = extras.rank;
+  const rankHtml = rank ? `<div class="list-item-rank">${rank}</div>` : '';
+  const itemRankClass = rank && rank <= 3 ? ` rank-${rank}` : '';
   return `
-    <div class="list-item" data-username="${escapeHtml(model.username)}">
+    <div class="list-item${itemRankClass}" data-username="${escapeHtml(model.username)}">
       ${rankHtml}
       ${avatar}
       <div class="list-item-main">
@@ -548,10 +550,38 @@ wire('topSearch', 'input', (e) => {
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => loadTopTab(true), 300);
 });
-wire('topSort', 'change', (e) => {
-  lbState.filters.sort = e.target.value;
-  loadTopTab(true);
-});
+// Custom sort dropdown
+(function setupSortDropdown() {
+  const wrap = document.getElementById('sortDropdown');
+  const btn = document.getElementById('sortDropdownBtn');
+  const label = document.getElementById('sortDropdownLabel');
+  if (!wrap || !btn) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    wrap.classList.toggle('open');
+    btn.classList.toggle('open', wrap.classList.contains('open'));
+  });
+
+  wrap.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const val = opt.dataset.value;
+      wrap.querySelectorAll('.custom-dropdown-option').forEach(o => o.classList.toggle('selected', o === opt));
+      label.textContent = opt.textContent.trim();
+      wrap.classList.remove('open');
+      btn.classList.remove('open');
+      lbState.filters.sort = val;
+      loadTopTab(true);
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) {
+      wrap.classList.remove('open');
+      btn.classList.remove('open');
+    }
+  });
+})();
 wire('filterToggleBtn', 'click', () => {
   const adv = document.getElementById('filterAdvanced');
   const btn = document.getElementById('filterToggleBtn');

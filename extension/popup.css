@@ -485,16 +485,89 @@ body { background: var(--gradient-page); }
 }
 
 .list-item-rank {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 28px; height: 22px; padding: 0 6px;
-  font-size: 12px; font-weight: 700;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary); border-radius: 6px;
+  min-width: 22px;
+  font-size: 13px; font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
-.list-item-rank.rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); }
-.list-item-rank.rank-2 { background: linear-gradient(135deg, #d1d5db, #9ca3af); color: #111827; box-shadow: 0 2px 8px rgba(156, 163, 175, 0.3); }
-.list-item-rank.rank-3 { background: linear-gradient(135deg, #fb923c, #ea580c); color: white; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35); }
+
+/* Top 3 — entire card gets a gradient border + glow */
+.list-item.rank-1 {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
+    linear-gradient(135deg, #fbbf24, #f59e0b) border-box;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25), inset 0 0 0 1px rgba(251, 191, 36, 0.15);
+}
+.list-item.rank-1 .list-item-rank { color: #fbbf24; }
+
+.list-item.rank-2 {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
+    linear-gradient(135deg, #e5e7eb, #9ca3af) border-box;
+  box-shadow: 0 4px 16px rgba(156, 163, 175, 0.22), inset 0 0 0 1px rgba(229, 231, 235, 0.12);
+}
+.list-item.rank-2 .list-item-rank { color: #d1d5db; }
+
+.list-item.rank-3 {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
+    linear-gradient(135deg, #fb923c, #c2410c) border-box;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.22), inset 0 0 0 1px rgba(251, 146, 60, 0.15);
+}
+.list-item.rank-3 .list-item-rank { color: #fb923c; }
+
+/* Custom dropdown (replaces native select) */
+.custom-dropdown { position: relative; }
+.custom-dropdown-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 12px;
+  background: var(--bg-card); backdrop-filter: blur(4px);
+  border: 1px solid var(--border-color); border-radius: 10px;
+  color: var(--text-primary); font-size: 12px; font-weight: 600;
+  cursor: pointer; user-select: none;
+  transition: all 0.18s;
+}
+.custom-dropdown-btn:hover { border-color: var(--border-soft); background: var(--bg-card-hover); }
+.custom-dropdown-btn.open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.custom-dropdown-btn .caret {
+  transition: transform 0.2s;
+  color: var(--accent);
+}
+.custom-dropdown-btn.open .caret { transform: rotate(180deg); }
+.custom-dropdown-list {
+  position: absolute; top: calc(100% + 6px); right: 0; min-width: 140px;
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+  border: 1px solid var(--border-soft); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1);
+  backdrop-filter: blur(12px);
+  z-index: 50;
+  padding: 4px;
+  display: none;
+  animation: slideDown 0.18s ease-out;
+}
+.custom-dropdown.open .custom-dropdown-list { display: block; }
+.custom-dropdown-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.custom-dropdown-option:hover { background: rgba(139, 92, 246, 0.1); color: var(--accent); }
+.custom-dropdown-option.selected {
+  background: var(--accent-soft); color: var(--accent); font-weight: 700;
+}
+.custom-dropdown-option .opt-arrow { margin-left: auto; opacity: 0.6; font-size: 11px; }
 
 .load-more-btn {
   margin-top: 10px; width: 100%; height: 36px;
