@@ -24,13 +24,19 @@ const TAG_COLORS = [
 ];
 function tagColor(ci) { return TAG_COLORS[((ci % TAG_COLORS.length) + TAG_COLORS.length) % TAG_COLORS.length]; }
 
-// Notes / tags state shared between screens
+// Notes / tags state. Mirrors the badge's _notesActiveView model so the
+// three sub-tabs (editor/tags/models) behave identically.
 const notesState = {
+  loaded: false,
   notes: {},        // { username: { text, tags: [tagId], date } }
   avatars: {},      // { username: avatar_url }
   tags: [],         // [ { id, name, ci } ]
+  activeView: 'models',
   editingUsername: null,
-  newTagColorIndex: 0
+  draftText: '',
+  draftTagName: '',
+  newTagColorIndex: 0,
+  modelsSearch: ''
 };
 
 function show(name) {
@@ -356,154 +362,205 @@ async function loadTopTab(reset = true) {
   loadMoreBtn.style.display = lbState.offset < lbState.total ? '' : 'none';
 }
 
-async function loadNotesTab() {
-  const list = document.getElementById('notesList');
-  const empty = document.getElementById('notesEmpty');
-  empty.textContent = 'Loading…';
-  empty.style.display = '';
-  list.querySelectorAll('.list-item, .note-row').forEach(n => n.remove());
+// ============ Notes Tab (sub-tabs: editor / tags / models) ============
 
-  // Load notes and tags in parallel — both required for proper rendering.
+async function loadNotesTab() {
+  const content = document.getElementById('notesContent');
+  content.innerHTML = '<div class="list-empty">Loading…</div>';
+
   const [notesResp, tagsResp] = await Promise.all([send('getNotes'), send('getNoteTags')]);
   if (!notesResp.success) {
-    empty.textContent = notesResp.error || 'Failed to load notes';
+    content.innerHTML = `<div class="list-empty">${escapeHtml(notesResp.error || 'Failed to load notes')}</div>`;
     return;
   }
-
   notesState.notes = notesResp.notes || {};
   notesState.avatars = notesResp.avatars || {};
   notesState.tags = tagsResp.success ? (tagsResp.tags || []) : [];
+  notesState.loaded = true;
+  renderNotesView();
+}
 
-  const entries = Object.entries(notesState.notes)
-    .filter(([, n]) => n && ((n.text && n.text.trim()) || (Array.isArray(n.tags) && n.tags.length)))
-    .sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+function setNotesView(view) {
+  notesState.activeView = view;
+  document.querySelectorAll('.notes-subtab').forEach(b => {
+    b.classList.toggle('active', b.dataset.subview === view);
+  });
+  renderNotesView();
+}
 
-  if (entries.length === 0) {
-    empty.textContent = 'No notes yet — tap "New note" or write one from a model profile badge.';
+function renderNotesView() {
+  const content = document.getElementById('notesContent');
+  if (!content) return;
+  if (!notesState.loaded) return;
+  if (notesState.activeView === 'editor') renderEditorView(content);
+  else if (notesState.activeView === 'tags') renderTagsView(content);
+  else renderModelsView(content);
+}
+
+// ---- Editor view ----
+function renderEditorView(content) {
+  const username = notesState.editingUsername;
+  if (!username) {
+    content.innerHTML = `
+      <div class="editor-empty">
+        Pick a model from the <b>Models</b> tab to edit its note,<br>
+        or type a username below to add a new one.
+      </div>
+      <div class="form-field">
+        <label class="form-label">Model username</label>
+        <input type="text" id="editorUsernameInput" class="form-input" placeholder="@username" autocomplete="off">
+      </div>
+      <button class="auth-btn" id="editorPickBtn">
+        <span class="btn-text">Open editor</span>
+        <div class="btn-loader" style="display:none;"></div>
+      </button>`;
+    document.getElementById('editorPickBtn').addEventListener('click', () => {
+      const u = document.getElementById('editorUsernameInput').value.trim().toLowerCase().replace(/^@/, '');
+      if (!u) return;
+      notesState.editingUsername = u;
+      notesState.draftText = '';
+      renderEditorView(content);
+    });
     return;
   }
-  empty.style.display = 'none';
 
-  const tagsById = new Map(notesState.tags.map(t => [t.id, t]));
+  const note = notesState.notes[username] || { text: '', tags: [], date: 0 };
+  const avatarUrl = notesState.avatars[username] || null;
+  const profileUrl = `https://onlyfans.com/${encodeURIComponent(username)}`;
 
-  const html = entries.map(([username, note]) => {
-    const noteText = escapeHtml((note.text || '').slice(0, 120));
-    const dateStr = note.date ? new Date(note.date).toLocaleDateString() : '';
-    const avatarUrl = notesState.avatars[username] || null;
-    const tagIds = Array.isArray(note.tags) ? note.tags : [];
-    const tagsHtml = tagIds
-      .map(tid => tagsById.get(tid))
-      .filter(Boolean)
-      .map(t => `<span class="tag-chip selected" style="background:${tagColor(t.ci)}; cursor: default; padding: 2px 8px; font-size:10px;">${escapeHtml(t.name)}</span>`)
-      .join('');
-    return `
-      <div class="list-item" data-edit-username="${escapeHtml(username)}">
-        ${avatarUrl
-          ? `<img class="list-item-avatar" src="${escapeHtml(avatarUrl)}" alt="" referrerpolicy="no-referrer">`
-          : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
-        <div class="list-item-main">
-          <div class="list-item-name">@${escapeHtml(username)}</div>
-          <div class="list-item-meta">${noteText || '<em style="opacity:.6;">(no text)</em>'} <span style="color:var(--text-muted);">${escapeHtml(dateStr)}</span></div>
-          ${tagsHtml ? `<div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">${tagsHtml}</div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-  list.insertAdjacentHTML('beforeend', html);
-  list.querySelectorAll('.list-item[data-edit-username]').forEach(el => {
-    el.addEventListener('click', () => openNoteEdit(el.dataset.editUsername));
+  content.innerHTML = `
+    <div class="editor-header">
+      ${avatarUrl
+        ? `<img class="editor-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="" id="editorAvatar">`
+        : `<div class="editor-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-weight:700;">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
+      <span class="editor-label" id="editorOpenProfile">@${escapeHtml(username)}</span>
+      <span style="flex:1;"></span>
+      <button class="header-icon-btn" id="editorCloseBtn" title="Pick another">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <textarea id="editorTextarea" class="form-input form-textarea" rows="5" placeholder="Write your note about this model…" maxlength="5000">${escapeHtml(notesState.draftText || note.text || '')}</textarea>
+    <div class="form-hint"><span id="editorCharCount">${(notesState.draftText || note.text || '').length}</span> / 5000</div>
+    <div class="form-field" style="margin-top: 10px;">
+      <label class="form-label">Tags</label>
+      <div class="tag-picker" id="editorTagPicker"></div>
+    </div>
+    <div class="auth-error" id="editorError"></div>
+    <div style="display:flex; gap:8px;">
+      <button class="auth-btn" id="editorSaveBtn" style="flex:1;">
+        <span class="btn-text">Save</span>
+        <div class="btn-loader" style="display:none;"></div>
+      </button>
+      ${note.date ? `<button class="toolbar-btn" id="editorDeleteBtn" style="color: var(--error); border-color: rgba(239,68,68,0.3);" title="Delete">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+        </svg>
+      </button>` : ''}
+    </div>
+  `;
+
+  // Tag chips: assigned first (full opacity), available second (dimmed). Click toggles.
+  renderEditorTagPicker(note.tags || []);
+
+  // Wire up
+  document.getElementById('editorOpenProfile').addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
+  if (avatarUrl) document.getElementById('editorAvatar').addEventListener('click', () => chrome.tabs.create({ url: profileUrl }));
+  document.getElementById('editorCloseBtn').addEventListener('click', () => {
+    notesState.editingUsername = null;
+    notesState.draftText = '';
+    renderEditorView(content);
   });
+  document.getElementById('editorTextarea').addEventListener('input', (e) => {
+    notesState.draftText = e.target.value;
+    document.getElementById('editorCharCount').textContent = e.target.value.length;
+  });
+  document.getElementById('editorSaveBtn').addEventListener('click', () => saveCurrentNote());
+  const delBtn = document.getElementById('editorDeleteBtn');
+  if (delBtn) delBtn.addEventListener('click', () => deleteCurrentNote());
 }
 
-// ============ Note edit ============
-function openNoteEdit(username) {
-  notesState.editingUsername = username || null;
-  const existing = username ? (notesState.notes[username] || null) : null;
-  document.getElementById('noteEditTitle').textContent = username ? 'Edit note' : 'New note';
-  document.getElementById('noteDeleteBtn').style.display = username ? '' : 'none';
-  const usernameInput = document.getElementById('noteUsername');
-  usernameInput.value = username || '';
-  usernameInput.disabled = !!username; // can't rename an existing note
-  document.getElementById('noteText').value = existing?.text || '';
-  document.getElementById('noteCharCount').textContent = (existing?.text || '').length;
-  setError('noteError', '');
-
-  renderTagPicker(Array.isArray(existing?.tags) ? existing.tags.slice() : []);
-  show('noteEdit');
-}
-
-function renderTagPicker(selectedIds) {
-  const picker = document.getElementById('noteTagPicker');
-  const hint = document.getElementById('noteTagHint');
+function renderEditorTagPicker(selectedIds) {
+  const picker = document.getElementById('editorTagPicker');
+  if (!picker) return;
   picker.innerHTML = '';
   if (notesState.tags.length === 0) {
-    picker.style.display = 'none';
-    hint.style.display = '';
+    picker.innerHTML = '<div style="font-size:11px; color: var(--text-muted); padding: 8px;">No tags yet — open the Tags sub-tab to create some.</div>';
     return;
   }
-  picker.style.display = '';
-  hint.style.display = 'none';
   const selectedSet = new Set(selectedIds);
-  notesState.tags.forEach(t => {
+  const sorted = [...notesState.tags].sort((a, b) => Number(selectedSet.has(b.id)) - Number(selectedSet.has(a.id)));
+  sorted.forEach(t => {
     const chip = document.createElement('span');
     chip.className = 'tag-chip' + (selectedSet.has(t.id) ? ' selected' : '');
     chip.style.background = tagColor(t.ci);
     chip.dataset.tagId = t.id;
     chip.textContent = t.name;
-    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+    });
     picker.appendChild(chip);
   });
 }
 
-function collectSelectedTagIds() {
-  return Array.from(document.querySelectorAll('#noteTagPicker .tag-chip.selected'))
-    .map(el => Number(el.dataset.tagId))
-    .filter(n => !Number.isNaN(n));
-}
-
-async function saveNote() {
-  const usernameRaw = document.getElementById('noteUsername').value.trim().toLowerCase().replace(/^@/, '');
-  const text = document.getElementById('noteText').value.trim();
-  if (!usernameRaw) { setError('noteError', 'Username is required'); return; }
-  const tags = collectSelectedTagIds();
-  setError('noteError', '');
-  setLoading('noteSaveBtn', true);
+async function saveCurrentNote() {
+  const username = notesState.editingUsername;
+  if (!username) return;
+  const text = (document.getElementById('editorTextarea')?.value || '').trim();
+  const tags = Array.from(document.querySelectorAll('#editorTagPicker .tag-chip.selected'))
+    .map(el => Number(el.dataset.tagId)).filter(n => !Number.isNaN(n));
+  setError('editorError', '');
+  setLoading('editorSaveBtn', true);
   try {
     const r = await send('saveNote', {
-      username: usernameRaw, text, tags,
-      date: Date.now(),
-      avatarUrl: notesState.avatars[usernameRaw] || null
+      username, text, tags, date: Date.now(),
+      avatarUrl: notesState.avatars[username] || null
     });
-    if (!r.success) { setError('noteError', r.error || 'Failed to save'); return; }
-    // Optimistic refresh
-    notesState.notes[usernameRaw] = { text, tags, date: Date.now() };
-    show('main');
-    await loadNotesTab();
-  } finally { setLoading('noteSaveBtn', false); }
+    if (!r.success) { setError('editorError', r.error || 'Failed to save'); return; }
+    notesState.notes[username] = { text, tags, date: Date.now() };
+    notesState.draftText = '';
+    // Switch to Models tab so the user sees their save landed
+    setNotesView('models');
+  } finally { setLoading('editorSaveBtn', false); }
 }
 
-async function deleteNote() {
-  if (!notesState.editingUsername) return;
-  if (!confirm('Delete this note?')) return;
+async function deleteCurrentNote() {
   const username = notesState.editingUsername;
+  if (!username) return;
+  if (!confirm('Delete this note?')) return;
   const r = await send('deleteNote', { username });
-  if (!r.success) { setError('noteError', r.error || 'Failed to delete'); return; }
+  if (!r.success) { setError('editorError', r.error || 'Failed to delete'); return; }
   delete notesState.notes[username];
-  show('main');
-  await loadNotesTab();
+  notesState.editingUsername = null;
+  notesState.draftText = '';
+  setNotesView('models');
 }
 
-// ============ Tags manager ============
-function openTagsManager() {
-  notesState.newTagColorIndex = 0;
-  document.getElementById('newTagName').value = '';
-  setError('tagError', '');
+// ---- Tags view ----
+function renderTagsView(content) {
+  content.innerHTML = `
+    <div class="form-field">
+      <label class="form-label">Create tag</label>
+      <div class="tag-create-row">
+        <input type="text" id="newTagName" class="form-input" placeholder="Tag name" maxlength="50" value="${escapeHtml(notesState.draftTagName || '')}">
+        <div class="color-picker" id="newTagColorPicker"></div>
+        <button class="toolbar-btn primary" id="addTagBtn">Add</button>
+      </div>
+      <div class="auth-error" id="tagError"></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Your tags</label>
+      <div class="tag-list" id="tagList"></div>
+    </div>
+  `;
   renderColorPicker();
   renderTagList();
-  show('tagsManager');
+  document.getElementById('newTagName').addEventListener('input', (e) => { notesState.draftTagName = e.target.value; });
+  document.getElementById('addTagBtn').addEventListener('click', () => addTag());
 }
 
 function renderColorPicker() {
   const wrap = document.getElementById('newTagColorPicker');
+  if (!wrap) return;
   wrap.innerHTML = '';
   TAG_COLORS.forEach((c, idx) => {
     const dot = document.createElement('div');
@@ -519,6 +576,7 @@ function renderColorPicker() {
 
 function renderTagList() {
   const list = document.getElementById('tagList');
+  if (!list) return;
   list.innerHTML = '';
   if (notesState.tags.length === 0) {
     list.innerHTML = '<div class="list-empty">No tags yet. Create one above.</div>';
@@ -532,8 +590,7 @@ function renderTagList() {
       <div class="tag-row-name">${escapeHtml(t.name)}</div>
       <button class="tag-row-delete" data-tag-id="${t.id}" title="Delete">
         <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
         </svg>
       </button>`;
     row.querySelector('.tag-row-delete').addEventListener('click', () => deleteTag(t.id));
@@ -542,29 +599,24 @@ function renderTagList() {
 }
 
 async function syncTags() {
-  // PUT /api/notes/tags replaces all the user's tags — send the current list.
   const r = await send('syncNoteTags', { tags: notesState.tags });
   if (!r.success) { setError('tagError', r.error || 'Failed to sync tags'); return false; }
-  // Server returns canonical list with assigned IDs.
   notesState.tags = r.tags || notesState.tags;
   return true;
 }
 
 async function addTag() {
-  const name = document.getElementById('newTagName').value.trim().slice(0, 50);
+  const name = (document.getElementById('newTagName')?.value || '').trim().slice(0, 50);
   if (!name) { setError('tagError', 'Name is required'); return; }
   if (notesState.tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
-    setError('tagError', 'A tag with this name already exists');
-    return;
+    setError('tagError', 'A tag with this name already exists'); return;
   }
   setError('tagError', '');
-  // Use a negative id to mark "new"; server will assign a real one.
   notesState.tags.push({ id: -Date.now(), name, ci: notesState.newTagColorIndex });
   if (await syncTags()) {
-    document.getElementById('newTagName').value = '';
-    renderTagList();
+    notesState.draftTagName = '';
+    renderTagsView(document.getElementById('notesContent'));
   } else {
-    // Roll back local addition on failure.
     notesState.tags.pop();
   }
 }
@@ -572,11 +624,7 @@ async function addTag() {
 async function deleteTag(tagId) {
   const before = notesState.tags;
   notesState.tags = notesState.tags.filter(t => t.id !== tagId);
-  if (!(await syncTags())) {
-    notesState.tags = before;
-    return;
-  }
-  // Strip the deleted id from any cached notes so the picker stays sane.
+  if (!(await syncTags())) { notesState.tags = before; return; }
   for (const u of Object.keys(notesState.notes)) {
     const n = notesState.notes[u];
     if (Array.isArray(n?.tags) && n.tags.includes(tagId)) {
@@ -584,6 +632,69 @@ async function deleteTag(tagId) {
     }
   }
   renderTagList();
+}
+
+// ---- Models view ----
+function renderModelsView(content) {
+  content.innerHTML = `
+    <div class="notes-search-wrap">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="search" id="modelsSearch" class="search-input" placeholder="Search @username…" value="${escapeHtml(notesState.modelsSearch || '')}">
+      </div>
+    </div>
+    <div class="notes-models-list" id="notesModelsList"></div>
+  `;
+  document.getElementById('modelsSearch').addEventListener('input', (e) => {
+    notesState.modelsSearch = e.target.value.trim().toLowerCase();
+    renderModelsListBody();
+  });
+  renderModelsListBody();
+}
+
+function renderModelsListBody() {
+  const wrap = document.getElementById('notesModelsList');
+  if (!wrap) return;
+  const tagsById = new Map(notesState.tags.map(t => [t.id, t]));
+  const q = notesState.modelsSearch || '';
+  const entries = Object.entries(notesState.notes)
+    .filter(([u, n]) => n && ((n.text && n.text.trim()) || (Array.isArray(n.tags) && n.tags.length)))
+    .filter(([u]) => !q || u.toLowerCase().includes(q))
+    .sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+
+  if (entries.length === 0) {
+    wrap.innerHTML = `<div class="list-empty">${q ? 'No models match.' : 'No notes yet.'}<br><span style="font-size:11px; color:var(--text-muted);">Open Note tab and type a username, or write a note from the badge on any profile.</span></div>`;
+    return;
+  }
+  wrap.innerHTML = entries.map(([username, note]) => {
+    const avatarUrl = notesState.avatars[username] || null;
+    const preview = escapeHtml((note.text || '').slice(0, 90));
+    const tagIds = Array.isArray(note.tags) ? note.tags : [];
+    const chips = tagIds.map(tid => tagsById.get(tid)).filter(Boolean).map(t =>
+      `<span class="tag-chip selected" style="background:${tagColor(t.ci)}; cursor:default; padding:2px 7px; font-size:10px;">${escapeHtml(t.name)}</span>`
+    ).join('');
+    return `
+      <div class="notes-model-row" data-username="${escapeHtml(username)}">
+        ${avatarUrl
+          ? `<img class="notes-model-avatar" src="${escapeHtml(avatarUrl)}" referrerpolicy="no-referrer" alt="">`
+          : `<div class="notes-model-avatar">${escapeHtml(username.charAt(0).toUpperCase())}</div>`}
+        <div class="notes-model-main">
+          <div class="notes-model-name">@${escapeHtml(username)}</div>
+          <div class="notes-model-preview">${preview || '<em style="opacity:.6;">(no text)</em>'}</div>
+          ${chips ? `<div class="notes-model-tags">${chips}</div>` : ''}
+        </div>
+        <svg class="notes-model-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </div>`;
+  }).join('');
+  wrap.querySelectorAll('.notes-model-row[data-username]').forEach(el => {
+    el.addEventListener('click', () => {
+      notesState.editingUsername = el.dataset.username;
+      notesState.draftText = '';
+      setNotesView('editor');
+    });
+  });
 }
 
 // ============ Plugin enabled toggle ============
@@ -807,16 +918,9 @@ wire('filterResetBtn', 'click', () => {
 });
 wire('loadMoreBtn', 'click', () => loadTopTab(false));
 
-// Notes
-wire('addNoteBtn', 'click', () => openNoteEdit(null));
-wire('manageTagsBtn', 'click', () => openTagsManager());
-wire('noteEditBackBtn', 'click', () => show('main'));
-wire('noteSaveBtn', 'click', () => saveNote());
-wire('noteDeleteBtn', 'click', () => deleteNote());
-wire('tagsBackBtn', 'click', () => { show('main'); loadNotesTab(); });
-wire('addTagBtn', 'click', () => addTag());
-wire('noteText', 'input', (e) => {
-  document.getElementById('noteCharCount').textContent = e.target.value.length;
+// Notes sub-tabs
+document.querySelectorAll('.notes-subtab').forEach(btn => {
+  btn.addEventListener('click', () => setNotesView(btn.dataset.subview));
 });
 
 // ============ Boot ============

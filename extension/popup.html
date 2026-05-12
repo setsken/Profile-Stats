@@ -297,23 +297,13 @@
 
       <!-- Tab: Notes -->
       <div class="tab-pane" data-tab-pane="notes" style="display:none;">
-        <div class="notes-toolbar">
-          <button class="toolbar-btn primary" id="addNoteBtn">
-            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            New note
-          </button>
-          <button class="toolbar-btn" id="manageTagsBtn">
-            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-              <line x1="7" y1="7" x2="7.01" y2="7"/>
-            </svg>
-            Tags
-          </button>
+        <div class="notes-subtabs">
+          <button class="notes-subtab" data-subview="editor">Note</button>
+          <button class="notes-subtab" data-subview="tags">Tags</button>
+          <button class="notes-subtab active" data-subview="models">Models</button>
         </div>
-        <div class="list" id="notesList">
-          <div class="list-empty" id="notesEmpty">Loading notes…</div>
+        <div class="notes-content" id="notesContent">
+          <div class="list-empty">Loading…</div>
         </div>
       </div>
     </div>
@@ -391,74 +381,6 @@
     <div class="main-body">
       <p style="color: var(--text-secondary); margin-bottom: 12px;">Need help? Email us at:</p>
       <a class="auth-link" href="mailto:support@ofstats.pro">support@ofstats.pro</a>
-    </div>
-  </div>
-
-  <!-- =============== NOTE EDIT =============== -->
-  <div class="screen" id="noteEditScreen" style="display:none;">
-    <header class="app-header">
-      <button class="header-icon-btn" id="noteEditBackBtn" title="Back">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <div class="header-left" style="margin-left: 8px;">
-        <div class="logo-text"><span class="logo-title" id="noteEditTitle">Note</span></div>
-      </div>
-      <div class="header-right">
-        <button class="header-icon-btn" id="noteDeleteBtn" title="Delete note" style="color: var(--error); display:none;">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-          </svg>
-        </button>
-      </div>
-    </header>
-    <div class="main-body">
-      <div class="form-field">
-        <label class="form-label">Model username</label>
-        <input type="text" id="noteUsername" class="form-input" placeholder="@username" autocomplete="off">
-      </div>
-      <div class="form-field">
-        <label class="form-label">Note</label>
-        <textarea id="noteText" class="form-input form-textarea" rows="5" placeholder="Write your note about this model…" maxlength="5000"></textarea>
-        <div class="form-hint"><span id="noteCharCount">0</span> / 5000</div>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Tags <span style="color: var(--text-muted); font-weight: 500;">(tap to toggle)</span></label>
-        <div class="tag-picker" id="noteTagPicker"></div>
-        <div class="form-hint" id="noteTagHint" style="display:none;">No tags yet — open the Tags screen to create some.</div>
-      </div>
-      <div class="auth-error" id="noteError"></div>
-      <button class="auth-btn" id="noteSaveBtn">
-        <span class="btn-text">Save</span>
-        <div class="btn-loader" style="display:none;"></div>
-      </button>
-    </div>
-  </div>
-
-  <!-- =============== TAGS MANAGER =============== -->
-  <div class="screen" id="tagsManagerScreen" style="display:none;">
-    <header class="app-header">
-      <button class="header-icon-btn" id="tagsBackBtn" title="Back">
-        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <div class="header-left" style="margin-left: 8px;">
-        <div class="logo-text"><span class="logo-title">Tags</span></div>
-      </div>
-    </header>
-    <div class="main-body">
-      <div class="form-field">
-        <label class="form-label">New tag</label>
-        <div class="tag-create-row">
-          <input type="text" id="newTagName" class="form-input" placeholder="Tag name" maxlength="50">
-          <div class="color-picker" id="newTagColorPicker"></div>
-          <button class="toolbar-btn primary" id="addTagBtn">Add</button>
-        </div>
-        <div class="auth-error" id="tagError"></div>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Your tags</label>
-        <div class="tag-list" id="tagList"></div>
-      </div>
     </div>
   </div>
 
