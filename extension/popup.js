@@ -330,7 +330,7 @@ async function loadTopTab(reset = true) {
 
   empty.style.display = 'none';
 
-  const html = models.map((m, i) => modelRowHtml(m, { rank: startRank + i })).join('');
+  const html = models.map((m, i) => modelRowHtml(m, { rank: m.globalRank || (startRank + i) })).join('');
   list.insertAdjacentHTML('beforeend', html);
   bindRowClicks(list);
 
