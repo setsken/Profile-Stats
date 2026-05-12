@@ -59,6 +59,149 @@ async function clearDraft() {
   try { await chrome.storage.local.remove(DRAFT_STORAGE_KEY); } catch {}
 }
 
+// ============ Notifications ============
+// System-level notifications (sub expiring soon, sub activated, etc.).
+// Stored as an array in chrome.storage.local under NOTIF_KEY. Deduped by id.
+const NOTIF_KEY = 'psNotifications';
+const NOTIF_MAX = 50;
+
+async function notifLoad() {
+  try {
+    const r = await chrome.storage.local.get(NOTIF_KEY);
+    return Array.isArray(r[NOTIF_KEY]) ? r[NOTIF_KEY] : [];
+  } catch { return []; }
+}
+async function notifSave(list) {
+  try { await chrome.storage.local.set({ [NOTIF_KEY]: list.slice(0, NOTIF_MAX) }); } catch {}
+}
+// Append a notification unless one with the same id already exists.
+async function notifAdd(n) {
+  const list = await notifLoad();
+  if (list.some(x => x.id === n.id)) return list;
+  const entry = { ts: Date.now(), read: false, ...n };
+  list.unshift(entry);
+  await notifSave(list);
+  notifRefreshBadge(list);
+  return list;
+}
+async function notifMarkAllRead() {
+  const list = await notifLoad();
+  list.forEach(n => { n.read = true; });
+  await notifSave(list);
+  notifRefreshBadge(list);
+}
+async function notifClearAll() {
+  await notifSave([]);
+  notifRefreshBadge([]);
+  renderNotifPanel([]);
+}
+async function notifDismiss(id) {
+  const list = (await notifLoad()).filter(n => n.id !== id);
+  await notifSave(list);
+  notifRefreshBadge(list);
+  renderNotifPanel(list);
+}
+
+function notifRefreshBadge(list) {
+  const badge = document.getElementById('notificationBadge');
+  if (!badge) return;
+  const unread = list.filter(n => !n.read).length;
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function notifFormatTime(ts) {
+  const d = (Date.now() - ts) / 1000;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d / 60) + 'm ago';
+  if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+  return Math.floor(d / 86400) + 'd ago';
+}
+
+function renderNotifPanel(list) {
+  const wrap = document.getElementById('notifPanelList');
+  const empty = document.getElementById('notifPanelEmpty');
+  if (!wrap || !empty) return;
+  wrap.innerHTML = '';
+  if (!list.length) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  for (const n of list) {
+    const row = document.createElement('div');
+    row.className = 'notif-row' + (n.read ? '' : ' unread');
+    const iconClass = n.level || 'info';
+    row.innerHTML = `
+      <div class="notif-row-icon ${escapeHtml(iconClass)}">
+        ${iconSvgFor(n.level)}
+      </div>
+      <div class="notif-row-main">
+        <div class="notif-row-title">${escapeHtml(n.title || '')}</div>
+        <div class="notif-row-msg">${escapeHtml(n.message || '')}</div>
+        <div class="notif-row-time">${escapeHtml(notifFormatTime(n.ts))}</div>
+      </div>
+      <button class="notif-row-dismiss" data-dismiss="${escapeHtml(n.id)}" title="Dismiss">
+        <svg viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>`;
+    wrap.appendChild(row);
+  }
+  wrap.querySelectorAll('.notif-row-dismiss').forEach(btn => {
+    btn.addEventListener('click', () => notifDismiss(btn.dataset.dismiss));
+  });
+}
+function iconSvgFor(level) {
+  if (level === 'ok') return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  if (level === 'warn') return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  if (level === 'danger') return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+  return `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+}
+
+// Check on each boot: emit "expires soon" / "active" / "expired" entries.
+async function notifEvaluateSubscription() {
+  const sub = currentSubscription;
+  if (!sub) return;
+  if (sub.hasAccess && sub.expiresAt) {
+    const expMs = new Date(sub.expiresAt).getTime();
+    const daysLeft = Math.ceil((expMs - Date.now()) / (24 * 60 * 60 * 1000));
+    if (daysLeft <= 3 && daysLeft > 0) {
+      const id = `sub-expiring-${new Date(sub.expiresAt).toISOString().slice(0, 10)}`;
+      await notifAdd({
+        id, level: 'warn',
+        title: 'Subscription expires soon',
+        message: daysLeft === 1
+          ? 'Your Profile Stats access ends tomorrow. Renew to keep the badge alive.'
+          : `Your Profile Stats access ends in ${daysLeft} days.`
+      });
+    }
+    if (daysLeft <= 0) {
+      await notifAdd({
+        id: 'sub-expired',
+        level: 'danger',
+        title: 'Subscription expired',
+        message: 'Renew Profile Stats to bring the badge and analytics back.'
+      });
+    }
+  } else if (!sub.hasAccess) {
+    // Optional: prompt to subscribe — fire once per session
+    const id = 'sub-inactive';
+    const list = await notifLoad();
+    if (!list.some(n => n.id === id)) {
+      await notifAdd({
+        id, level: 'info',
+        title: 'No active subscription',
+        message: 'Profile Stats analytics require an active plan.'
+      });
+    }
+  }
+}
+
 // Whole-popup UI state: which screen, which top-level tab. The Notes
 // sub-view lives in the existing draft so it follows the same lifecycle.
 const UI_STATE_KEY = 'psPopupUi';
@@ -262,6 +405,10 @@ async function enterMainScreen(user) {
 
   applySubscriptionHeader();
   await loadPluginEnabled();
+
+  // Refresh the bell badge on every boot and emit expiry / activity notices.
+  notifEvaluateSubscription().catch(() => {});
+  notifLoad().then(notifRefreshBadge);
 
   // Warm the notes/tags cache so the Top Models tab can light up models that
   // already have notes without a second round-trip.
@@ -1133,6 +1280,12 @@ function pollPayment(paymentId, token) {
       if (data.status === 'completed' || data.subscriptionActivated) {
         clearInterval(paymentPollInterval);
         paymentPollInterval = null;
+        await notifAdd({
+          id: `sub-activated-${paymentId}`,
+          level: 'ok',
+          title: 'Subscription activated',
+          message: 'Profile Stats is live on your account. Enjoy!'
+        });
         await send('clearCache');
         await enterMainScreen({ email: (await send('getAuthStatus')).email });
       }
@@ -1176,7 +1329,30 @@ wire('ssoBtn', 'click', () => doSSO());
 // Header
 wire('pluginEnabled', 'change', (e) => setPluginEnabled(e.target.checked));
 wire('settingsPluginEnabled', 'change', (e) => setPluginEnabled(e.target.checked));
-wire('notificationBtn', 'click', () => { /* TODO: notifications panel */ });
+wire('notificationBtn', 'click', async (e) => {
+  e.stopPropagation();
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  const opening = panel.style.display === 'none';
+  if (opening) {
+    const list = await notifLoad();
+    renderNotifPanel(list);
+    panel.style.display = '';
+    // Mark all read after the user has actually seen the list.
+    await notifMarkAllRead();
+  } else {
+    panel.style.display = 'none';
+  }
+});
+wire('notifClearBtn', 'click', () => notifClearAll());
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notificationBtn');
+  if (!panel || !btn) return;
+  if (panel.style.display !== 'none' && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
 wire('expandPanelBtn', 'click', () => openSidePanel());
 wire('headerMenuBtn', 'click', (e) => { e.stopPropagation(); toggleDropdown(); });
 
