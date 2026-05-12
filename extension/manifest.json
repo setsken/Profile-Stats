@@ -28,7 +28,7 @@
     }
   },
   "side_panel": {
-    "default_path": "popup.html"
+    "default_path": "popup.html?mode=sidepanel"
   },
   "web_accessible_resources": [
     {

@@ -1306,13 +1306,19 @@ function applySidePanelButtons() {
   if (expand) expand.style.display = isSidePanel ? 'none' : '';
   if (collapse) collapse.style.display = isSidePanel ? '' : 'none';
 }
-async function openSidePanel() {
-  await send('openSidePanel');
-  window.close();
+// chrome.sidePanel.open() needs a user gesture and any await before it
+// breaks that gesture context, so call the API synchronously inside the
+// click handler. WINDOW_ID_CURRENT keeps Chrome happy without a tabs.query.
+function openSidePanel() {
+  try {
+    chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+  } catch (e) { console.error('openSidePanel failed', e); }
+  // Closing the popup right after lets the side panel take focus.
+  setTimeout(() => window.close(), 50);
 }
 async function closeSidePanel() {
-  // Disable the panel so Chrome closes it; window.close() ends our context too.
-  await send('closeSidePanel');
+  // No direct close API for side panel; just shut down our window — Chrome
+  // collapses the panel when the document goes away.
   window.close();
 }
 
