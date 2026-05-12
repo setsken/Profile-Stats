@@ -6,6 +6,12 @@ const rateLimit = require('express-rate-limit');
 const { query } = require('./config/database');
 
 const healthRoutes = require('./routes/health');
+const modelsRoutes = require('./routes/models');
+const fansRoutes = require('./routes/fans');
+const farmedModelsRoutes = require('./routes/farmed-models');
+const alertsRoutes = require('./routes/alerts');
+const notesRoutes = require('./routes/notes');
+const verdictRoutes = require('./routes/verdict');
 
 const app = express();
 
@@ -187,6 +193,12 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/health', healthRoutes);
+app.use('/api/models', modelsRoutes);
+app.use('/api/fans', fansRoutes);
+app.use('/api/farmed-models', farmedModelsRoutes);
+app.use('/api/alerts', alertsRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/verdict', verdictRoutes);
 
 // 404
 app.use((req, res) => {

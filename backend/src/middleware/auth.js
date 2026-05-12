@@ -36,4 +36,24 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken };
+// Optional auth — does not fail when no token is sent, but populates req.user
+// when one is valid. Used by public-ish endpoints that adjust behavior for
+// authenticated callers (e.g. /api/fans/:username, /api/fans/trend/:username).
+const optionalAuth = (req, res, next) => {
+  try {
+    const header = req.headers['authorization'];
+    const token = header && header.split(' ')[1];
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.userId) {
+        req.user = { id: decoded.userId, email: decoded.email || null };
+        req.authToken = token;
+      }
+    }
+  } catch (e) {
+    // ignore invalid tokens — public route falls through anonymous
+  }
+  next();
+};
+
+module.exports = { authenticateToken, optionalAuth };
