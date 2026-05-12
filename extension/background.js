@@ -198,7 +198,26 @@ async function handleMessage(request, sender) {
       case 'openSidePanel': {
         try {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (tab) await chrome.sidePanel.open({ tabId: tab.id });
+          if (!tab) return { success: false, error: 'No active tab' };
+          // Mark the path so the popup script knows it's running inside a side
+          // panel and can show the collapse button instead of the expand one.
+          await chrome.sidePanel.setOptions({
+            tabId: tab.id,
+            path: 'popup.html?mode=sidepanel',
+            enabled: true
+          });
+          await chrome.sidePanel.open({ tabId: tab.id });
+          return { success: true };
+        } catch (e) { return { success: false, error: e.message }; }
+      }
+      case 'closeSidePanel': {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab) {
+            // Disable the side panel for this tab so it shuts; the popup will
+            // re-enable it via openSidePanel next time.
+            await chrome.sidePanel.setOptions({ tabId: tab.id, enabled: false });
+          }
           return { success: true };
         } catch (e) { return { success: false, error: e.message }; }
       }

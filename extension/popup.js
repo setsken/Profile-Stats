@@ -1299,8 +1299,20 @@ function closePaymentScreen() {
 }
 
 // ============ Side panel toggle ============
+const isSidePanel = new URLSearchParams(location.search).get('mode') === 'sidepanel';
+function applySidePanelButtons() {
+  const expand = document.getElementById('expandPanelBtn');
+  const collapse = document.getElementById('collapsePanelBtn');
+  if (expand) expand.style.display = isSidePanel ? 'none' : '';
+  if (collapse) collapse.style.display = isSidePanel ? '' : 'none';
+}
 async function openSidePanel() {
   await send('openSidePanel');
+  window.close();
+}
+async function closeSidePanel() {
+  // Disable the panel so Chrome closes it; window.close() ends our context too.
+  await send('closeSidePanel');
   window.close();
 }
 
@@ -1358,6 +1370,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeNotifOverlay();
 });
 wire('expandPanelBtn', 'click', () => openSidePanel());
+wire('collapsePanelBtn', 'click', () => closeSidePanel());
+applySidePanelButtons();
 wire('headerMenuBtn', 'click', (e) => { e.stopPropagation(); toggleDropdown(); });
 
 // Dropdown items
