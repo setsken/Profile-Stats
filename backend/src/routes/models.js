@@ -130,6 +130,119 @@ router.delete('/:username', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /leaderboard — full model database, paginated and filterable.
+// Query params:
+//   offset, limit (max 200)
+//   search    — substring of model_username (case-insensitive)
+//   sort      — 'score' | 'fans' | 'quality' | 'recent' (default 'score')
+//   minScore, maxScore  (0..100)
+//   minQuality (0..1, e.g. 0.85)
+//   minFans   — minimum last-known fan count
+router.get('/leaderboard', authenticateToken, async (req, res) => {
+  try {
+    const offset    = Math.max(0, parseInt(req.query.offset) || 0);
+    const limit     = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+    const search    = (typeof req.query.search === 'string' && req.query.search.trim()) ? req.query.search.trim() : null;
+    const sort      = ['score', 'fans', 'quality', 'recent'].includes(req.query.sort) ? req.query.sort : 'score';
+    const minScore  = Math.max(0, Math.min(100, Number(req.query.minScore) || 0));
+    const maxScore  = Math.max(0, Math.min(100, Number(req.query.maxScore) || 100));
+    const minQuality = Math.max(0, Math.min(1, Number(req.query.minQuality) || 0));
+    const minFans   = Math.max(0, parseInt(req.query.minFans) || 0);
+
+    const params = [];
+    const where = [];
+    where.push(`ms.score BETWEEN $${params.length + 1} AND $${params.length + 2}`);
+    params.push(minScore, maxScore);
+    if (minQuality > 0) {
+      params.push(minQuality);
+      where.push(`ms.quality_score >= $${params.length}`);
+    }
+    if (search) {
+      params.push(`%${search}%`);
+      where.push(`ms.model_username ILIKE $${params.length}`);
+    }
+
+    // Inner select pulls the last fan count per model so we can both filter
+    // and sort on it without repeating the correlated subquery everywhere.
+    let havingClause = '';
+    if (minFans > 0) {
+      params.push(minFans);
+      havingClause = `WHERE last_fans >= $${params.length}`;
+    }
+
+    const orderBy = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC'
+                  : sort === 'quality' ? 'quality_score DESC, score DESC'
+                  : sort === 'recent'  ? 'updated_at DESC, score DESC'
+                  :                      'score DESC, quality_score DESC';
+
+    params.push(limit, offset);
+    const limitParamIdx = params.length - 1;
+    const offsetParamIdx = params.length;
+
+    const sql = `
+      WITH base AS (
+        SELECT
+          ms.model_username,
+          ms.score,
+          ms.quality_score,
+          ms.organicity,
+          ms.engagement_rate,
+          ms.updated_at,
+          (
+            SELECT mfh.fans_count
+            FROM model_fans_history mfh
+            WHERE mfh.model_username = ms.model_username
+            ORDER BY mfh.recorded_at DESC LIMIT 1
+          ) AS last_fans,
+          (
+            SELECT mfh.fans_text
+            FROM model_fans_history mfh
+            WHERE mfh.model_username = ms.model_username
+            ORDER BY mfh.recorded_at DESC LIMIT 1
+          ) AS last_fans_text,
+          (
+            SELECT un.avatar_url
+            FROM user_notes un
+            WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
+            LIMIT 1
+          ) AS avatar_url
+        FROM model_quality_snapshots ms
+        WHERE ${where.join(' AND ')}
+      )
+      SELECT *, COUNT(*) OVER() AS total_count
+      FROM base
+      ${havingClause}
+      ORDER BY ${orderBy}
+      LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}
+    `;
+
+    const result = await query(sql, params);
+    const rows = result.rows;
+    const total = rows.length > 0 ? Number(rows[0].total_count) : 0;
+
+    res.json({
+      total,
+      offset,
+      limit,
+      sort,
+      models: rows.map(r => ({
+        username: r.model_username,
+        score: Number(r.score),
+        qualityScore: Number(r.quality_score),
+        organicity: Number(r.organicity),
+        engagementRate: Number(r.engagement_rate),
+        fansCount: r.last_fans,
+        fansText: r.last_fans_text,
+        avatarUrl: r.avatar_url,
+        updatedAt: r.updated_at
+      }))
+    });
+  } catch (error) {
+    console.error('Get leaderboard error:', error);
+    res.status(500).json({ error: 'Failed to load leaderboard' });
+  }
+});
+
 // GET /top — leaderboard of models by aggregated quality_score.
 // Joins last known fan count and the best available avatar (taken from any
 // user_notes row that ever stored one).

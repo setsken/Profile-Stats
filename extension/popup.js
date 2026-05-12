@@ -238,8 +238,10 @@ function modelRowHtml(model, extras = {}) {
   const qPct = Math.round((Number(model.qualityScore) || 0) * 100);
   const meta = extras.meta || `Fans: ${escapeHtml(formatFans(model))} · Quality: ${qPct}%`;
   const score = Math.round(Number(model.score) || 0);
+  const rankHtml = extras.rank ? `<div class="list-item-rank rank-${extras.rank <= 3 ? extras.rank : 'n'}" ${extras.rank > 3 ? 'class="list-item-rank"' : ''}>${extras.rank}</div>` : '';
   return `
     <div class="list-item" data-username="${escapeHtml(model.username)}">
+      ${rankHtml}
       ${avatar}
       <div class="list-item-main">
         <div class="list-item-name">@${escapeHtml(model.username)}</div>
@@ -260,27 +262,79 @@ function bindRowClicks(container) {
   });
 }
 
-async function loadTopTab() {
+// ============ Leaderboard state ============
+const PAGE_SIZE = 50;
+const lbState = {
+  offset: 0,
+  total: 0,
+  loading: false,
+  filters: { search: '', sort: 'score', minScore: '', maxScore: '', minFans: '', minQuality: '' }
+};
+
+function currentLeaderboardParams() {
+  const f = lbState.filters;
+  const params = { offset: lbState.offset, limit: PAGE_SIZE, sort: f.sort };
+  if (f.search) params.search = f.search;
+  if (f.minScore !== '') params.minScore = f.minScore;
+  if (f.maxScore !== '') params.maxScore = f.maxScore;
+  if (f.minFans !== '')  params.minFans  = f.minFans;
+  if (f.minQuality !== '') params.minQuality = (Number(f.minQuality) / 100).toFixed(2);
+  return params;
+}
+
+async function loadTopTab(reset = true) {
+  if (lbState.loading) return;
+  lbState.loading = true;
+
   const list = document.getElementById('topList');
   const empty = document.getElementById('topEmpty');
-  empty.textContent = 'Loading…';
-  empty.style.display = '';
-  list.querySelectorAll('.list-item').forEach(n => n.remove());
+  const info = document.getElementById('leaderboardInfo');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
 
-  const r = await send('getTopModels', { limit: 100 });
+  if (reset) {
+    lbState.offset = 0;
+    list.querySelectorAll('.list-item').forEach(n => n.remove());
+    empty.textContent = 'Loading…';
+    empty.style.display = '';
+    info.textContent = '';
+    loadMoreBtn.style.display = 'none';
+  } else {
+    loadMoreBtn.textContent = 'Loading…';
+    loadMoreBtn.disabled = true;
+  }
+
+  const r = await send('getLeaderboard', { params: currentLeaderboardParams() });
+
+  lbState.loading = false;
+  loadMoreBtn.disabled = false;
+  loadMoreBtn.textContent = 'Load more';
+
   if (!r.success) {
-    empty.textContent = r.error || 'Failed to load top models';
+    empty.textContent = r.error || 'Failed to load';
+    empty.style.display = '';
     return;
   }
+
+  lbState.total = Number(r.total) || 0;
   const models = r.models || [];
-  if (models.length === 0) {
-    empty.textContent = 'No data yet — open a few OnlyFans profiles to seed the leaderboard.';
+  const startRank = lbState.offset + 1;
+
+  if (lbState.total === 0) {
+    empty.textContent = 'No models match these filters.';
+    empty.style.display = '';
+    info.textContent = '';
     return;
   }
+
   empty.style.display = 'none';
-  const html = models.map(m => modelRowHtml(m)).join('');
+
+  const html = models.map((m, i) => modelRowHtml(m, { rank: startRank + i })).join('');
   list.insertAdjacentHTML('beforeend', html);
   bindRowClicks(list);
+
+  lbState.offset += models.length;
+  info.textContent = `Showing ${lbState.offset} of ${lbState.total}`;
+  loadMoreBtn.style.display = lbState.offset < lbState.total ? '' : 'none';
 }
 
 async function loadNotesTab() {
@@ -486,6 +540,40 @@ wire('buyBtn', 'click', () => startBuy());
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => activateTab(btn.dataset.tab));
 });
+
+// Leaderboard filters
+let searchDebounce = null;
+wire('topSearch', 'input', (e) => {
+  lbState.filters.search = e.target.value.trim();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadTopTab(true), 300);
+});
+wire('topSort', 'change', (e) => {
+  lbState.filters.sort = e.target.value;
+  loadTopTab(true);
+});
+wire('filterToggleBtn', 'click', () => {
+  const adv = document.getElementById('filterAdvanced');
+  const btn = document.getElementById('filterToggleBtn');
+  const open = adv.style.display === 'none';
+  adv.style.display = open ? '' : 'none';
+  btn.classList.toggle('active', open);
+});
+wire('filterApplyBtn', 'click', () => {
+  lbState.filters.minScore   = document.getElementById('filterMinScore').value;
+  lbState.filters.maxScore   = document.getElementById('filterMaxScore').value;
+  lbState.filters.minFans    = document.getElementById('filterMinFans').value;
+  lbState.filters.minQuality = document.getElementById('filterMinQuality').value;
+  loadTopTab(true);
+});
+wire('filterResetBtn', 'click', () => {
+  ['filterMinScore', 'filterMaxScore', 'filterMinFans', 'filterMinQuality'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  lbState.filters.minScore = lbState.filters.maxScore = lbState.filters.minFans = lbState.filters.minQuality = '';
+  loadTopTab(true);
+});
+wire('loadMoreBtn', 'click', () => loadTopTab(false));
 
 // ============ Boot ============
 (async () => {

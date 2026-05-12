@@ -233,9 +233,58 @@
     <div class="main-body">
       <!-- Tab: Top Models -->
       <div class="tab-pane tab-pane-active" data-tab-pane="top">
-        <div class="list" id="topList">
-          <div class="list-empty" id="topEmpty">Loading top models…</div>
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <div class="filter-row">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input type="search" id="topSearch" class="search-input" placeholder="Search @username…">
+            </div>
+            <select id="topSort" class="sort-select" title="Sort by">
+              <option value="score">Score ↓</option>
+              <option value="fans">Fans ↓</option>
+              <option value="quality">Quality ↓</option>
+              <option value="recent">Recent ↓</option>
+            </select>
+            <button class="filter-toggle-btn" id="filterToggleBtn" title="Filters">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="filter-advanced" id="filterAdvanced" style="display:none;">
+            <div class="filter-field">
+              <label>Min score</label>
+              <input type="number" id="filterMinScore" min="0" max="100" placeholder="0">
+            </div>
+            <div class="filter-field">
+              <label>Max score</label>
+              <input type="number" id="filterMaxScore" min="0" max="100" placeholder="100">
+            </div>
+            <div class="filter-field">
+              <label>Min fans</label>
+              <input type="number" id="filterMinFans" min="0" placeholder="0">
+            </div>
+            <div class="filter-field">
+              <label>Min quality %</label>
+              <input type="number" id="filterMinQuality" min="0" max="99" placeholder="0">
+            </div>
+            <div class="filter-actions">
+              <button class="filter-apply-btn" id="filterApplyBtn">Apply</button>
+              <button class="filter-reset-btn" id="filterResetBtn">Reset</button>
+            </div>
+            <div class="filter-note">More filters (streams, socials, posts) will be added once Profile Stats starts collecting that data per profile.</div>
+          </div>
         </div>
+
+        <div class="leaderboard-info" id="leaderboardInfo"></div>
+        <div class="list" id="topList">
+          <div class="list-empty" id="topEmpty">Loading…</div>
+        </div>
+        <button class="load-more-btn" id="loadMoreBtn" style="display:none;">Load more</button>
       </div>
 
       <!-- Tab: Notes -->
