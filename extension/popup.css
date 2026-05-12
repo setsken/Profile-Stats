@@ -209,7 +209,8 @@ body { background: var(--gradient-page); }
   z-index: 200;
   display: flex; flex-direction: column;
   align-items: stretch;
-  padding: 14px;
+  /* Panel sits just below the app header (≈58px) like the original dropdown. */
+  padding: 70px 14px 14px;
   animation: modalFadeIn 0.18s ease-out;
 }
 .notif-panel {
