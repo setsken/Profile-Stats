@@ -328,13 +328,40 @@ document.addEventListener('click', (e) => {
 });
 
 // ============ Tabs ============
+// Scroll positions per tab so leaving and returning lands on the same row.
+const tabScroll = { top: 0, notes: 0 };
+function getMainBody() {
+  return document.querySelector('#mainScreen .main-body');
+}
+
 function activateTab(name) {
+  // Snapshot scroll position of the tab we're leaving.
+  const body = getMainBody();
+  if (body && uiState.tab && uiState.tab !== name) {
+    tabScroll[uiState.tab] = body.scrollTop;
+  }
+
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === name));
   document.querySelectorAll('.tab-pane').forEach(p => p.style.display = p.dataset.tabPane === name ? '' : 'none');
   uiState.tab = name;
   persistUiState();
-  if (name === 'top') loadTopTab();
-  if (name === 'notes') loadNotesTab();
+
+  if (name === 'top') {
+    // Only reload if we haven't fetched anything yet; otherwise keep the
+    // existing rows and just restore the scroll position.
+    const hasRows = document.querySelectorAll('#topList .list-item').length > 0;
+    if (!hasRows) loadTopTab();
+    requestAnimationFrame(() => {
+      const b = getMainBody();
+      if (b) b.scrollTop = tabScroll.top || 0;
+    });
+  } else if (name === 'notes') {
+    loadNotesTab();
+    requestAnimationFrame(() => {
+      const b = getMainBody();
+      if (b) b.scrollTop = tabScroll.notes || 0;
+    });
+  }
 }
 
 // Score -> grade letter (matches the grading used inside the badge).
@@ -400,11 +427,11 @@ function modelRowHtml(model, extras = {}) {
   const noteBtnTitle = hasNote ? 'Edit your note' : 'Write a note';
   const noteIcon = hasNote
     ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/>
+         <path d="M14.06 2.94a2 2 0 012.83 0l4.17 4.17a2 2 0 010 2.83L8.5 22.5H2v-6.5L14.06 2.94z"/>
        </svg>`
     : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-         <polyline points="14 2 14 8 20 8"/>
+         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+         <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
        </svg>`;
 
   return `
