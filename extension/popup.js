@@ -754,6 +754,28 @@ function renderEditorTagPicker(selectedIds) {
   });
 }
 
+// Re-render the note-state of a single Top Models row in place. Called after
+// save/delete so the user does not have to switch tabs or reopen the popup to
+// see the icon flip between outlined and filled.
+function refreshNoteIconFor(username) {
+  const list = document.getElementById('topList');
+  if (!list || !username) return;
+  let row;
+  try { row = list.querySelector(`.list-item[data-username="${CSS.escape(username)}"]`); }
+  catch { row = null; }
+  if (!row) return;
+  const note = notesState.notes[username];
+  const hasNote = !!(note && ((note.text && note.text.trim()) || (Array.isArray(note.tags) && note.tags.length)));
+  row.classList.toggle('has-note', hasNote);
+  const btn = row.querySelector('.row-note-btn');
+  if (!btn) return;
+  btn.classList.toggle('active', hasNote);
+  btn.title = hasNote ? 'Edit your note' : 'Write a note';
+  btn.innerHTML = hasNote
+    ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M14.06 2.94a2 2 0 012.83 0l4.17 4.17a2 2 0 010 2.83L8.5 22.5H2v-6.5L14.06 2.94z"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+}
+
 async function saveCurrentNote() {
   const username = notesState.editingUsername;
   if (!username) return;
@@ -772,6 +794,7 @@ async function saveCurrentNote() {
     notesState.draftText = '';
     notesState.editingTagIds = null;
     await clearDraft();
+    refreshNoteIconFor(username);
     setNotesView('models');
   } finally { setLoading('editorSaveBtn', false); }
 }
@@ -792,6 +815,7 @@ async function deleteCurrentNote() {
   notesState.draftText = '';
   notesState.editingTagIds = null;
   await clearDraft();
+  refreshNoteIconFor(username);
   setNotesView('models');
 }
 
@@ -813,6 +837,7 @@ async function deleteNoteByUsername(username) {
     notesState.editingTagIds = null;
     await clearDraft();
   }
+  refreshNoteIconFor(username);
   renderModelsListBody();
 }
 
