@@ -68,13 +68,33 @@ function setLoading(btnId, on) {
   if (l) l.style.display = on ? 'inline-block' : 'none';
 }
 
-function send(action, payload = {}) {
+function _sendOnce(action, payload) {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action, ...payload }, (resp) => {
-      if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
-      else resolve(resp || { success: false, error: 'Empty response' });
-    });
+    try {
+      chrome.runtime.sendMessage({ action, ...payload }, (resp) => {
+        if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
+        else resolve(resp || { success: false, error: 'Empty response' });
+      });
+    } catch (e) { resolve({ success: false, error: e.message }); }
   });
+}
+
+// MV3 service workers can be asleep when popup opens; the very first message
+// occasionally lands before the worker is fully alive and the callback fires
+// with 'Could not establish connection' or with an empty response. Retry once
+// after a short delay to mask that cold-start race.
+async function send(action, payload = {}) {
+  let resp = await _sendOnce(action, payload);
+  const dead = !resp || (resp.success === false &&
+    typeof resp.error === 'string' &&
+    (resp.error.includes('Could not establish connection') ||
+     resp.error.includes('Receiving end does not exist') ||
+     resp.error === 'Empty response'));
+  if (dead) {
+    await new Promise(r => setTimeout(r, 150));
+    resp = await _sendOnce(action, payload);
+  }
+  return resp;
 }
 
 // ============ Auth flows ============
