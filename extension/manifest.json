@@ -38,13 +38,11 @@
   "content_scripts": [
     {
       "matches": ["https://onlyfans.com/*"],
-      "exclude_matches": ["https://onlyfans.com/my/*"],
       "js": ["inject-early.js"],
       "run_at": "document_start"
     },
     {
       "matches": ["https://onlyfans.com/*"],
-      "exclude_matches": ["https://onlyfans.com/my/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
