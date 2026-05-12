@@ -1329,29 +1329,33 @@ wire('ssoBtn', 'click', () => doSSO());
 // Header
 wire('pluginEnabled', 'change', (e) => setPluginEnabled(e.target.checked));
 wire('settingsPluginEnabled', 'change', (e) => setPluginEnabled(e.target.checked));
+function closeNotifOverlay() {
+  const ov = document.getElementById('notifOverlay');
+  if (ov) ov.style.display = 'none';
+}
 wire('notificationBtn', 'click', async (e) => {
   e.stopPropagation();
-  const panel = document.getElementById('notifPanel');
-  if (!panel) return;
-  const opening = panel.style.display === 'none';
+  const ov = document.getElementById('notifOverlay');
+  if (!ov) return;
+  const opening = ov.style.display === 'none';
   if (opening) {
     const list = await notifLoad();
     renderNotifPanel(list);
-    panel.style.display = '';
+    ov.style.display = 'flex';
     // Mark all read after the user has actually seen the list.
     await notifMarkAllRead();
   } else {
-    panel.style.display = 'none';
+    closeNotifOverlay();
   }
 });
 wire('notifClearBtn', 'click', () => notifClearAll());
-document.addEventListener('click', (e) => {
-  const panel = document.getElementById('notifPanel');
-  const btn = document.getElementById('notificationBtn');
-  if (!panel || !btn) return;
-  if (panel.style.display !== 'none' && !panel.contains(e.target) && !btn.contains(e.target)) {
-    panel.style.display = 'none';
-  }
+wire('notifCloseBtn', 'click', () => closeNotifOverlay());
+// Click on the dimmed backdrop (outside the panel) closes the overlay.
+document.getElementById('notifOverlay')?.addEventListener('click', (e) => {
+  if (e.target.id === 'notifOverlay') closeNotifOverlay();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeNotifOverlay();
 });
 wire('expandPanelBtn', 'click', () => openSidePanel());
 wire('headerMenuBtn', 'click', (e) => { e.stopPropagation(); toggleDropdown(); });

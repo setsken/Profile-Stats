@@ -172,14 +172,29 @@
       </div>
     </header>
 
-    <!-- Notifications dropdown -->
-    <div class="notif-panel" id="notifPanel" style="display:none;">
-      <div class="notif-panel-header">
-        <span>Notifications</span>
-        <button class="notif-clear-btn" id="notifClearBtn" title="Clear all">Clear all</button>
+    <!-- Notifications: full-popup overlay -->
+    <div class="notif-overlay" id="notifOverlay" style="display:none;">
+      <div class="notif-panel">
+        <div class="notif-panel-header">
+          <span>Notifications</span>
+          <div class="notif-header-actions">
+            <button class="notif-clear-btn" id="notifClearBtn" title="Clear all">Clear all</button>
+            <button class="notif-close-btn" id="notifCloseBtn" title="Close">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="notif-panel-list" id="notifPanelList"></div>
+        <div class="notif-panel-empty" id="notifPanelEmpty">
+          <svg viewBox="0 0 24 24" fill="none" width="44" height="44" stroke="currentColor" stroke-width="1.5">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <div>No notifications yet</div>
+        </div>
       </div>
-      <div class="notif-panel-list" id="notifPanelList"></div>
-      <div class="notif-panel-empty" id="notifPanelEmpty">No notifications yet.</div>
     </div>
 
     <!-- 3-dot menu dropdown -->
