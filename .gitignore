@@ -1,0 +1,22 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
+
+# Local DB copies / backups
+*.db
+*.db-shm
+*.db-wal
+*.sql
+
+# Build artifacts
+*.zip
+
+# Local IDE/agent state
+.claude/
+.vscode/
+
+# Local sandbox for design experiments and drafts
+sandbox/
