@@ -13,9 +13,7 @@ const screens = {
   subscription: document.getElementById('subscriptionScreen'),
   settings:     document.getElementById('settingsScreen'),
   support:      document.getElementById('supportScreen'),
-  payment:      document.getElementById('paymentScreen'),
-  noteEdit:     document.getElementById('noteEditScreen'),
-  tagsManager:  document.getElementById('tagsManagerScreen')
+  payment:      document.getElementById('paymentScreen')
 };
 
 const TAG_COLORS = [
@@ -41,6 +39,7 @@ const notesState = {
 
 function show(name) {
   for (const [k, el] of Object.entries(screens)) {
+    if (!el) continue; // tolerate missing screens
     el.style.display = k === name ? 'flex' : 'none';
   }
   closeDropdown();
