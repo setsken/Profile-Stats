@@ -172,21 +172,21 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
 
     // Sort key drives BOTH the leaderboard ordering and the global rank,
     // so users can search a single model and still see its true position.
-    const orderByGlobal = sort === 'fans'    ? 'last_fans DESC NULLS LAST, ms.score DESC'
-                        : sort === 'quality' ? 'ms.quality_score DESC, ms.score DESC'
-                        : sort === 'recent'  ? 'ms.updated_at DESC, ms.score DESC'
-                        :                      'ms.score DESC, ms.quality_score DESC';
-    const orderByPage = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC'
-                      : sort === 'quality' ? 'quality_score DESC, score DESC'
-                      : sort === 'recent'  ? 'updated_at DESC, score DESC'
-                      :                      'score DESC, quality_score DESC';
+    // After unwrapping into a CTE all the helper columns (last_fans etc.) are
+    // plain names — drop the ms. prefix from every order/where expression.
+    const orderBy = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC'
+                  : sort === 'quality' ? 'quality_score DESC, score DESC'
+                  : sort === 'recent'  ? 'updated_at DESC, score DESC'
+                  :                      'score DESC, quality_score DESC';
 
     params.push(limit, offset);
     const limitParamIdx = params.length - 1;
     const offsetParamIdx = params.length;
 
+    const filterWhere = where.join(' AND ').replace(/\bms\./g, '');
+
     const sql = `
-      WITH ranked AS (
+      WITH base AS (
         SELECT
           ms.model_username,
           ms.score,
@@ -211,18 +211,21 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
             FROM user_notes un
             WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
             LIMIT 1
-          ) AS avatar_url,
-          ROW_NUMBER() OVER (ORDER BY ${orderByGlobal}) AS global_rank
+          ) AS avatar_url
         FROM model_quality_snapshots ms
+      ),
+      ranked AS (
+        SELECT *, ROW_NUMBER() OVER (ORDER BY ${orderBy}) AS global_rank
+        FROM base
       ),
       filtered AS (
         SELECT * FROM ranked
-        WHERE ${where.join(' AND ').replace(/\bms\./g, '')}
+        WHERE ${filterWhere}
         ${havingClause}
       )
       SELECT *, COUNT(*) OVER() AS total_count
       FROM filtered
-      ORDER BY ${orderByPage}
+      ORDER BY ${orderBy}
       LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}
     `;
 
