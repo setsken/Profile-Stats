@@ -63,6 +63,7 @@ const TABLES = [
   {
     name: 'user_notes',
     columns: ['id', 'user_id', 'model_username', 'note_text', 'tags', 'note_date', 'avatar_url', 'created_at', 'updated_at'],
+    jsonColumns: ['tags'],
     conflictTarget: '(user_id, model_username) DO NOTHING',
     hasSerialId: true,
     serialColumn: 'id'
@@ -70,6 +71,7 @@ const TABLES = [
   {
     name: 'model_alerts',
     columns: ['id', 'model_username', 'alert_type', 'icon', 'color', 'diff', 'pct', 'extra_data', 'alert_date', 'created_at'],
+    jsonColumns: ['extra_data'],
     conflictTarget: '(model_username, alert_type, alert_date) DO NOTHING',
     hasSerialId: true,
     serialColumn: 'id'
@@ -109,7 +111,7 @@ async function countRows(pool, name) {
 }
 
 async function copyTable(spec) {
-  const { name, columns, conflictTarget, hasSerialId, serialColumn } = spec;
+  const { name, columns, conflictTarget, hasSerialId, serialColumn, jsonColumns = [] } = spec;
 
   // Source must have the table; destination must have been migrated by index.js
   const srcExists = await tableExists(sourcePool, name);
@@ -166,7 +168,16 @@ async function copyTable(spec) {
     try {
       await client.query('BEGIN');
       for (const row of batch.rows) {
-        const values = columns.map(c => row[c]);
+        const values = columns.map(c => {
+          const v = row[c];
+          // pg returns JSONB as parsed JS objects. To round-trip them through a
+          // parameterized INSERT we must re-serialize, otherwise pg coerces the
+          // object to "[object Object]" which Postgres rejects as invalid JSON.
+          if (jsonColumns.includes(c) && v !== null && typeof v === 'object') {
+            return JSON.stringify(v);
+          }
+          return v;
+        });
         await client.query(insertSql, values);
       }
       await client.query('COMMIT');
