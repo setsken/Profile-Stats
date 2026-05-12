@@ -108,6 +108,8 @@ async function runMigrations() {
     `).catch(() => {});
     await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS fans_text VARCHAR(255)').catch(() => {});
     await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS recorded_by INTEGER').catch(() => {});
+    // Source schema allows NULL fans_count (sometimes only fans_text is captured).
+    await query('ALTER TABLE model_fans_history ALTER COLUMN fans_count DROP NOT NULL').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_fans_history_username ON model_fans_history(model_username)').catch(() => {});
 
     // model_quality_snapshots — latest aggregated quality score per model.
