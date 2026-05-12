@@ -3,6 +3,7 @@
   "name": "Profile Stats",
   "version": "0.1.0",
   "description": "Model analytics for OnlyFans creator profiles — badges, fan trends, AI verdict, notes and alerts.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArQU9Jkwq/bcWyFwocy58AkV+VBNXhZDFTlpeA1IRVfD71OuGgM8GDJE0aTOvdwrL360n3EfNjcjgBvzLHwEeTGIZJZlOUzqN0i+RFcN1fc3hIU7kx5FUoMprBmc0XkRBxVwofhNC5/sBomeaxHCBnTOd9dZL6faZwJ/3v0HhgVNCeSWMBkp42GVC+yosWeE5j5lbhYd1znAtYMTkYdU4G91v+dpul6N5xOZtR8d7PZfIF/a4ocA+n6jcwJIhM0ytMovC/dfjyFV/ZQKmy7o2svCpe5xILnhrqRz7ktI9gx0dR4yJ5W07bA/o3eYVewZofUXyF7mD08fs7AUg/urC6wIDAQAB",
   "permissions": [
     "storage",
     "activeTab",

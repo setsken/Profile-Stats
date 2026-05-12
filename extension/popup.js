@@ -96,8 +96,52 @@ async function doLogout() {
   show('login');
 }
 
+// Stats Editor extension ID (matches manifest "key"). Has to be updated to the
+// production ID once Stats Editor is published to the Chrome Web Store.
+const STATS_EDITOR_EXTENSION_ID = 'mflgdblgjakdfkjnfdkfmmobgppgjgom';
+
 async function doSSO() {
-  setError('loginError', 'SSO with Stats Editor coming in the next update. Use email/password for now.');
+  setError('loginError', '');
+  setLoading('loginBtn', true);
+  try {
+    const resp = await new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage(STATS_EDITOR_EXTENSION_ID, { action: 'getStatsEditorToken' }, (r) => {
+          if (chrome.runtime.lastError) {
+            resolve({ success: false, error: chrome.runtime.lastError.message });
+          } else {
+            resolve(r || { success: false, error: 'Empty response' });
+          }
+        });
+      } catch (e) {
+        resolve({ success: false, error: e.message });
+      }
+    });
+
+    if (!resp.success) {
+      const msg = resp.code === 'NOT_AUTHENTICATED'
+        ? 'Sign in to Stats Editor first, then click this button again.'
+        : (resp.error && resp.error.includes('Could not establish connection'))
+          ? 'Stats Editor extension is not installed or disabled.'
+          : (resp.error || 'SSO failed');
+      setError('loginError', msg);
+      return;
+    }
+
+    // Hand the borrowed token to background so it lives in the same place a
+    // normal login would put it (in-memory + chrome.storage), and content
+    // scripts pick it up automatically.
+    await new Promise((resolve) => {
+      chrome.storage.local.set(
+        { authToken: resp.token, userEmail: resp.email },
+        () => resolve()
+      );
+    });
+    await send('clearCache'); // make sure background reads the fresh token next call
+    await enterMainScreen({ email: resp.email });
+  } finally {
+    setLoading('loginBtn', false);
+  }
 }
 
 // ============ Main screen ============
