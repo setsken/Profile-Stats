@@ -283,8 +283,7 @@ body { background: var(--gradient-page); }
 .list-item:hover {
   background: var(--bg-card-hover);
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 22px rgba(139, 92, 246, 0.18);
-  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(139, 92, 246, 0.18);
 }
 .list-item-avatar {
   width: 38px; height: 38px; border-radius: 50%;
@@ -505,7 +504,7 @@ body { background: var(--gradient-page); }
 }
 .list-item.rank-1:hover {
   border-color: transparent;
-  box-shadow: 0 0 0 1px #fbbf24, 0 10px 28px rgba(245, 158, 11, 0.5), inset 0 0 0 1px rgba(251, 191, 36, 0.25);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.5), inset 0 0 0 1px rgba(251, 191, 36, 0.25);
 }
 .list-item.rank-1 .list-item-rank { color: #fbbf24; }
 
@@ -518,7 +517,7 @@ body { background: var(--gradient-page); }
 }
 .list-item.rank-2:hover {
   border-color: transparent;
-  box-shadow: 0 0 0 1px #d1d5db, 0 10px 28px rgba(156, 163, 175, 0.45), inset 0 0 0 1px rgba(229, 231, 235, 0.22);
+  box-shadow: 0 10px 28px rgba(156, 163, 175, 0.45), inset 0 0 0 1px rgba(229, 231, 235, 0.22);
 }
 .list-item.rank-2 .list-item-rank { color: #d1d5db; }
 
@@ -531,7 +530,7 @@ body { background: var(--gradient-page); }
 }
 .list-item.rank-3:hover {
   border-color: transparent;
-  box-shadow: 0 0 0 1px #fb923c, 0 10px 28px rgba(234, 88, 12, 0.45), inset 0 0 0 1px rgba(251, 146, 60, 0.25);
+  box-shadow: 0 10px 28px rgba(234, 88, 12, 0.45), inset 0 0 0 1px rgba(251, 146, 60, 0.25);
 }
 .list-item.rank-3 .list-item-rank { color: #fb923c; }
 
