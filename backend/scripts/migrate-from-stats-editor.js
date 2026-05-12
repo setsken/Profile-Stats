@@ -48,7 +48,7 @@ const destPool = new Pool({
 const TABLES = [
   {
     name: 'user_models',
-    columns: ['id', 'user_id', 'model_username', 'display_name', 'is_deleted', 'deleted_at', 'added_at'],
+    columns: ['id', 'user_id', 'model_username', 'display_name', 'created_at', 'is_deleted', 'deleted_at'],
     conflictTarget: '(id) DO NOTHING',
     hasSerialId: true,
     serialColumn: 'id'
@@ -82,7 +82,7 @@ const TABLES = [
   },
   {
     name: 'model_fans_history',
-    columns: ['id', 'model_username', 'fans_count', 'recorded_at'],
+    columns: ['id', 'model_username', 'fans_count', 'fans_text', 'recorded_at', 'recorded_by'],
     conflictTarget: '(id) DO NOTHING',
     hasSerialId: true,
     serialColumn: 'id'

@@ -14,17 +14,22 @@ async function runMigrations() {
   try {
     // user_models — list of OnlyFans usernames a Profile Stats user is tracking.
     // user_id is NOT a foreign key here: users live in the Stats Editor DB.
+    // Schema mirrors the Stats Editor source so migration is a straight column-by-column copy.
     await query(`
       CREATE TABLE IF NOT EXISTS user_models (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
+        user_id INTEGER,
         model_username VARCHAR(255) NOT NULL,
         display_name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
         is_deleted BOOLEAN DEFAULT FALSE,
-        deleted_at TIMESTAMP,
-        added_at TIMESTAMP DEFAULT NOW()
+        deleted_at TIMESTAMP
       )
     `).catch(() => {});
+    // Drop the legacy 'added_at' column from the initial skeleton (only present on fresh deploys
+    // that ran before this fix; safe no-op everywhere else).
+    await query('ALTER TABLE user_models DROP COLUMN IF EXISTS added_at').catch(() => {});
+    await query('ALTER TABLE user_models ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_user_models_user_id ON user_models(user_id)').catch(() => {});
 
     // user_notes — personal notes per (user, model).
@@ -90,14 +95,19 @@ async function runMigrations() {
     await query('CREATE INDEX IF NOT EXISTS idx_model_fans_daily_username ON model_fans_daily(model_username)').catch(() => {});
 
     // model_fans_history — raw fan count reports (used to backfill daily).
+    // fans_count is nullable in source (sometimes only a fans_text label is captured).
     await query(`
       CREATE TABLE IF NOT EXISTS model_fans_history (
         id SERIAL PRIMARY KEY,
         model_username VARCHAR(255) NOT NULL,
-        fans_count INTEGER NOT NULL,
-        recorded_at TIMESTAMPTZ DEFAULT NOW()
+        fans_count INTEGER,
+        fans_text VARCHAR(255),
+        recorded_at TIMESTAMP DEFAULT NOW(),
+        recorded_by INTEGER
       )
     `).catch(() => {});
+    await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS fans_text VARCHAR(255)').catch(() => {});
+    await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS recorded_by INTEGER').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_fans_history_username ON model_fans_history(model_username)').catch(() => {});
 
     // model_quality_snapshots — latest aggregated quality score per model.
