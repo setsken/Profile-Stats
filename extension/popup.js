@@ -8,7 +8,8 @@ const screens = {
   login:    document.getElementById('loginScreen'),
   register: document.getElementById('registerScreen'),
   forgot:   document.getElementById('forgotScreen'),
-  main:     document.getElementById('mainScreen')
+  main:     document.getElementById('mainScreen'),
+  payment:  document.getElementById('paymentScreen')
 };
 
 function show(name) {
@@ -148,9 +149,9 @@ async function enterMainScreen(user) {
   document.getElementById('userEmail').textContent = email;
   show('main');
 
-  // Subscription status via Profile Stats backend (the background-cached one
-  // routes to /subscription/status?product=profile_stats on Stats Editor; the
-  // direct hit here uses our richer /api/health/check-access view).
+  const activeCard = document.getElementById('activeCard');
+  const upgradeCard = document.getElementById('upgradeCard');
+
   const { authToken } = await chrome.storage.local.get('authToken');
   try {
     const r = await fetch(`${PROFILE_STATS_API}/health/check-access`, {
@@ -163,12 +164,97 @@ async function enterMainScreen(user) {
       const exp = sub.expiresAt ? new Date(sub.expiresAt).toLocaleDateString() : '?';
       const via = sub.grantedVia === 'stats_editor_pro' ? ' (via Stats Editor Pro)' : '';
       document.getElementById('userSub').textContent = `${(sub.plan || 'Active').toUpperCase()} until ${exp}${via}`;
+      activeCard.style.display = '';
+      upgradeCard.style.display = 'none';
     } else {
       document.getElementById('userSub').textContent = 'No active subscription';
+      activeCard.style.display = 'none';
+      upgradeCard.style.display = '';
+      await loadPlanInto(upgradeCard, authToken);
     }
   } catch (e) {
     document.getElementById('userSub').textContent = 'Subscription check failed';
+    activeCard.style.display = 'none';
+    upgradeCard.style.display = 'none';
   }
+}
+
+async function loadPlanInto(card, token) {
+  try {
+    const r = await fetch(`${PROFILE_STATS_API}/billing/plan`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!r.ok) return;
+    const { plan } = await r.json();
+    if (!plan) return;
+    const ul = card.querySelector('#upgradeFeatures');
+    ul.innerHTML = '';
+    (plan.features || []).forEach(f => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      ul.appendChild(li);
+    });
+  } catch {}
+}
+
+// ============ Payment flow ============
+let paymentPollInterval = null;
+let currentPaymentId = null;
+
+async function startBuy() {
+  setError('buyError', '');
+  setLoading('buyBtn', true);
+  try {
+    const { authToken } = await chrome.storage.local.get('authToken');
+    const r = await fetch(`${PROFILE_STATS_API}/billing/create-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({})
+    });
+    const data = await r.json();
+    if (!r.ok || !data.success) {
+      setError('buyError', data.error || 'Could not start payment');
+      return;
+    }
+
+    currentPaymentId = data.paymentId;
+    const invoiceUrl = data.invoiceUrl || (data.payAddress ? null : null);
+    if (invoiceUrl) chrome.tabs.create({ url: invoiceUrl });
+
+    document.getElementById('paymentAmount').textContent = '$15.00 USD';
+    document.getElementById('paymentStatus').textContent = 'Waiting for payment confirmation…';
+    const link = document.getElementById('paymentInvoiceLink');
+    if (invoiceUrl) { link.href = invoiceUrl; link.style.display = ''; } else { link.style.display = 'none'; }
+    show('payment');
+    pollPayment(currentPaymentId, authToken);
+  } finally {
+    setLoading('buyBtn', false);
+  }
+}
+
+function pollPayment(paymentId, token) {
+  if (paymentPollInterval) clearInterval(paymentPollInterval);
+  paymentPollInterval = setInterval(async () => {
+    try {
+      const r = await fetch(`${PROFILE_STATS_API}/billing/payment-status/${paymentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await r.json();
+      if (!r.ok) return;
+      document.getElementById('paymentStatus').textContent = `Status: ${data.status || 'pending'}`;
+      if (data.status === 'completed' || data.subscriptionActivated) {
+        clearInterval(paymentPollInterval);
+        paymentPollInterval = null;
+        await send('clearCache');
+        await enterMainScreen({ email: (await send('getAuthStatus')).email });
+      }
+    } catch {}
+  }, 10000); // poll every 10s
+}
+
+function closePaymentScreen() {
+  if (paymentPollInterval) { clearInterval(paymentPollInterval); paymentPollInterval = null; }
+  show('main');
 }
 
 // ============ Wire up ============
@@ -192,6 +278,8 @@ document.getElementById('forgotLink').addEventListener('click', (e) => { e.preve
 document.getElementById('backToLoginFromForgot').addEventListener('click', (e) => { e.preventDefault(); show('login'); });
 document.getElementById('ssoBtn').addEventListener('click', () => doSSO());
 document.getElementById('logoutBtn').addEventListener('click', () => doLogout());
+document.getElementById('buyBtn').addEventListener('click', () => startBuy());
+document.getElementById('paymentCloseBtn').addEventListener('click', () => closePaymentScreen());
 
 // ============ Boot ============
 (async () => {

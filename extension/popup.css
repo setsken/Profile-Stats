@@ -254,3 +254,25 @@ html, body {
 }
 .placeholder-card h3 { font-size: 13px; margin-bottom: 6px; color: var(--accent); }
 .placeholder-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+.upgrade-card {
+  padding: 16px;
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+.upgrade-card h3 { font-size: 14px; margin-bottom: 6px; color: var(--accent); }
+.upgrade-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+.upgrade-card .price-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 10px; }
+.upgrade-card .price { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.upgrade-card .price-suffix { font-size: 12px; color: var(--text-muted); }
+.upgrade-card .features {
+  list-style: none; padding: 0; margin: 0 0 14px;
+  font-size: 12px; color: var(--text-secondary); line-height: 1.6;
+}
+.upgrade-card .features li { padding-left: 18px; position: relative; }
+.upgrade-card .features li::before {
+  content: "✓"; color: var(--accent); position: absolute; left: 0;
+  font-weight: 700;
+}
+.upgrade-card .auth-btn { margin-top: 4px; }
