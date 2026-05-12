@@ -104,7 +104,48 @@ function _sendOnce(action, payload) {
 // occasionally lands before the worker is fully alive and the callback fires
 // with 'Could not establish connection' or with an empty response. Retry once
 // after a short delay to mask that cold-start race.
-async function send(action, payload = {}) {
+async // Promise-based custom confirm dialog (replaces native window.confirm).
+function showConfirm({ title = 'Confirm', message = '', confirmText = 'Confirm', cancelText = 'Cancel', danger = true } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('confirmOverlay');
+    const titleEl = document.getElementById('confirmTitle');
+    const msgEl = document.getElementById('confirmMessage');
+    const okBtn = document.getElementById('confirmAcceptBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    const iconEl = document.getElementById('confirmIcon');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    okBtn.textContent = confirmText;
+    cancelBtn.textContent = cancelText;
+    okBtn.className = 'modal-btn ' + (danger ? 'modal-btn-danger' : 'modal-btn-primary');
+    iconEl.className = 'modal-icon' + (danger ? '' : ' info');
+    overlay.style.display = 'flex';
+
+    function cleanup(result) {
+      overlay.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onBackdrop(e) { if (e.target === overlay) cleanup(false); }
+    function onKey(e) {
+      if (e.key === 'Escape') cleanup(false);
+      else if (e.key === 'Enter') cleanup(true);
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+    setTimeout(() => okBtn.focus(), 50);
+  });
+}
+
+function send(action, payload = {}) {
   let resp = await _sendOnce(action, payload);
   const dead = !resp || (resp.success === false &&
     typeof resp.error === 'string' &&
@@ -616,7 +657,12 @@ async function saveCurrentNote() {
 async function deleteCurrentNote() {
   const username = notesState.editingUsername;
   if (!username) return;
-  if (!confirm(`Delete the note for @${username}? This cannot be undone.`)) return;
+  const ok = await showConfirm({
+    title: 'Delete note',
+    message: `Are you sure you want to delete the note for @${username}? This cannot be undone.`,
+    confirmText: 'Delete'
+  });
+  if (!ok) return;
   const r = await send('deleteNote', { username });
   if (!r.success) { setError('editorError', r.error || 'Failed to delete'); return; }
   delete notesState.notes[username];
@@ -630,7 +676,12 @@ async function deleteCurrentNote() {
 // Quick delete from the Models list row.
 async function deleteNoteByUsername(username) {
   if (!username) return;
-  if (!confirm(`Delete the note for @${username}? This cannot be undone.`)) return;
+  const ok = await showConfirm({
+    title: 'Delete note',
+    message: `Are you sure you want to delete the note for @${username}? This cannot be undone.`,
+    confirmText: 'Delete'
+  });
+  if (!ok) return;
   const r = await send('deleteNote', { username });
   if (!r.success) { alert(r.error || 'Failed to delete'); return; }
   delete notesState.notes[username];
@@ -736,7 +787,12 @@ async function addTag() {
 async function deleteTag(tagId) {
   const target = notesState.tags.find(t => t.id === tagId);
   const name = target ? target.name : 'this tag';
-  if (!confirm(`Delete the tag "${name}"? It will be removed from every note that uses it.`)) return;
+  const ok = await showConfirm({
+    title: 'Delete tag',
+    message: `Are you sure you want to delete "${name}"? It will be removed from every note that uses it.`,
+    confirmText: 'Delete'
+  });
+  if (!ok) return;
   const before = notesState.tags;
   notesState.tags = notesState.tags.filter(t => t.id !== tagId);
   if (!(await syncTags())) { notesState.tags = before; return; }

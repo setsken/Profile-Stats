@@ -410,6 +410,24 @@
     </div>
   </div>
 
+  <!-- =============== CONFIRM MODAL =============== -->
+  <div class="modal-overlay" id="confirmOverlay" style="display:none;">
+    <div class="modal-card" id="confirmCard">
+      <div class="modal-icon" id="confirmIcon">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
+      </div>
+      <h3 class="modal-title" id="confirmTitle">Confirm</h3>
+      <p class="modal-message" id="confirmMessage"></p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="confirmCancelBtn">Cancel</button>
+        <button class="modal-btn modal-btn-danger" id="confirmAcceptBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

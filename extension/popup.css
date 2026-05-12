@@ -773,6 +773,75 @@ body { background: var(--gradient-page); }
 }
 .tag-row-delete:hover { color: var(--error); background: rgba(239, 68, 68, 0.08); }
 
+/* ============ Confirm modal ============ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5, 7, 14, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: modalFadeIn 0.18s ease-out;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-card {
+  width: 100%; max-width: 320px;
+  padding: 18px;
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+  border: 1px solid var(--border-soft); border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(139, 92, 246, 0.1);
+  animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error);
+  margin-bottom: 10px;
+}
+.modal-icon.info {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.modal-message { font-size: 13px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; }
+.modal-btn {
+  flex: 1; height: 40px;
+  font-size: 13px; font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.modal-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.modal-btn-cancel:hover { background: var(--bg-tertiary); border-color: var(--text-secondary); }
+.modal-btn-danger {
+  background: var(--error);
+  border: none;
+  color: white;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+}
+.modal-btn-danger:hover { filter: brightness(1.08); box-shadow: 0 8px 20px rgba(239, 68, 68, 0.45); }
+.modal-btn-primary {
+  background: var(--gradient-accent);
+  border: none;
+  color: white;
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+}
+.modal-btn-primary:hover { filter: brightness(1.08); }
+
 /* ============ Scrollbar ============ */
 .main-body::-webkit-scrollbar { width: 6px; }
 .main-body::-webkit-scrollbar-track { background: transparent; }
