@@ -165,7 +165,7 @@ router.get('/top', authenticateToken, async (req, res) => {
           LIMIT 1
         ) AS avatar_url
       FROM model_quality_snapshots ms
-      ORDER BY ms.quality_score DESC
+      ORDER BY ms.score DESC, ms.quality_score DESC, ms.updated_at DESC
       LIMIT $1
     `, [limit]);
 

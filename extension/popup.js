@@ -235,7 +235,8 @@ function modelRowHtml(model, extras = {}) {
   const avatar = model.avatarUrl
     ? `<img class="list-item-avatar" src="${escapeHtml(model.avatarUrl)}" alt="" referrerpolicy="no-referrer">`
     : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml((model.username || '?').charAt(0).toUpperCase())}</div>`;
-  const meta = extras.meta || `Fans: ${escapeHtml(formatFans(model))}`;
+  const qPct = Math.round((Number(model.qualityScore) || 0) * 100);
+  const meta = extras.meta || `Fans: ${escapeHtml(formatFans(model))} · Quality: ${qPct}%`;
   const score = Math.round(Number(model.score) || 0);
   return `
     <div class="list-item" data-username="${escapeHtml(model.username)}">
