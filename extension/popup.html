@@ -128,40 +128,146 @@
     </div>
   </div>
 
-  <!-- =============== MAIN APP (placeholder) =============== -->
+  <!-- =============== MAIN APP =============== -->
   <div class="screen" id="mainScreen" style="display:none;">
-    <header class="main-header">
-      <div class="main-logo">
-        <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
-          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span>Profile Stats</span>
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Profile Stats</span>
+          <span class="logo-subtitle" id="logoSubtitle">—</span>
+        </div>
       </div>
-      <button class="icon-btn" id="logoutBtn" title="Sign out">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-        </svg>
-      </button>
+      <div class="header-right">
+        <label class="toggle-switch" id="pluginToggle" title="Enable / Disable Profile Stats">
+          <input type="checkbox" id="pluginEnabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="header-icon-btn" id="notificationBtn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="notification-badge" id="notificationBadge" style="display:none;"></span>
+        </button>
+        <button class="header-icon-btn" id="expandPanelBtn" title="Open in side panel">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+            <line x1="9" y1="3" x2="9" y2="21" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button class="header-icon-btn" id="headerMenuBtn" title="Menu">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
+            <circle cx="12" cy="5"  r="1.6" fill="currentColor"/>
+            <circle cx="12" cy="19" r="1.6" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <div class="main-body">
-      <div class="user-card">
-        <div class="user-email" id="userEmail">—</div>
-        <div class="user-sub" id="userSub">Checking access…</div>
-      </div>
-
-      <div class="placeholder-card" id="activeCard" style="display:none;">
-        <h3>You're all set</h3>
-        <p>The badge appears automatically on every OnlyFans model profile.
-           Models, notes and tags will move into this popup in a later update.</p>
-      </div>
-
-      <div class="upgrade-card" id="upgradeCard" style="display:none;">
-        <h3 id="upgradeTitle">Unlock Profile Stats</h3>
-        <p id="upgradeBody">Get badges, AI verdict, fan trends, notes and alerts on every model profile.</p>
-        <div class="price-row">
-          <span class="price">$15</span><span class="price-suffix">/month</span>
+    <!-- 3-dot menu dropdown -->
+    <div class="dropdown-menu" id="userMenuDropdown" style="display:none;">
+      <div class="dropdown-header">
+        <div class="dropdown-email" id="userMenuEmail">—</div>
+        <div class="dropdown-plan-row">
+          <span class="dropdown-plan" id="userMenuPlan">—</span>
+          <span class="dropdown-expires" id="userMenuExpires"></span>
         </div>
+      </div>
+      <div class="dropdown-item" id="menuSettings">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </div>
+      <div class="dropdown-item" id="menuSubscription">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+        </svg>
+        <span>Subscription</span>
+      </div>
+      <div class="dropdown-item" id="menuSupport">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>Support</span>
+      </div>
+      <div class="dropdown-divider"></div>
+      <div class="dropdown-item dropdown-item-danger" id="menuLogout">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span>Logout</span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn tab-active" data-tab="top">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+        <span>Top Models</span>
+      </button>
+      <button class="tab-btn" data-tab="notes">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span>Notes</span>
+      </button>
+    </nav>
+
+    <div class="main-body">
+      <!-- Tab: Top Models -->
+      <div class="tab-pane tab-pane-active" data-tab-pane="top">
+        <div class="list" id="topList">
+          <div class="list-empty" id="topEmpty">Loading top models…</div>
+        </div>
+      </div>
+
+      <!-- Tab: Notes -->
+      <div class="tab-pane" data-tab-pane="notes" style="display:none;">
+        <div class="list" id="notesList">
+          <div class="list-empty" id="notesEmpty">Loading notes…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== SUBSCRIPTION PAGE (opened from menu) =============== -->
+  <div class="screen" id="subscriptionScreen" style="display:none;">
+    <header class="app-header">
+      <button class="header-icon-btn" id="subBackBtn" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-left" style="margin-left: 8px;">
+        <div class="logo-text"><span class="logo-title">Subscription</span></div>
+      </div>
+    </header>
+    <div class="main-body" id="subscriptionBody">
+      <div class="user-card">
+        <div class="user-email" id="subUserEmail">—</div>
+        <div class="user-sub" id="subUserSub">—</div>
+      </div>
+      <div class="upgrade-card" id="upgradeCard" style="display:none;">
+        <h3>Unlock Profile Stats</h3>
+        <p>Get badges, AI verdict, fan trends, notes and alerts on every model profile.</p>
+        <div class="price-row"><span class="price">$15</span><span class="price-suffix">/month</span></div>
         <ul class="features" id="upgradeFeatures"></ul>
         <button class="auth-btn" id="buyBtn">
           <span class="btn-text">Buy Profile Stats</span>
@@ -172,27 +278,67 @@
     </div>
   </div>
 
-  <!-- =============== PAYMENT MODAL =============== -->
-  <div class="screen" id="paymentScreen" style="display:none;">
-    <header class="main-header">
-      <div class="main-logo">
-        <svg viewBox="0 0 24 24" fill="none" width="24" height="24" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2"/>
-          <path d="M7 11V7a5 5 0 0110 0v4"/>
-        </svg>
-        <span>Complete payment</span>
-      </div>
-      <button class="icon-btn" id="paymentCloseBtn" title="Close">
-        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
+  <!-- =============== SETTINGS PAGE =============== -->
+  <div class="screen" id="settingsScreen" style="display:none;">
+    <header class="app-header">
+      <button class="header-icon-btn" id="settingsBackBtn" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
+      <div class="header-left" style="margin-left: 8px;">
+        <div class="logo-text"><span class="logo-title">Settings</span></div>
+      </div>
+    </header>
+    <div class="main-body">
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title">Enable Profile Stats</div>
+          <div class="settings-row-sub">Show badges on OnlyFans profile pages</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="settingsPluginEnabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== SUPPORT PAGE =============== -->
+  <div class="screen" id="supportScreen" style="display:none;">
+    <header class="app-header">
+      <button class="header-icon-btn" id="supportBackBtn" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-left" style="margin-left: 8px;">
+        <div class="logo-text"><span class="logo-title">Support</span></div>
+      </div>
+    </header>
+    <div class="main-body">
+      <p style="color: var(--text-secondary); margin-bottom: 12px;">Need help? Email us at:</p>
+      <a class="auth-link" href="mailto:support@ofstats.pro">support@ofstats.pro</a>
+    </div>
+  </div>
+
+  <!-- =============== PAYMENT MODAL =============== -->
+  <div class="screen" id="paymentScreen" style="display:none;">
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-text"><span class="logo-title">Complete payment</span></div>
+      </div>
+      <div class="header-right">
+        <button class="header-icon-btn" id="paymentCloseBtn" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </header>
     <div class="main-body">
       <p style="color: var(--text-secondary); margin-bottom: 12px;">
-        A NOWPayments invoice was opened in a new tab. Complete the payment there.
-        We'll detect it automatically.
+        A NOWPayments invoice was opened in a new tab. Complete the payment there — we'll detect it automatically.
       </p>
       <div class="user-card">
         <div class="user-email" id="paymentAmount">—</div>
