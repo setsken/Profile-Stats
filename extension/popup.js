@@ -59,12 +59,32 @@ async function clearDraft() {
   try { await chrome.storage.local.remove(DRAFT_STORAGE_KEY); } catch {}
 }
 
+// Whole-popup UI state: which screen, which top-level tab. The Notes
+// sub-view lives in the existing draft so it follows the same lifecycle.
+const UI_STATE_KEY = 'psPopupUi';
+const uiState = { screen: 'main', tab: 'top' };
+async function persistUiState() {
+  try { await chrome.storage.local.set({ [UI_STATE_KEY]: uiState }); } catch {}
+}
+async function loadUiState() {
+  try {
+    const r = await chrome.storage.local.get(UI_STATE_KEY);
+    return r[UI_STATE_KEY] || null;
+  } catch { return null; }
+}
+
 function show(name) {
   for (const [k, el] of Object.entries(screens)) {
     if (!el) continue; // tolerate missing screens
     el.style.display = k === name ? 'flex' : 'none';
   }
   closeDropdown();
+  // Persist only screens that make sense to restore after re-open. Auth
+  // screens fall through — those are gated by the auth status anyway.
+  if (['main', 'subscription', 'settings', 'support'].includes(name)) {
+    uiState.screen = name;
+    persistUiState();
+  }
 }
 
 function setError(id, msg) {
@@ -242,8 +262,28 @@ async function enterMainScreen(user) {
 
   applySubscriptionHeader();
   await loadPluginEnabled();
-  show('main');
-  loadTopTab(); // first tab is Top by default
+
+  // Pull saved UI state to decide where to land. Default = main / Top Models.
+  const saved = await loadUiState();
+  const targetScreen = saved && ['main', 'subscription', 'settings', 'support'].includes(saved.screen)
+    ? saved.screen
+    : 'main';
+  const targetTab = saved && ['top', 'notes'].includes(saved.tab) ? saved.tab : 'top';
+
+  show(targetScreen);
+
+  if (targetScreen === 'main') {
+    // Apply tab without going through activateTab (which would persist state
+    // we just read). Inline the visible swap, then call the loader.
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === targetTab));
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = p.dataset.tabPane === targetTab ? '' : 'none');
+    uiState.tab = targetTab;
+    if (targetTab === 'top') loadTopTab();
+    else loadNotesTab();
+  } else if (targetScreen === 'subscription') {
+    openSubscriptionPage();
+  }
+  // settings / support are static — nothing to load.
 }
 
 function applySubscriptionHeader() {
@@ -287,6 +327,8 @@ document.addEventListener('click', (e) => {
 function activateTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === name));
   document.querySelectorAll('.tab-pane').forEach(p => p.style.display = p.dataset.tabPane === name ? '' : 'none');
+  uiState.tab = name;
+  persistUiState();
   if (name === 'top') loadTopTab();
   if (name === 'notes') loadNotesTab();
 }
