@@ -32,6 +32,14 @@ html, body {
   color: var(--text-primary);
   background: var(--bg-primary);
   overflow: hidden;
+  /* Tell native form controls (select option list, scrollbars, etc.) to render
+     using a dark palette so the dropdown matches the rest of the UI. */
+  color-scheme: dark;
+}
+
+select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 body { background: var(--gradient-page); }
