@@ -120,6 +120,9 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
     const rawOrganicity = Number(req.body?.organicity);
     const rawEngagementRate = Number(req.body?.engagementRate);
     const rawNegativeFlags = Number(req.body?.negativeFlagsCount);
+    const avatarUrl = typeof req.body?.avatarUrl === 'string' && req.body.avatarUrl.startsWith('http')
+      ? req.body.avatarUrl.slice(0, 500)
+      : null;
 
     const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : null;
     const organicity = Number.isFinite(rawOrganicity) ? Math.max(0, Math.min(25, rawOrganicity)) : null;
@@ -138,8 +141,8 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
 
     await query(
       `INSERT INTO model_quality_snapshots
-        (model_username, quality_score, score, organicity, engagement_rate, negative_flags, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        (model_username, quality_score, score, organicity, engagement_rate, negative_flags, avatar_url, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          quality_score = EXCLUDED.quality_score,
@@ -147,8 +150,9 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
          organicity = EXCLUDED.organicity,
          engagement_rate = EXCLUDED.engagement_rate,
          negative_flags = EXCLUDED.negative_flags,
+         avatar_url = COALESCE(EXCLUDED.avatar_url, model_quality_snapshots.avatar_url),
          updated_at = NOW()`,
-      [cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount]
+      [cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount, avatarUrl]
     );
 
     const MIN_MODELS_FOR_PERCENTILE = 20;

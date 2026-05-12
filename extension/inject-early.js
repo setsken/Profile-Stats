@@ -3526,7 +3526,8 @@
               score: Number(scoreResult.score || 0),
               organicity: Number(components.organicity || 0),
               engagementRate: Number(engagementRate || 0),
-              negativeFlagsCount: Number(negativeFlagsCount || 0)
+              negativeFlagsCount: Number(negativeFlagsCount || 0),
+              avatarUrl: profileData.avatar || null
             }
           }).then(function(resp) {
             if (!resp || !resp.success) return;

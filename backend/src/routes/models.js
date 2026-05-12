@@ -206,11 +206,14 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
             WHERE mfh.model_username = ms.model_username
             ORDER BY mfh.recorded_at DESC LIMIT 1
           ) AS last_fans_text,
-          (
-            SELECT un.avatar_url
-            FROM user_notes un
-            WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
-            LIMIT 1
+          COALESCE(
+            ms.avatar_url,
+            (
+              SELECT un.avatar_url
+              FROM user_notes un
+              WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
+              LIMIT 1
+            )
           ) AS avatar_url
         FROM model_quality_snapshots ms
       ),

@@ -128,9 +128,11 @@ async function runMigrations() {
         organicity NUMERIC(6,2) NOT NULL,
         engagement_rate NUMERIC(12,6) NOT NULL,
         negative_flags INTEGER DEFAULT 0,
+        avatar_url VARCHAR(500),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `).catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).
