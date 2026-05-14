@@ -4179,15 +4179,19 @@
 
       // === PAYWALL BLUR OVERLAY (if subscription expired) ===
       if (_subExpired) {
-        // Blur the scoreSection content
-        scoreSection.style.filter = 'blur(5px)';
+        // Blur + desaturate so colored score chips don't bleed through.
+        // saturate(0.15) drains the green/red badges to almost greyscale,
+        // brightness(0.7) drops the overall light level so the lock + CTA
+        // sit on a near-flat dark backdrop.
+        scoreSection.style.filter = 'blur(7px) saturate(0.15) brightness(0.7)';
         scoreSection.style.pointerEvents = 'none';
         scoreSection.style.userSelect = 'none';
         scoreSection.style.position = 'relative';
 
-        // Create overlay with renew button
+        // Create overlay with renew button. Opaque dark backdrop kills the
+        // remaining color halo from any blurred element underneath.
         var paywallOverlay = document.createElement('div');
-        paywallOverlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,12,30,0.4);border-radius:10px;';
+        paywallOverlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,12,30,0.78);border-radius:10px;';
 
         // Lock icon
         paywallOverlay.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="opacity:0.7;"><rect x="3" y="11" width="18" height="11" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1.5"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#475569" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1.5" fill="#64748b"/></svg>'
