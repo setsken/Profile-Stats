@@ -85,4 +85,69 @@ router.get('/crypto-currencies', async (req, res) => {
   }
 });
 
+// POST /api/billing/apply-promo — redeem a promo code against the Profile
+// Stats subscription. The upstream /api/promo/apply route reads the product
+// off the promo code itself, so a code minted as product='profile_stats'
+// updates the right subscription row even though we proxy through the
+// Stats Editor backend.
+router.post('/apply-promo', authenticateToken, async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    if (!code) return res.status(400).json({ error: 'Promo code is required', code: 'INVALID_CODE' });
+
+    const r = await fetch(`${STATS_EDITOR_API}/promo/apply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: req.headers['authorization']
+      },
+      body: JSON.stringify({ code })
+    });
+    const data = await r.json();
+
+    // Defence in depth: refuse to grant access if the code belongs to a
+    // different product. The upstream route already gates this for
+    // profile_stats codes (they target product='profile_stats' rows), but
+    // some legacy stats_editor-only codes may exist and we don't want them
+    // accidentally extending Profile Stats.
+    if (r.ok && data.subscription && data.subscription.product
+        && data.subscription.product !== 'profile_stats') {
+      return res.status(400).json({
+        error: 'This code is not valid for Profile Stats',
+        code: 'WRONG_PRODUCT'
+      });
+    }
+
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error('[billing] /apply-promo failed:', e.message);
+    res.status(502).json({ error: 'Stats Editor billing unavailable' });
+  }
+});
+
+// POST /api/billing/support — proxy a bug report / question to the
+// Stats Editor /auth/support endpoint with product='profile_stats' so the
+// shared mailer tags it correctly.
+router.post('/support', authenticateToken, async (req, res) => {
+  try {
+    const { subject, message } = req.body || {};
+    if (!message || String(message).trim().length < 10) {
+      return res.status(400).json({ error: 'Message is too short' });
+    }
+    const r = await fetch(`${STATS_EDITOR_API}/auth/support`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: req.headers['authorization']
+      },
+      body: JSON.stringify({ subject, message, product: 'profile_stats' })
+    });
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error('[billing] /support failed:', e.message);
+    res.status(502).json({ error: 'Support service unavailable' });
+  }
+});
+
 module.exports = router;

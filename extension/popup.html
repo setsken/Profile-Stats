@@ -13,45 +13,46 @@
     <div class="auth-container">
       <div class="auth-header">
         <div class="auth-logo">
-          <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg viewBox="0 0 512 512" fill="currentColor">
+            <rect x="120" y="248" width="64"  height="148" rx="10"/>
+            <rect x="224" y="120" width="64"  height="276" rx="10"/>
+            <rect x="328" y="184" width="64"  height="212" rx="10"/>
+            <rect x="84"  y="408" width="344" height="14"  rx="7" opacity=".75"/>
           </svg>
         </div>
-        <h1 class="auth-title">Profile Stats</h1>
-        <p class="auth-subtitle">Sign in to continue</p>
+        <h1 class="auth-title" data-i18n="appTitle">Profile Stats</h1>
+        <p class="auth-subtitle" data-i18n="loginSubtitle">Sign in to continue</p>
       </div>
 
-      <button type="button" class="sso-btn" id="ssoBtn" title="Use your Stats Editor account">
+      <button type="button" class="sso-btn" id="ssoBtn" data-i18n-title="ssoTitle" title="Use your Stats Editor account">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
           <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
         </svg>
-        Sign in with Stats Editor
+        <span data-i18n="ssoButton">Sign in with Stats Editor</span>
       </button>
 
-      <div class="divider"><span>or</span></div>
+      <div class="divider"><span data-i18n="dividerOr">or</span></div>
 
       <form class="auth-form" id="loginForm">
         <div class="auth-input-group">
-          <label class="auth-label">Email</label>
-          <input type="email" id="loginEmail" class="auth-input" placeholder="your@email.com" required>
+          <label class="auth-label" data-i18n="email">Email</label>
+          <input type="email" id="loginEmail" class="auth-input" data-i18n-placeholder="emailPlaceholder" placeholder="your@email.com" required>
         </div>
         <div class="auth-input-group">
-          <label class="auth-label">Password</label>
+          <label class="auth-label" data-i18n="password">Password</label>
           <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
         </div>
         <div class="auth-error" id="loginError"></div>
-        <a href="#" class="auth-link auth-forgot" id="forgotLink">Forgot password?</a>
+        <a href="#" class="auth-link auth-forgot" id="forgotLink" data-i18n="forgotPassword">Forgot password?</a>
         <button type="submit" class="auth-btn" id="loginBtn">
-          <span class="btn-text">Sign In</span>
+          <span class="btn-text" data-i18n="signIn">Sign In</span>
           <div class="btn-loader" style="display:none;"></div>
         </button>
       </form>
 
       <div class="auth-footer">
-        <span>Don't have an account?</span>
-        <a href="#" class="auth-link" id="showRegister">Create one</a>
+        <span data-i18n="noAccount">Don't have an account?</span>
+        <a href="#" class="auth-link" id="showRegister" data-i18n="createOne">Create one</a>
       </div>
     </div>
   </div>
@@ -61,36 +62,36 @@
     <div class="auth-container">
       <div class="auth-header">
         <div class="auth-logo">
-          <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
-            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2"/>
-            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-            <line x1="20" y1="8" x2="20" y2="14" stroke="currentColor" stroke-width="2"/>
-            <line x1="23" y1="11" x2="17" y2="11" stroke="currentColor" stroke-width="2"/>
+          <svg viewBox="0 0 512 512" fill="currentColor">
+            <rect x="120" y="248" width="64"  height="148" rx="10"/>
+            <rect x="224" y="120" width="64"  height="276" rx="10"/>
+            <rect x="328" y="184" width="64"  height="212" rx="10"/>
+            <rect x="84"  y="408" width="344" height="14"  rx="7" opacity=".75"/>
           </svg>
         </div>
-        <h1 class="auth-title">Create Account</h1>
-        <p class="auth-subtitle">7 days of Profile Stats free</p>
+        <h1 class="auth-title" data-i18n="registerTitle">Create Account</h1>
+        <p class="auth-subtitle" data-i18n="registerSubtitle">7 days of Profile Stats free</p>
       </div>
 
       <form class="auth-form" id="registerForm">
         <div class="auth-input-group">
-          <label class="auth-label">Email</label>
-          <input type="email" id="registerEmail" class="auth-input" placeholder="your@email.com" required>
+          <label class="auth-label" data-i18n="email">Email</label>
+          <input type="email" id="registerEmail" class="auth-input" data-i18n-placeholder="emailPlaceholder" placeholder="your@email.com" required>
         </div>
         <div class="auth-input-group">
-          <label class="auth-label">Password</label>
-          <input type="password" id="registerPassword" class="auth-input" placeholder="Min 6 characters" required minlength="6">
+          <label class="auth-label" data-i18n="password">Password</label>
+          <input type="password" id="registerPassword" class="auth-input" data-i18n-placeholder="passwordMin6" placeholder="Min 6 characters" required minlength="6">
         </div>
         <div class="auth-error" id="registerError"></div>
         <button type="submit" class="auth-btn" id="registerBtn">
-          <span class="btn-text">Create Account</span>
+          <span class="btn-text" data-i18n="createAccount">Create Account</span>
           <div class="btn-loader" style="display:none;"></div>
         </button>
       </form>
 
       <div class="auth-footer">
-        <span>Already have an account?</span>
-        <a href="#" class="auth-link" id="showLogin">Sign in</a>
+        <span data-i18n="haveAccount">Already have an account?</span>
+        <a href="#" class="auth-link" id="showLogin" data-i18n="signInLink">Sign in</a>
       </div>
     </div>
   </div>
@@ -100,30 +101,32 @@
     <div class="auth-container">
       <div class="auth-header">
         <div class="auth-logo">
-          <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
-            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
-            <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="2"/>
+          <svg viewBox="0 0 512 512" fill="currentColor">
+            <rect x="120" y="248" width="64"  height="148" rx="10"/>
+            <rect x="224" y="120" width="64"  height="276" rx="10"/>
+            <rect x="328" y="184" width="64"  height="212" rx="10"/>
+            <rect x="84"  y="408" width="344" height="14"  rx="7" opacity=".75"/>
           </svg>
         </div>
-        <h1 class="auth-title">Reset Password</h1>
-        <p class="auth-subtitle">Enter your email to receive a reset code</p>
+        <h1 class="auth-title" data-i18n="resetTitle">Reset Password</h1>
+        <p class="auth-subtitle" data-i18n="resetSubtitle">Enter your email to receive a reset code</p>
       </div>
 
       <form class="auth-form" id="forgotForm">
         <div class="auth-input-group">
-          <label class="auth-label">Email</label>
-          <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com" required>
+          <label class="auth-label" data-i18n="email">Email</label>
+          <input type="email" id="forgotEmail" class="auth-input" data-i18n-placeholder="emailPlaceholder" placeholder="your@email.com" required>
         </div>
         <div class="auth-error" id="forgotError"></div>
         <div class="auth-success" id="forgotSuccess"></div>
         <button type="submit" class="auth-btn" id="forgotBtn">
-          <span class="btn-text">Send Reset Code</span>
+          <span class="btn-text" data-i18n="sendResetCode">Send Reset Code</span>
           <div class="btn-loader" style="display:none;"></div>
         </button>
       </form>
 
       <div class="auth-footer">
-        <a href="#" class="auth-link" id="backToLoginFromForgot">Back to sign in</a>
+        <a href="#" class="auth-link" id="backToLoginFromForgot" data-i18n="backToSignIn">Back to sign in</a>
       </div>
     </div>
   </div>
@@ -133,43 +136,44 @@
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg viewBox="0 0 512 512" width="40" height="40" fill="white">
+            <rect x="120" y="248" width="64"  height="148" rx="10"/>
+            <rect x="224" y="120" width="64"  height="276" rx="10"/>
+            <rect x="328" y="184" width="64"  height="212" rx="10"/>
+            <rect x="84"  y="408" width="344" height="14"  rx="7" opacity=".75"/>
           </svg>
         </div>
         <div class="logo-text">
-          <span class="logo-title">Profile Stats</span>
+          <span class="logo-title" data-i18n="appTitle">Profile Stats</span>
           <span class="logo-subtitle" id="logoSubtitle">—</span>
         </div>
       </div>
       <div class="header-right">
-        <label class="toggle-switch" id="pluginToggle" title="Enable / Disable Profile Stats">
+        <label class="toggle-switch" id="pluginToggle" data-i18n-title="pluginToggleTitle" title="Enable / Disable Profile Stats">
           <input type="checkbox" id="pluginEnabled" checked>
           <span class="toggle-slider"></span>
         </label>
-        <button class="header-icon-btn" id="notificationBtn" title="Notifications">
+        <button class="header-icon-btn" id="notificationBtn" data-i18n-title="notifications" title="Notifications">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span class="notification-badge" id="notificationBadge" style="display:none;"></span>
         </button>
-        <button class="header-icon-btn" id="expandPanelBtn" title="Open in side panel">
+        <button class="header-icon-btn" id="expandPanelBtn" data-i18n-title="openSidePanel" title="Open in side panel">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
             <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
             <line x1="9" y1="3" x2="9" y2="21" stroke="currentColor" stroke-width="2"/>
           </svg>
         </button>
-        <button class="header-icon-btn" id="collapsePanelBtn" title="Close side panel" style="display:none;">
+        <button class="header-icon-btn" id="collapsePanelBtn" data-i18n-title="closeSidePanel" title="Close side panel" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <line x1="15" y1="3" x2="15" y2="21"/>
             <path d="M11 9L8 12L11 15" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <button class="header-icon-btn" id="headerMenuBtn" title="Menu">
+        <button class="header-icon-btn" id="headerMenuBtn" data-i18n-title="menu" title="Menu">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
             <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
             <circle cx="12" cy="5"  r="1.6" fill="currentColor"/>
@@ -183,10 +187,10 @@
     <div class="notif-overlay" id="notifOverlay" style="display:none;">
       <div class="notif-panel">
         <div class="notif-panel-header">
-          <span>Notifications</span>
+          <span data-i18n="notifications">Notifications</span>
           <div class="notif-header-actions">
-            <button class="notif-clear-btn" id="notifClearBtn" title="Clear all">Clear all</button>
-            <button class="notif-close-btn" id="notifCloseBtn" title="Close">
+            <button class="notif-clear-btn" id="notifClearBtn" data-i18n-title="clearAll" data-i18n="clearAll" title="Clear all">Clear all</button>
+            <button class="notif-close-btn" id="notifCloseBtn" data-i18n-title="close" title="Close">
               <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -199,7 +203,7 @@
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 01-3.46 0"/>
           </svg>
-          <div>No notifications yet</div>
+          <div data-i18n="noNotificationsYet">No notifications yet</div>
         </div>
       </div>
     </div>
@@ -218,13 +222,13 @@
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
-        <span>Settings</span>
+        <span data-i18n="menuSettings">Settings</span>
       </div>
       <div class="dropdown-item" id="menuSubscription">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
         </svg>
-        <span>Subscription</span>
+        <span data-i18n="menuSubscription">Subscription</span>
       </div>
       <div class="dropdown-item" id="menuSupport">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
@@ -232,7 +236,7 @@
           <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
           <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
-        <span>Support</span>
+        <span data-i18n="menuSupport">Support</span>
       </div>
       <div class="dropdown-divider"></div>
       <div class="dropdown-item dropdown-item-danger" id="menuLogout">
@@ -241,7 +245,7 @@
           <polyline points="16 17 21 12 16 7"/>
           <line x1="21" y1="12" x2="9" y2="12"/>
         </svg>
-        <span>Logout</span>
+        <span data-i18n="menuLogout">Logout</span>
       </div>
     </div>
 
@@ -251,14 +255,14 @@
         <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
           <path d="M6 9l6 6 6-6"/>
         </svg>
-        <span>Top Models</span>
+        <span data-i18n="tabTop">Top Models</span>
       </button>
       <button class="tab-btn" data-tab="notes">
         <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
         </svg>
-        <span>Notes</span>
+        <span data-i18n="tabNotes">Notes</span>
       </button>
     </nav>
 
@@ -273,23 +277,23 @@
                 <circle cx="11" cy="11" r="7"/>
                 <path d="M21 21l-4.35-4.35"/>
               </svg>
-              <input type="search" id="topSearch" class="search-input" placeholder="Search @username…">
+              <input type="search" id="topSearch" class="search-input" data-i18n-placeholder="searchUsername" placeholder="Search @username…">
             </div>
             <div class="custom-dropdown" id="sortDropdown">
-              <button class="custom-dropdown-btn" id="sortDropdownBtn" type="button" title="Sort by">
-                <span id="sortDropdownLabel">Score ↓</span>
+              <button class="custom-dropdown-btn" id="sortDropdownBtn" type="button" data-i18n-title="sortBy" title="Sort by">
+                <span id="sortDropdownLabel"><span data-i18n="sortScore">Score</span> <span class="opt-arrow">↓</span></span>
                 <svg class="caret" viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2.5">
                   <path d="M6 9l6 6 6-6"/>
                 </svg>
               </button>
               <div class="custom-dropdown-list" role="listbox">
-                <div class="custom-dropdown-option selected" data-value="score">Score <span class="opt-arrow">↓</span></div>
-                <div class="custom-dropdown-option" data-value="fans">Fans <span class="opt-arrow">↓</span></div>
-                <div class="custom-dropdown-option" data-value="quality">Quality <span class="opt-arrow">↓</span></div>
-                <div class="custom-dropdown-option" data-value="recent">Recent <span class="opt-arrow">↓</span></div>
+                <div class="custom-dropdown-option selected" data-value="score"><span data-i18n="sortScore">Score</span> <span class="opt-arrow">↓</span></div>
+                <div class="custom-dropdown-option" data-value="fans"><span data-i18n="sortFans">Fans</span> <span class="opt-arrow">↓</span></div>
+                <div class="custom-dropdown-option" data-value="quality"><span data-i18n="sortQuality">Quality</span> <span class="opt-arrow">↓</span></div>
+                <div class="custom-dropdown-option" data-value="recent"><span data-i18n="sortRecent">Recent</span> <span class="opt-arrow">↓</span></div>
               </div>
             </div>
-            <button class="filter-toggle-btn" id="filterToggleBtn" title="Filters">
+            <button class="filter-toggle-btn" id="filterToggleBtn" data-i18n-title="filters" title="Filters">
               <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
                 <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
               </svg>
@@ -297,83 +301,83 @@
           </div>
           <div class="filter-advanced" id="filterAdvanced" style="display:none;">
             <div class="filter-field">
-              <label>Min score</label>
+              <label data-i18n="filterMinScore">Min score</label>
               <input type="number" id="filterMinScore" min="0" max="100" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Max score</label>
+              <label data-i18n="filterMaxScore">Max score</label>
               <input type="number" id="filterMaxScore" min="0" max="100" placeholder="100">
             </div>
             <div class="filter-field">
-              <label>Min fans</label>
+              <label data-i18n="filterMinFans">Min fans</label>
               <input type="number" id="filterMinFans" min="0" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min quality %</label>
+              <label data-i18n="filterMinQuality">Min quality %</label>
               <input type="number" id="filterMinQuality" min="0" max="99" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min posts</label>
+              <label data-i18n="filterMinPosts">Min posts</label>
               <input type="number" id="filterMinPosts" min="0" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min videos</label>
+              <label data-i18n="filterMinVideos">Min videos</label>
               <input type="number" id="filterMinVideos" min="0" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min streams</label>
+              <label data-i18n="filterMinStreams">Min streams</label>
               <input type="number" id="filterMinStreams" min="0" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min age (months)</label>
+              <label data-i18n="filterMinAge">Min age (months)</label>
               <input type="number" id="filterMinAge" min="0" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Min price ($)</label>
+              <label data-i18n="filterMinPrice">Min price ($)</label>
               <input type="number" id="filterMinPrice" min="0" step="0.01" placeholder="0">
             </div>
             <div class="filter-field">
-              <label>Max price ($)</label>
+              <label data-i18n="filterMaxPrice">Max price ($)</label>
               <input type="number" id="filterMaxPrice" min="0" step="0.01" placeholder="∞">
             </div>
             <div class="filter-field" style="grid-column: span 2;">
-              <label>Socials</label>
+              <label data-i18n="filterSocials">Socials</label>
               <div class="custom-dropdown" id="socialsDropdown">
                 <button class="custom-dropdown-btn" id="socialsDropdownBtn" type="button">
-                  <span id="socialsDropdownLabel">Any</span>
+                  <span id="socialsDropdownLabel" data-i18n="socialsAny">Any</span>
                   <svg class="caret" viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div class="custom-dropdown-list" role="listbox">
-                  <div class="custom-dropdown-option selected" data-value="">Any</div>
-                  <div class="custom-dropdown-option" data-value="1">With socials only</div>
-                  <div class="custom-dropdown-option" data-value="0">No socials only</div>
+                  <div class="custom-dropdown-option selected" data-value="" data-i18n="socialsAny">Any</div>
+                  <div class="custom-dropdown-option" data-value="1" data-i18n="socialsWith">With socials only</div>
+                  <div class="custom-dropdown-option" data-value="0" data-i18n="socialsWithout">No socials only</div>
                 </div>
               </div>
             </div>
             <div class="filter-actions">
-              <button class="filter-apply-btn" id="filterApplyBtn">Apply</button>
-              <button class="filter-reset-btn" id="filterResetBtn">Reset</button>
+              <button class="filter-apply-btn" id="filterApplyBtn" data-i18n="apply">Apply</button>
+              <button class="filter-reset-btn" id="filterResetBtn" data-i18n="reset">Reset</button>
             </div>
-            <div class="filter-note">Filters fill in for models that have been recently viewed. Older models without data are excluded only when a min/max value is set.</div>
+            <div class="filter-note" data-i18n="filterNote">Filters fill in for models that have been recently viewed. Older models without data are excluded only when a min/max value is set.</div>
           </div>
         </div>
 
         <div class="leaderboard-info" id="leaderboardInfo"></div>
         <div class="list" id="topList">
-          <div class="list-empty" id="topEmpty">Loading…</div>
+          <div class="list-empty" id="topEmpty" data-i18n="loading">Loading…</div>
         </div>
-        <button class="load-more-btn" id="loadMoreBtn" style="display:none;">Load more</button>
+        <button class="load-more-btn" id="loadMoreBtn" data-i18n="loadMore" style="display:none;">Load more</button>
       </div>
 
       <!-- Tab: Notes -->
       <div class="tab-pane" data-tab-pane="notes" style="display:none;">
         <div class="notes-subtabs">
-          <button class="notes-subtab" data-subview="editor">Note</button>
-          <button class="notes-subtab" data-subview="tags">Tags</button>
-          <button class="notes-subtab active" data-subview="models">Models</button>
+          <button class="notes-subtab" data-subview="editor" data-i18n="subtabNote">Note</button>
+          <button class="notes-subtab" data-subview="tags" data-i18n="subtabTags">Tags</button>
+          <button class="notes-subtab active" data-subview="models" data-i18n="subtabModels">Models</button>
         </div>
         <div class="notes-content" id="notesContent">
-          <div class="list-empty">Loading…</div>
+          <div class="list-empty" data-i18n="loading">Loading…</div>
         </div>
       </div>
     </div>
@@ -382,13 +386,13 @@
   <!-- =============== SUBSCRIPTION PAGE (opened from menu) =============== -->
   <div class="screen" id="subscriptionScreen" style="display:none;">
     <header class="app-header">
-      <button class="header-icon-btn" id="subBackBtn" title="Back">
+      <button class="header-icon-btn" id="subBackBtn" data-i18n-title="back" title="Back">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
       <div class="header-left" style="margin-left: 8px;">
-        <div class="logo-text"><span class="logo-title">Subscription</span></div>
+        <div class="logo-text"><span class="logo-title" data-i18n="menuSubscription">Subscription</span></div>
       </div>
     </header>
     <div class="main-body" id="subscriptionBody">
@@ -396,42 +400,171 @@
         <div class="user-email" id="subUserEmail">—</div>
         <div class="user-sub" id="subUserSub">—</div>
       </div>
+
+      <!-- Renew card: shown for users with an active subscription. -->
+      <!-- The h3/p/price-row/Renew button collapse to a single info line for -->
+      <!-- Stats Editor Pro users (Profile Stats is already included). -->
+      <div class="upgrade-card" id="renewCard" style="display:none;">
+        <h3 id="renewTitleEl" data-i18n="renewTitle">Extend your subscription</h3>
+        <p id="renewDescEl" data-i18n="renewDesc">Add another month of Profile Stats. Days are stacked on top of your current expiration.</p>
+        <div class="price-row" id="renewPriceRow"><span class="price">$15</span><span class="price-suffix" data-i18n="perMonth">/month</span></div>
+        <button class="auth-btn" id="renewBtn">
+          <span class="btn-text" data-i18n="renewButton">Renew for $15</span>
+          <div class="btn-loader" style="display:none;"></div>
+        </button>
+        <div class="auth-error" id="renewError"></div>
+
+        <div class="promo-code-section">
+          <label class="form-label" data-i18n="promoCodeLabel">Have a promo code?</label>
+          <div class="promo-code-input-group">
+            <input type="text" id="renewPromoInput" class="auth-input promo-input" data-i18n-placeholder="promoCodePh" placeholder="ENTER CODE" maxlength="32" autocomplete="off">
+            <button class="promo-apply-btn" id="renewPromoBtn" data-i18n="promoApply">Apply</button>
+          </div>
+          <div class="promo-code-message" id="renewPromoMessage"></div>
+        </div>
+      </div>
+
+      <!-- Upgrade card: shown for users with NO active subscription -->
       <div class="upgrade-card" id="upgradeCard" style="display:none;">
-        <h3>Unlock Profile Stats</h3>
-        <p>Get badges, AI verdict, fan trends, notes and alerts on every model profile.</p>
-        <div class="price-row"><span class="price">$15</span><span class="price-suffix">/month</span></div>
+        <h3 data-i18n="unlockTitle">Unlock Profile Stats</h3>
+        <p data-i18n="unlockDesc">Get badges, AI verdict, fan trends, notes and alerts on every model profile.</p>
+        <div class="price-row"><span class="price">$15</span><span class="price-suffix" data-i18n="perMonth">/month</span></div>
         <ul class="features" id="upgradeFeatures"></ul>
         <button class="auth-btn" id="buyBtn">
-          <span class="btn-text">Buy Profile Stats</span>
+          <span class="btn-text" data-i18n="buyButton">Buy Profile Stats</span>
           <div class="btn-loader" style="display:none;"></div>
         </button>
         <div class="auth-error" id="buyError"></div>
+
+        <div class="promo-code-section">
+          <label class="form-label" data-i18n="promoCodeLabel">Have a promo code?</label>
+          <div class="promo-code-input-group">
+            <input type="text" id="buyPromoInput" class="auth-input promo-input" data-i18n-placeholder="promoCodePh" placeholder="ENTER CODE" maxlength="32" autocomplete="off">
+            <button class="promo-apply-btn" id="buyPromoBtn" data-i18n="promoApply">Apply</button>
+          </div>
+          <div class="promo-code-message" id="buyPromoMessage"></div>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- =============== NETWORK SELECTION =============== -->
+  <div class="screen" id="networkScreen" style="display:none;">
+    <header class="app-header">
+      <button class="header-icon-btn" id="networkBackBtn" data-i18n-title="back" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-left" style="margin-left: 8px;">
+        <div class="logo-text"><span class="logo-title" data-i18n="selectNetwork">Select Network</span></div>
+      </div>
+    </header>
+    <div class="main-body">
+      <p class="network-subtitle" data-i18n="selectNetworkSub">Pay $15 USDT in your preferred network</p>
+      <div class="networks-container">
+        <div class="network-card" data-network="usdttrc20">
+          <div class="network-info">
+            <img class="network-icon" src="icons/networks/tron.png" width="28" height="28" alt="TRC20">
+            <div class="network-text">
+              <span class="network-name">USDT · TRC20</span>
+              <span class="network-chain">Tron</span>
+            </div>
+          </div>
+          <svg class="network-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="network-card" data-network="usdtbsc">
+          <div class="network-info">
+            <img class="network-icon" src="icons/networks/bnb.png" width="28" height="28" alt="BEP20">
+            <div class="network-text">
+              <span class="network-name">USDT · BEP20</span>
+              <span class="network-chain">BNB Smart Chain</span>
+            </div>
+          </div>
+          <svg class="network-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="network-card" data-network="usdtsol">
+          <div class="network-info">
+            <img class="network-icon" src="icons/networks/solana.png" width="28" height="28" alt="Solana">
+            <div class="network-text">
+              <span class="network-name">USDT · Solana</span>
+              <span class="network-chain">SPL</span>
+            </div>
+          </div>
+          <svg class="network-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="network-card" data-network="usdterc20">
+          <div class="network-info">
+            <img class="network-icon" src="icons/networks/ethereum.png" width="28" height="28" alt="ERC20">
+            <div class="network-text">
+              <span class="network-name">USDT · ERC20</span>
+              <span class="network-chain">Ethereum</span>
+            </div>
+          </div>
+          <svg class="network-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="network-card" data-network="usdtton">
+          <div class="network-info">
+            <img class="network-icon" src="icons/networks/toncoin.png" width="28" height="28" alt="TON">
+            <div class="network-text">
+              <span class="network-name">USDT · TON</span>
+              <span class="network-chain">Toncoin</span>
+            </div>
+          </div>
+          <svg class="network-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <p class="network-note">
+        <span data-i18n="youPayExactly">You pay exactly</span>
+        <strong>$15</strong> USDT.
+        <span data-i18n="noExtraFees">No extra fees.</span>
+      </p>
+      <div class="auth-error" id="networkError"></div>
     </div>
   </div>
 
   <!-- =============== SETTINGS PAGE =============== -->
   <div class="screen" id="settingsScreen" style="display:none;">
     <header class="app-header">
-      <button class="header-icon-btn" id="settingsBackBtn" title="Back">
+      <button class="header-icon-btn" id="settingsBackBtn" data-i18n-title="back" title="Back">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
       <div class="header-left" style="margin-left: 8px;">
-        <div class="logo-text"><span class="logo-title">Settings</span></div>
+        <div class="logo-text"><span class="logo-title" data-i18n="menuSettings">Settings</span></div>
       </div>
     </header>
     <div class="main-body">
       <div class="settings-row">
         <div>
-          <div class="settings-row-title">Enable Profile Stats</div>
-          <div class="settings-row-sub">Show badges on OnlyFans profile pages</div>
+          <div class="settings-row-title" data-i18n="settingsEnable">Enable Profile Stats</div>
+          <div class="settings-row-sub" data-i18n="settingsEnableSub">Show badges on OnlyFans profile pages</div>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="settingsPluginEnabled" checked>
           <span class="toggle-slider"></span>
         </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title" data-i18n="settingsVerdict">Verdict AI</div>
+          <div class="settings-row-sub" data-i18n="settingsVerdictSub">Show or hide the AI verdict card inside the badge</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="settingsVerdictEnabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-title" data-i18n="settingsLanguage">Language</div>
+          <div class="settings-row-sub" data-i18n="settingsLanguageSub">Switch the popup and badge language</div>
+        </div>
+        <div class="lang-switch" id="langSwitch">
+          <button class="lang-btn active" data-lang="en" type="button">EN</button>
+          <button class="lang-btn" data-lang="ru" type="button">RU</button>
+        </div>
       </div>
     </div>
   </div>
@@ -439,29 +572,84 @@
   <!-- =============== SUPPORT PAGE =============== -->
   <div class="screen" id="supportScreen" style="display:none;">
     <header class="app-header">
-      <button class="header-icon-btn" id="supportBackBtn" title="Back">
+      <button class="header-icon-btn" id="supportBackBtn" data-i18n-title="back" title="Back">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
       <div class="header-left" style="margin-left: 8px;">
-        <div class="logo-text"><span class="logo-title">Support</span></div>
+        <div class="logo-text"><span class="logo-title" data-i18n="contactSupport">Contact Support</span></div>
       </div>
     </header>
     <div class="main-body">
-      <p style="color: var(--text-secondary); margin-bottom: 12px;">Need help? Email us at:</p>
-      <a class="auth-link" href="mailto:support@ofstats.pro">support@ofstats.pro</a>
+      <!-- Bug-bounty style banner -->
+      <div class="support-banner" id="supportBanner">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        <span data-i18n="supportPromo">Found a bug? Report it and get 1 month of Profile Stats free!</span>
+      </div>
+
+      <!-- Support form -->
+      <form class="support-form" id="supportForm">
+        <div class="form-field">
+          <label class="form-label" data-i18n="supportYourEmail">Your email</label>
+          <input type="email" id="supportEmail" class="auth-input" readonly>
+        </div>
+        <div class="form-field">
+          <label class="form-label" data-i18n="supportSubjectLabel">Subject</label>
+          <input type="text" id="supportSubject" class="auth-input" maxlength="120">
+        </div>
+        <div class="form-field">
+          <label class="form-label" data-i18n="supportMessageLabel">Message</label>
+          <textarea id="supportMessage" class="auth-input form-textarea" rows="5" maxlength="3000" data-i18n-placeholder="supportMessagePh" placeholder="Describe the issue: what happened, on which page, what you expected…"></textarea>
+        </div>
+        <div class="auth-error" id="supportError"></div>
+        <div class="support-actions">
+          <button type="button" class="modal-btn modal-btn-cancel" id="supportCancelBtn" data-i18n="cancel">Cancel</button>
+          <button type="submit" class="modal-btn modal-btn-primary" id="supportSendBtn">
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            <span class="btn-text" data-i18n="send">Send</span>
+            <div class="btn-loader" style="display:none;"></div>
+          </button>
+        </div>
+      </form>
+
+      <!-- Success state -->
+      <div class="support-success" id="supportSuccess" style="display:none;">
+        <div class="support-success-icon">
+          <svg viewBox="0 0 52 52" width="48" height="48">
+            <circle class="support-success-circle" cx="26" cy="26" r="24" fill="none" stroke="#10b981" stroke-width="3"/>
+            <path class="support-success-check" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M14 27l8 8 16-18"/>
+          </svg>
+        </div>
+        <div class="support-success-title" data-i18n="supportSentTitle">Message sent!</div>
+        <div class="support-success-msg">
+          <span data-i18n="supportSentMsg">We'll reply to:</span>
+          <strong id="supportSuccessEmail">—</strong>
+        </div>
+        <button type="button" class="modal-btn modal-btn-cancel" id="supportSuccessClose" data-i18n="close">Close</button>
+      </div>
     </div>
   </div>
 
-  <!-- =============== PAYMENT MODAL =============== -->
+  <!-- =============== PAYMENT SCREEN =============== -->
   <div class="screen" id="paymentScreen" style="display:none;">
     <header class="app-header">
-      <div class="header-left">
-        <div class="logo-text"><span class="logo-title">Complete payment</span></div>
+      <button class="header-icon-btn" id="paymentBackBtn" data-i18n-title="back" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-left" style="margin-left: 8px;">
+        <div class="logo-text"><span class="logo-title" data-i18n="completePayment">Complete payment</span></div>
       </div>
       <div class="header-right">
-        <button class="header-icon-btn" id="paymentCloseBtn" title="Close">
+        <button class="header-icon-btn" id="paymentCloseBtn" data-i18n-title="close" title="Close">
           <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -469,14 +657,53 @@
       </div>
     </header>
     <div class="main-body">
-      <p style="color: var(--text-secondary); margin-bottom: 12px;">
-        A NOWPayments invoice was opened in a new tab. Complete the payment there — we'll detect it automatically.
-      </p>
-      <div class="user-card">
-        <div class="user-email" id="paymentAmount">—</div>
-        <div class="user-sub" id="paymentStatus">Waiting for payment…</div>
+      <p class="payment-plan-name" id="paymentPlanName">Profile Stats — $15/month</p>
+
+      <div class="payment-info">
+        <div class="payment-qr" id="paymentQr"></div>
+
+        <div class="payment-field">
+          <label class="payment-field-label" data-i18n="sendExactly">Send exactly:</label>
+          <div class="payment-amount" id="paymentAmount">—</div>
+        </div>
+
+        <div class="payment-field">
+          <label class="payment-field-label" data-i18n="toAddress">To address:</label>
+          <div class="payment-address">
+            <span id="paymentAddressText">—</span>
+            <button class="copy-btn" id="copyAddressBtn" data-i18n-title="copy" title="Copy">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="payment-timer" id="paymentTimer">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><span data-i18n="timeRemaining">Time remaining</span>: <strong id="paymentTimeLeft">--:--</strong></span>
+        </div>
+
+        <a href="#" id="paymentInvoiceLink" class="payment-invoice-link" target="_blank" rel="noopener" data-i18n="reopenInvoice">Reopen invoice</a>
+
+        <button class="auth-btn payment-verify-btn" id="checkPaymentBtn">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6L9 17L4 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="btn-text" data-i18n="verifyPayment">Verify Payment</span>
+        </button>
+
+        <div class="payment-status" id="paymentStatus" style="display:none;">
+          <div class="payment-status-icon waiting">
+            <div class="btn-loader"></div>
+          </div>
+          <span id="paymentStatusText" data-i18n="verifyingPayment">Verifying payment…</span>
+        </div>
       </div>
-      <a href="#" id="paymentInvoiceLink" class="auth-link" target="_blank" rel="noopener" style="display:inline-block; margin-top: 8px;">Reopen invoice</a>
     </div>
   </div>
 
@@ -489,11 +716,11 @@
           <path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
         </svg>
       </div>
-      <h3 class="modal-title" id="confirmTitle">Confirm</h3>
+      <h3 class="modal-title" id="confirmTitle" data-i18n="confirm">Confirm</h3>
       <p class="modal-message" id="confirmMessage"></p>
       <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel" id="confirmCancelBtn">Cancel</button>
-        <button class="modal-btn modal-btn-danger" id="confirmAcceptBtn">Confirm</button>
+        <button class="modal-btn modal-btn-cancel" id="confirmCancelBtn" data-i18n="cancel">Cancel</button>
+        <button class="modal-btn modal-btn-danger" id="confirmAcceptBtn" data-i18n="confirm">Confirm</button>
       </div>
     </div>
   </div>

@@ -168,6 +168,68 @@
       paywallRenew: 'Продлить подписку', paywallExpired: 'Подписка истекла',
       // AI payload
       aiDate: 'дата: ', aiRecentlyOnline: 'был(а) недавно', aiUnknown: 'неизвестно',
+      // Achievement / warning chip labels (short text shown on the chip itself).
+      // Lookup by the original English text — keep keys identical to the EN labels
+      // emitted in result.flags so tLabel('Newcomer') maps to 'Новичок' here.
+      flagLabels: {
+        'Abandoned': 'Заброшен',
+        'Botted Likes': 'Накрутка лайков',
+        'Low Content': 'Мало контента',
+        'Slow Growth': 'Медл. рост',
+        'Boosted Likes': 'Бустед лайки',
+        'Bought Fans': 'Куплены фаны',
+        'Fake Fans': 'Фейк-фаны',
+        'Suspect Growth': 'Подозр. рост',
+        'Low Trust': 'Низкое доверие',
+        'Empty Profile': 'Пустой профиль',
+        'No Profile Image': 'Нет фото',
+        'No Avatar': 'Нет аватара',
+        'Bulk Posting': 'Масс. постинг',
+        'Newcomer': 'Новичок',
+        'Inflated Likes': 'Накрученные лайки',
+        'Verified': 'Верифицирован',
+        'Website': 'Сайт',
+        'Stream Legend': 'Легенда стримов',
+        'Stream Platinum': 'Платина стримов',
+        'Stream Master': 'Мастер стримов',
+        'Top Streamer': 'Топ-стример',
+        'Active Streamer': 'Актив. стример',
+        'Streamer': 'Стример',
+        'Diamond OG': 'Алмаз. ветеран',
+        'Platinum OG': 'Платин. ветеран',
+        'OG Creator': 'OG-креатор',
+        'Veteran': 'Ветеран',
+        'Legend': 'Легенда',
+        'Icon': 'Икона',
+        'Superstar': 'Суперзвезда',
+        'Star Power': 'Звёздная',
+        'Fan Favorite': 'Любимица фанов',
+        'Trending': 'В тренде',
+        'Rising Star': 'Восх. звезда',
+        'Organic Growth': 'Органич. рост',
+        'Video Diamond': 'Алмаз видео',
+        'Video Platinum': 'Платина видео',
+        'Video Master': 'Мастер видео',
+        'Video Creator': 'Видеокреатор',
+        'Content Diamond': 'Алмаз контента',
+        'Content Platinum': 'Платина контента',
+        'Content Pro': 'Контент-про',
+        'Content Rich': 'Много контента',
+        'Content Maker': 'Контент-мейкер',
+        'Likes Legend': 'Легенда лайков',
+        'Diamond Likes': 'Алмаз лайков',
+        'Platinum Likes': 'Платина лайков',
+        'Mega Liked': 'Мега-лайки',
+        'Super Liked': 'Супер-лайки',
+        'Well Liked': 'Хорошо лайкают',
+        'Liked': 'Лайкают',
+        'Rising Likes': 'Растут лайки',
+        'Open Book': 'Откр. профиль',
+        'Free Access': 'Бесплатный',
+        'Premium': 'Премиум',
+        'High Engage': 'Выс. вовлеч.',
+        'Active Now': 'Активна сейчас'
+      },
     },
     en: {
       profileStats: 'Profile Stats', details: 'Details', back: 'Back',
@@ -307,9 +369,19 @@
       // Paywall
       paywallRenew: 'Renew Subscription', paywallExpired: 'Subscription expired',
       aiDate: 'date: ', aiRecentlyOnline: 'recently online', aiUnknown: 'unknown',
+      // English flag labels are the source of truth — empty map means "use the
+      // original English text passed to tLabel()".
+      flagLabels: {}
     }
   };
   function t(key) { return (_badgeI18n[_ofLang] || _badgeI18n.ru)[key] || (_badgeI18n.ru)[key] || key; }
+  // Look up a chip/flag label in the current locale, falling back to the
+  // original English text if no translation is registered.
+  function tLabel(text) {
+    var dict = _badgeI18n[_ofLang] || _badgeI18n.ru;
+    var labels = dict.flagLabels || {};
+    return labels[text] || text;
+  }
   
   // Check subscription status from localStorage
   // This is set by popup.js when subscription is checked
@@ -991,26 +1063,26 @@
       // === CRITICAL RED FLAGS ===
       // Abandoned/Inactive account
       if (isAbandoned) {
-        result.flags.push({ text: 'Abandoned', color: '#ef4444', icon: 'skull', tooltip: t('flagAbandoned') + posts + t('flagPostsFor') + accountMonths + t('flagMonths') + ' (' + postsPerMonth.toFixed(1) + t('flagPostsPerMonth') });
+        result.flags.push({ text: tLabel('Abandoned'), color: '#ef4444', icon: 'skull', tooltip: t('flagAbandoned') + posts + t('flagPostsFor') + accountMonths + t('flagMonths') + ' (' + postsPerMonth.toFixed(1) + t('flagPostsPerMonth') });
       }
       // Botted/Farmed likes
       if (isBottedLikes) {
-        result.flags.push({ text: 'Botted Likes', color: '#ef4444', icon: 'robot', tooltip: t('flagBottedLikes') + Math.round(likesPerPost).toLocaleString() + t('flagLikesPerPost') + posts + t('flagPosts') });
+        result.flags.push({ text: tLabel('Botted Likes'), color: '#ef4444', icon: 'robot', tooltip: t('flagBottedLikes') + Math.round(likesPerPost).toLocaleString() + t('flagLikesPerPost') + posts + t('flagPosts') });
       }
       // Low content
       if (isLowContent && !isAbandoned) {
-        result.flags.push({ text: 'Low Content', color: '#f97316', icon: 'camera', tooltip: t('flagLowContent') + posts + t('flagPostsFor') + accountMonths + t('flagMonths') });
+        result.flags.push({ text: tLabel('Low Content'), color: '#f97316', icon: 'camera', tooltip: t('flagLowContent') + posts + t('flagPostsFor') + accountMonths + t('flagMonths') });
       }
       // Slow fan growth
       if (isSlowGrowth) {
-        result.flags.push({ text: 'Slow Growth', color: '#f97316', icon: 'snail', tooltip: t('flagSlowGrowth') + Math.round(fansPerMonth) + t('flagFansPerMonth') + accountMonths + t('flagMonths') });
+        result.flags.push({ text: tLabel('Slow Growth'), color: '#f97316', icon: 'snail', tooltip: t('flagSlowGrowth') + Math.round(fansPerMonth) + t('flagFansPerMonth') + accountMonths + t('flagMonths') });
       }
       // Boosted likes — young account with extreme like volume
       if (!isBottedLikes && !isInflatedLikes && likes > 100000 && accountMonths < 3) {
-        result.flags.push({ text: 'Boosted Likes', color: '#ef4444', icon: 'fire', tooltip: t('flagBoostedLikes') });
+        result.flags.push({ text: tLabel('Boosted Likes'), color: '#ef4444', icon: 'fire', tooltip: t('flagBoostedLikes') });
       }
       if (effectiveFans > 50000 && likes < 1000) {
-        result.flags.push({ text: 'Bought Fans', color: '#ef4444', icon: 'warning', tooltip: t('flagBoughtFans') });
+        result.flags.push({ text: tLabel('Bought Fans'), color: '#ef4444', icon: 'warning', tooltip: t('flagBoughtFans') });
       }
       // Fan growth rate analysis — detect fake/suspect fan acquisition
       if (effectiveFans > 0 && accountMonths >= 2) {
@@ -1018,29 +1090,29 @@
         var isVeteranLargeAudience = accountMonths >= 48 && effectiveFans >= 100000;
         if (!isVeteranLargeAudience) {
           if (fansPerMonth > 5000) {
-            result.flags.push({ text: 'Fake Fans', color: '#ef4444', icon: 'robot', tooltip: t('flagFakeFans') + Math.round(fansPerMonth).toLocaleString() + t('flagFakeFansSuffix') });
+            result.flags.push({ text: tLabel('Fake Fans'), color: '#ef4444', icon: 'robot', tooltip: t('flagFakeFans') + Math.round(fansPerMonth).toLocaleString() + t('flagFakeFansSuffix') });
           } else if (fansPerMonth > 3000) {
-            result.flags.push({ text: 'Suspect Growth', color: '#f97316', icon: 'warning', tooltip: t('flagSuspectGrowth') + Math.round(fansPerMonth).toLocaleString() + t('flagSuspectGrowthSuffix') });
+            result.flags.push({ text: tLabel('Suspect Growth'), color: '#f97316', icon: 'warning', tooltip: t('flagSuspectGrowth') + Math.round(fansPerMonth).toLocaleString() + t('flagSuspectGrowthSuffix') });
           }
         }
       }
       if (!fansVisible && commentsClosed && !isUltraActive) {
-        result.flags.push({ text: 'Low Trust', color: '#f97316', icon: 'lock', tooltip: t('flagLowTrust') });
+        result.flags.push({ text: tLabel('Low Trust'), color: '#f97316', icon: 'lock', tooltip: t('flagLowTrust') });
       }
       if (posts === 0 && effectiveFans > 100) {
-        result.flags.push({ text: 'Empty Profile', color: '#ef4444', icon: 'ghost', tooltip: t('flagEmptyProfile') });
+        result.flags.push({ text: tLabel('Empty Profile'), color: '#ef4444', icon: 'ghost', tooltip: t('flagEmptyProfile') });
       }
       // No avatar AND no header — likely farm/shell account
       if (hasEmptyProfileLook) {
-        result.flags.push({ text: 'No Profile Image', color: '#f97316', icon: 'camera', tooltip: t('flagNoProfileImage') });
+        result.flags.push({ text: tLabel('No Profile Image'), color: '#f97316', icon: 'camera', tooltip: t('flagNoProfileImage') });
       } else if (!hasAvatar) {
-        result.flags.push({ text: 'No Avatar', color: '#f97316', icon: 'camera', tooltip: t('flagNoAvatar') });
+        result.flags.push({ text: tLabel('No Avatar'), color: '#f97316', icon: 'camera', tooltip: t('flagNoAvatar') });
       }
       if (postsPerMonth > 100 && accountMonths > 1 && !isVeteranActive) {
-        result.flags.push({ text: 'Bulk Posting', color: '#f97316', icon: 'bolt', tooltip: t('flagBulkPosting') });
+        result.flags.push({ text: tLabel('Bulk Posting'), color: '#f97316', icon: 'bolt', tooltip: t('flagBulkPosting') });
       }
       if (accountMonths < 3 && accountMonths > 0) {
-        result.flags.push({ text: 'Newcomer', color: '#f59e0b', icon: 'clock', tooltip: t('flagNewcomer') });
+        result.flags.push({ text: tLabel('Newcomer'), color: '#f59e0b', icon: 'clock', tooltip: t('flagNewcomer') });
       }
       // Suspicious likes — inflated by any detection method
       if (isInflatedLikes) {
@@ -1048,12 +1120,12 @@
         if (inflatedByTempo) inflReason = Math.round(likesPerMonth).toLocaleString() + t('flagInflatedByTempo') + accountMonths + ' ' + t('monthShort');
         else if (inflatedByFanRatio) inflReason = Math.round(likesPerFan) + t('flagInflatedByFanRatio') + effectiveFans + t('flagInflatedByFanRatioSuffix');
         else inflReason = Math.round(likesPerPost) + t('flagInflatedByPostRatio') + posts + t('flagPosts');
-        result.flags.push({ text: 'Inflated Likes', color: '#f97316', icon: 'fire', tooltip: t('flagInflatedLikes') + inflReason });
+        result.flags.push({ text: tLabel('Inflated Likes'), color: '#f97316', icon: 'fire', tooltip: t('flagInflatedLikes') + inflReason });
       }
 
       // === POSITIVE SIGNALS ===
       if (verified) {
-        result.flags.push({ text: 'Verified', color: '#00b4ff', icon: 'check', tooltip: t('flagVerified') });
+        result.flags.push({ text: tLabel('Verified'), color: '#00b4ff', icon: 'check', tooltip: t('flagVerified') });
       }
       if (hasSocialMedia) {
         var socialNames = { instagram: 'Instagram', tiktok: 'TikTok', twitter: 'Twitter / X', reddit: 'Reddit', youtube: 'YouTube', snapchat: 'Snapchat', twitch: 'Twitch' };
@@ -1067,107 +1139,107 @@
           }
         });
       } else if (hasWebsite) {
-        result.flags.push({ text: 'Website', color: '#10b981', icon: 'globe', tooltip: t('flagWebsite') });
+        result.flags.push({ text: tLabel('Website'), color: '#10b981', icon: 'globe', tooltip: t('flagWebsite') });
       }
       if (streams >= 1000) {
-        result.flags.push({ text: 'Stream Legend', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagStreamLegend') + ' (' + streams + ')' });
+        result.flags.push({ text: tLabel('Stream Legend'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagStreamLegend') + ' (' + streams + ')' });
       } else if (streams >= 500) {
-        result.flags.push({ text: 'Stream Platinum', color: '#e5e4e2', icon: 'trophy', tooltip: t('flagStreamPlatinum') + ' (' + streams + ')' });
+        result.flags.push({ text: tLabel('Stream Platinum'), color: '#e5e4e2', icon: 'trophy', tooltip: t('flagStreamPlatinum') + ' (' + streams + ')' });
       } else if (streams >= 100) {
-        result.flags.push({ text: 'Stream Master', color: '#ffd700', icon: 'mic', tooltip: t('flagStreamMaster') + ' (' + streams + ')' });
+        result.flags.push({ text: tLabel('Stream Master'), color: '#ffd700', icon: 'mic', tooltip: t('flagStreamMaster') + ' (' + streams + ')' });
       } else if (streams >= 30) {
-        result.flags.push({ text: 'Top Streamer', color: '#9b59b6', icon: 'star', tooltip: t('flagTopStreamer') + ' (' + streams + ')' });
+        result.flags.push({ text: tLabel('Top Streamer'), color: '#9b59b6', icon: 'star', tooltip: t('flagTopStreamer') + ' (' + streams + ')' });
       } else if (streams >= 10) {
-        result.flags.push({ text: 'Active Streamer', color: '#9b59b6', icon: 'video', tooltip: t('flagActiveStreamer') + ' (' + streams + ')' });
+        result.flags.push({ text: tLabel('Active Streamer'), color: '#9b59b6', icon: 'video', tooltip: t('flagActiveStreamer') + ' (' + streams + ')' });
       } else if (streams >= 3) {
-        result.flags.push({ text: 'Streamer', color: '#9b59b6', icon: 'video', tooltip: t('flagStreamer') });
+        result.flags.push({ text: tLabel('Streamer'), color: '#9b59b6', icon: 'video', tooltip: t('flagStreamer') });
       }
       // OG Creator only if NOT abandoned (old abandoned account shouldn't get a crown)
       if (accountMonths >= 72 && !isAbandoned) {
-        result.flags.push({ text: 'Diamond OG', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagDiamondOG') });
+        result.flags.push({ text: tLabel('Diamond OG'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagDiamondOG') });
       } else if (accountMonths >= 48 && !isAbandoned) {
-        result.flags.push({ text: 'Platinum OG', color: '#e5e4e2', icon: 'crown', tooltip: t('flagPlatinumOG') });
+        result.flags.push({ text: tLabel('Platinum OG'), color: '#e5e4e2', icon: 'crown', tooltip: t('flagPlatinumOG') });
       } else if (accountMonths >= 36 && !isAbandoned) {
-        result.flags.push({ text: 'OG Creator', color: '#ffd700', icon: 'crown', tooltip: t('flagOGCreator') });
+        result.flags.push({ text: tLabel('OG Creator'), color: '#ffd700', icon: 'crown', tooltip: t('flagOGCreator') });
       } else if (accountMonths >= 24 && !isAbandoned) {
-        result.flags.push({ text: 'Veteran', color: '#10b981', icon: 'shield', tooltip: t('flagVeteran') });
+        result.flags.push({ text: tLabel('Veteran'), color: '#10b981', icon: 'shield', tooltip: t('flagVeteran') });
       }
       // === Fan milestone badges ===
       if (effectiveFans >= 500000) {
-        result.flags.push({ text: 'Legend', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagLegend') });
+        result.flags.push({ text: tLabel('Legend'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagLegend') });
       } else if (effectiveFans >= 100000) {
-        result.flags.push({ text: 'Icon', color: '#ffd700', icon: 'crown', tooltip: t('flagIcon') });
+        result.flags.push({ text: tLabel('Icon'), color: '#ffd700', icon: 'crown', tooltip: t('flagIcon') });
       } else if (effectiveFans >= 50000) {
-        result.flags.push({ text: 'Superstar', color: '#ff6b9d', icon: 'crown', tooltip: t('flagSuperstar') });
+        result.flags.push({ text: tLabel('Superstar'), color: '#ff6b9d', icon: 'crown', tooltip: t('flagSuperstar') });
       } else if (effectiveFans >= 25000) {
-        result.flags.push({ text: 'Star Power', color: '#ff6b9d', icon: 'heart', tooltip: t('flagStarPower') });
+        result.flags.push({ text: tLabel('Star Power'), color: '#ff6b9d', icon: 'heart', tooltip: t('flagStarPower') });
       } else if (effectiveFans >= 10000) {
-        result.flags.push({ text: 'Fan Favorite', color: '#f1c40f', icon: 'star', tooltip: t('flagFanFavorite') });
+        result.flags.push({ text: tLabel('Fan Favorite'), color: '#f1c40f', icon: 'star', tooltip: t('flagFanFavorite') });
       } else if (effectiveFans >= 5000) {
-        result.flags.push({ text: 'Trending', color: '#10b981', icon: 'trending', tooltip: t('flagTrending') });
+        result.flags.push({ text: tLabel('Trending'), color: '#10b981', icon: 'trending', tooltip: t('flagTrending') });
       } else if (effectiveFans >= 1000) {
-        result.flags.push({ text: 'Rising Star', color: '#10b981', icon: 'trending', tooltip: t('flagRisingStar') });
+        result.flags.push({ text: tLabel('Rising Star'), color: '#10b981', icon: 'trending', tooltip: t('flagRisingStar') });
       }
       // === Organic Growth achievement ===
       if (effectiveFans > 0 && accountMonths >= 3 && fansPerMonth >= 100 && fansPerMonth <= 3000 && !isBottedLikes) {
-        result.flags.push({ text: 'Organic Growth', color: '#10b981', icon: 'shield', tooltip: t('flagOrganicGrowth') + Math.round(fansPerMonth) + t('flagFansPerMonth') + accountMonths + ' ' + t('monthShort') + t('flagOrganicGrowthSuffix') });
+        result.flags.push({ text: tLabel('Organic Growth'), color: '#10b981', icon: 'shield', tooltip: t('flagOrganicGrowth') + Math.round(fansPerMonth) + t('flagFansPerMonth') + accountMonths + ' ' + t('monthShort') + t('flagOrganicGrowthSuffix') });
       }
       if (videos >= 1000) {
-        result.flags.push({ text: 'Video Diamond', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagVideoDiamond') + ' (' + videos + ')' });
+        result.flags.push({ text: tLabel('Video Diamond'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagVideoDiamond') + ' (' + videos + ')' });
       } else if (videos >= 500) {
-        result.flags.push({ text: 'Video Platinum', color: '#e5e4e2', icon: 'trophy', tooltip: t('flagVideoPlatinum') + ' (' + videos + ')' });
+        result.flags.push({ text: tLabel('Video Platinum'), color: '#e5e4e2', icon: 'trophy', tooltip: t('flagVideoPlatinum') + ' (' + videos + ')' });
       } else if (videos >= 100) {
-        result.flags.push({ text: 'Video Master', color: '#ffd700', icon: 'video', tooltip: t('flagVideoMaster') + ' (' + videos + ')' });
+        result.flags.push({ text: tLabel('Video Master'), color: '#ffd700', icon: 'video', tooltip: t('flagVideoMaster') + ' (' + videos + ')' });
       } else if (videos >= 30) {
-        result.flags.push({ text: 'Video Creator', color: '#00b4ff', icon: 'video', tooltip: t('flagVideoCreator') });
+        result.flags.push({ text: tLabel('Video Creator'), color: '#00b4ff', icon: 'video', tooltip: t('flagVideoCreator') });
       }
       if (posts >= 3000) {
-        result.flags.push({ text: 'Content Diamond', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagContentDiamond') + ' (' + posts + ')' });
+        result.flags.push({ text: tLabel('Content Diamond'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagContentDiamond') + ' (' + posts + ')' });
       } else if (posts >= 1000) {
-        result.flags.push({ text: 'Content Platinum', color: '#e5e4e2', icon: 'trophy', tooltip: t('flagContentPlatinum') + ' (' + posts + ')' });
+        result.flags.push({ text: tLabel('Content Platinum'), color: '#e5e4e2', icon: 'trophy', tooltip: t('flagContentPlatinum') + ' (' + posts + ')' });
       } else if (posts >= 500) {
-        result.flags.push({ text: 'Content Pro', color: '#ffd700', icon: 'bolt', tooltip: t('flagContentPro') + ' (' + posts + ')' });
+        result.flags.push({ text: tLabel('Content Pro'), color: '#ffd700', icon: 'bolt', tooltip: t('flagContentPro') + ' (' + posts + ')' });
       } else if (posts >= 300) {
-        result.flags.push({ text: 'Content Rich', color: '#10b981', icon: 'camera', tooltip: t('flagContentRich') });
+        result.flags.push({ text: tLabel('Content Rich'), color: '#10b981', icon: 'camera', tooltip: t('flagContentRich') });
       } else if (posts >= 100) {
-        result.flags.push({ text: 'Content Maker', color: '#10b981', icon: 'camera', tooltip: t('flagContentMaker') });
+        result.flags.push({ text: tLabel('Content Maker'), color: '#10b981', icon: 'camera', tooltip: t('flagContentMaker') });
       }
       // Likes tiers — only if NOT botted and NOT inflated
       if (likes >= 1000000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Likes Legend', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagLikesLegend') });
+        result.flags.push({ text: tLabel('Likes Legend'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagLikesLegend') });
       } else if (likes >= 500000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Diamond Likes', color: '#b9f2ff', icon: 'diamond', tooltip: t('flagDiamondLikes') });
+        result.flags.push({ text: tLabel('Diamond Likes'), color: '#b9f2ff', icon: 'diamond', tooltip: t('flagDiamondLikes') });
       } else if (likes >= 250000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Platinum Likes', color: '#e5e4e2', icon: 'trophy', tooltip: t('flagPlatinumLikes') });
+        result.flags.push({ text: tLabel('Platinum Likes'), color: '#e5e4e2', icon: 'trophy', tooltip: t('flagPlatinumLikes') });
       } else if (likes >= 100000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Mega Liked', color: '#ffd700', icon: 'trophy', tooltip: t('flagMegaLiked') });
+        result.flags.push({ text: tLabel('Mega Liked'), color: '#ffd700', icon: 'trophy', tooltip: t('flagMegaLiked') });
       } else if (likes >= 50000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Super Liked', color: '#ffd700', icon: 'star', tooltip: t('flagSuperLiked') });
+        result.flags.push({ text: tLabel('Super Liked'), color: '#ffd700', icon: 'star', tooltip: t('flagSuperLiked') });
       } else if (likes >= 25000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Well Liked', color: '#f1c40f', icon: 'heart', tooltip: t('flagWellLiked') });
+        result.flags.push({ text: tLabel('Well Liked'), color: '#f1c40f', icon: 'heart', tooltip: t('flagWellLiked') });
       } else if (likes >= 10000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Liked', color: '#10b981', icon: 'heart', tooltip: t('flagLiked') });
+        result.flags.push({ text: tLabel('Liked'), color: '#10b981', icon: 'heart', tooltip: t('flagLiked') });
       } else if (likes >= 5000 && !isBottedLikes && !isInflatedLikes) {
-        result.flags.push({ text: 'Rising Likes', color: '#10b981', icon: 'heart', tooltip: t('flagRisingLikes') });
+        result.flags.push({ text: tLabel('Rising Likes'), color: '#10b981', icon: 'heart', tooltip: t('flagRisingLikes') });
       }
       if (fansVisible && commentsOpen) {
-        result.flags.push({ text: 'Open Book', color: '#10b981', icon: 'eye', tooltip: t('flagOpenBook') });
+        result.flags.push({ text: tLabel('Open Book'), color: '#10b981', icon: 'eye', tooltip: t('flagOpenBook') });
       }
       if (profileData.subscribePrice === 0) {
-        result.flags.push({ text: 'Free Access', color: '#10b981', icon: 'gift', tooltip: t('flagFreeAccess') });
+        result.flags.push({ text: tLabel('Free Access'), color: '#10b981', icon: 'gift', tooltip: t('flagFreeAccess') });
       } else if (profileData.subscribePrice >= 30) {
-        result.flags.push({ text: 'Premium', color: '#e74c3c', icon: 'dollar', tooltip: '$' + profileData.subscribePrice + t('flagPremium') });
+        result.flags.push({ text: tLabel('Premium'), color: '#e74c3c', icon: 'dollar', tooltip: '$' + profileData.subscribePrice + t('flagPremium') });
       }
       // High engagement rate (likes/fans ratio)
       if (effectiveFans > 0 && !isBottedLikes) {
         var engagementRate = likes / effectiveFans;
         if (engagementRate >= 10 && posts >= 50) {
-          result.flags.push({ text: 'High Engage', color: '#10b981', icon: 'trending', tooltip: t('flagHighEngage') + engagementRate.toFixed(1) + t('flagHighEngageSuffix') });
+          result.flags.push({ text: tLabel('High Engage'), color: '#10b981', icon: 'trending', tooltip: t('flagHighEngage') + engagementRate.toFixed(1) + t('flagHighEngageSuffix') });
         }
       }
       // Active & engaged (opposite of abandoned)
       if (postsPerMonth >= 10 && hoursSinceOnline < 24 && posts >= 50) {
-        result.flags.push({ text: 'Active Now', color: '#10b981', icon: 'bolt', tooltip: t('flagActiveNow') + Math.round(postsPerMonth) + t('flagActiveNowSuffix') });
+        result.flags.push({ text: tLabel('Active Now'), color: '#10b981', icon: 'bolt', tooltip: t('flagActiveNow') + Math.round(postsPerMonth) + t('flagActiveNowSuffix') });
       }
 
       // Store achIcons reference for display
@@ -1790,13 +1862,13 @@
       const badge = document.createElement('div');
       badge.id = 'of-stats-profile-badge';
       badge.style.cssText = `
-        background: linear-gradient(160deg, #14192d 0%, #0a0e1e 100%);
-        border: 1px solid rgba(0, 180, 255, 0.25);
-        border-top: 1px solid rgba(0, 180, 255, 0.4);
+        background: linear-gradient(180deg, #0e1120 0%, #0a0c14 60%);
+        border: 1px solid rgba(139, 92, 246, 0.25);
+        border-top: 1px solid rgba(139, 92, 246, 0.4);
         border-radius: 14px;
         padding: 16px;
         margin-bottom: 15px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         width: 100%;
         box-sizing: border-box;
@@ -1821,7 +1893,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: radial-gradient(ellipse at 80% 0%, rgba(0,180,255,0.12) 0%, rgba(0,180,255,0) 60%);
+        background: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0) 55%);
         pointer-events: none;
         border-radius: 14px;
         z-index: 0;
@@ -1854,7 +1926,7 @@
           </div>
           <div id="of-stats-flip-btn" style="display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:0.65;transition:opacity 0.2s;padding:2px 6px;border-radius:6px;background:rgba(0,180,255,0.08);border:1px solid rgba(0,180,255,0.15);">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00b4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
-            <span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;" id="of-flip-label">Details</span>
+            <span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;" id="of-flip-label">${t('details')}</span>
           </div>
           <button class="of-stats-close-btn" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;transition:color 0.2s;">&times;</button>
         </div>
@@ -2990,8 +3062,8 @@
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
         var frontLabel = document.getElementById('of-flip-label');
         var backLabel = document.getElementById('of-flip-label-back');
-        if (frontLabel) frontLabel.textContent = 'Details';
-        if (backLabel) backLabel.textContent = 'Details';
+        if (frontLabel) frontLabel.textContent = t('details');
+        if (backLabel) backLabel.textContent = t('details');
         var fb = badge.querySelector('#of-stats-flip-btn');
         if (fb) fb.style.opacity = '0.65';
       }
@@ -3426,7 +3498,7 @@
       // Back side header with Back button and close
       var backHeader = document.createElement('div');
       backHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;padding-bottom:8px;border-bottom:1px solid rgba(0, 180, 255, 0.15);';
-      backHeader.innerHTML = '<div style="display:flex;align-items:center;gap:6px;">' + svgIcons.stats + '<span style="color:#00b4ff;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">' + t('radarAnalysis') + '</span></div><div style="display:flex;align-items:center;gap:8px;"><div id="of-stats-flip-btn-back" style="display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:1;transition:opacity 0.2s;padding:2px 6px;border-radius:6px;background:rgba(0,180,255,0.08);border:1px solid rgba(0,180,255,0.15);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00b4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;" id="of-flip-label-back">Back</span></div><button class="of-stats-close-btn" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;transition:color 0.2s;">&times;</button></div>';
+      backHeader.innerHTML = '<div style="display:flex;align-items:center;gap:6px;">' + svgIcons.stats + '<span style="color:#00b4ff;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">' + t('radarAnalysis') + '</span></div><div style="display:flex;align-items:center;gap:8px;"><div id="of-stats-flip-btn-back" style="display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:1;transition:opacity 0.2s;padding:2px 6px;border-radius:6px;background:rgba(0,180,255,0.08);border:1px solid rgba(0,180,255,0.15);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00b4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;" id="of-flip-label-back">' + t('back') + '</span></div><button class="of-stats-close-btn" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:18px;padding:0 2px;line-height:1;transition:color 0.2s;">&times;</button></div>';
       flipBack.appendChild(backHeader);
 
       // === TAB SYSTEM: Radar | Trend ===
@@ -4198,7 +4270,7 @@
       // Back button
       var notesBackBtn = document.createElement('div');
       notesBackBtn.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;opacity:1;transition:opacity 0.2s;padding:2px 6px;border-radius:6px;background:rgba(0,180,255,0.08);border:1px solid rgba(0,180,255,0.15);';
-      notesBackBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00b4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;">Back</span>';
+      notesBackBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00b4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#00b4ff;font-size:9px;font-weight:600;letter-spacing:0.5px;">' + t('back') + '</span>';
       notesBackBtn.addEventListener('click', function() { _notesClosePanel(); });
       notesBackBtn.addEventListener('mouseenter', function() { this.style.background = 'rgba(0,180,255,0.15)'; });
       notesBackBtn.addEventListener('mouseleave', function() { this.style.background = 'rgba(0,180,255,0.08)'; });
@@ -4233,7 +4305,7 @@
       alertsPanelActions.style.cssText = 'display:flex;align-items:center;gap:8px;';
       var alertsBackBtn = document.createElement('div');
       alertsBackBtn.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;padding:2px 6px;border-radius:6px;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.15);transition:all 0.2s;';
-      alertsBackBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#eab308;font-size:9px;font-weight:600;letter-spacing:0.5px;">Back</span>';
+      alertsBackBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg><span style="color:#eab308;font-size:9px;font-weight:600;letter-spacing:0.5px;">' + t('back') + '</span>';
       alertsBackBtn.addEventListener('click', function() { _alertsClosePanel(); });
       alertsBackBtn.addEventListener('mouseenter', function() { this.style.background = 'rgba(234,179,8,0.15)'; });
       alertsBackBtn.addEventListener('mouseleave', function() { this.style.background = 'rgba(234,179,8,0.08)'; });
@@ -4296,8 +4368,8 @@
           adjustFlipHeight(!isFlipped);
           var frontLabel = document.getElementById('of-flip-label');
           var backLabel = document.getElementById('of-flip-label-back');
-          if (frontLabel) frontLabel.textContent = isFlipped ? 'Details' : 'Back';
-          if (backLabel) backLabel.textContent = isFlipped ? 'Details' : 'Back';
+          if (frontLabel) frontLabel.textContent = isFlipped ? t('details') : t('back');
+          if (backLabel) backLabel.textContent = isFlipped ? t('details') : t('back');
           this.style.opacity = isFlipped ? '0.65' : '1';
         });
       }
@@ -4312,8 +4384,8 @@
           adjustFlipHeight(false);
           var frontLabel = document.getElementById('of-flip-label');
           var backLabel = document.getElementById('of-flip-label-back');
-          if (frontLabel) frontLabel.textContent = 'Details';
-          if (backLabel) backLabel.textContent = 'Details';
+          if (frontLabel) frontLabel.textContent = t('details');
+          if (backLabel) backLabel.textContent = t('details');
           if (flipBtnEl) flipBtnEl.style.opacity = '0.65';
         });
       }

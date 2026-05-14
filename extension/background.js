@@ -223,6 +223,13 @@ async function handleMessage(request, sender) {
       }
       case 'clearCache':     clearCache(); return { success: true };
 
+      // ── Billing / promo ───────────────────────────────────────────────
+      case 'createPayment':         return await apiCreatePayment(request.currency);
+      case 'getPaymentStatus':      return await apiGetPaymentStatus(request.paymentId);
+      case 'getCryptoCurrencies':   return await apiGetCryptoCurrencies();
+      case 'applyPromoCode':        return await apiApplyPromoCode(request.code);
+      case 'sendSupportEmail':      return await apiSendSupportEmail(request.subject, request.message);
+
       default:               return { success: false, error: 'Unknown action: ' + request.action };
     }
   } catch (error) {
@@ -661,6 +668,76 @@ async function apiSyncNoteTags(tags) {
     if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
     const data = await r.json();
     return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+// ==================== BILLING (Profile Stats) ====================
+// All routes proxy to Stats Editor through /api/billing/* — see backend
+// billing.js. The popup never talks to NOWPayments directly.
+
+async function apiCreatePayment(currency) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/billing/create-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currency: currency || null })
+    });
+    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
+    const data = await r.json();
+    return { success: r.ok && data.success !== false, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiGetPaymentStatus(paymentId) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/billing/payment-status/${encodeURIComponent(paymentId)}`);
+    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
+    const data = await r.json();
+    return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiGetCryptoCurrencies() {
+  try {
+    const r = await fetch(`${PROFILE_STATS_API}/billing/crypto-currencies`);
+    const data = await r.json();
+    return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiSendSupportEmail(subject, message) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  if (!message || String(message).trim().length < 10) {
+    return { success: false, error: 'Message is too short' };
+  }
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/billing/support`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, message })
+    });
+    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
+    const data = await r.json();
+    return { success: r.ok && data.success !== false, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiApplyPromoCode(code) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  if (!code || !code.trim()) return { success: false, error: 'Promo code is required', code: 'INVALID_CODE' };
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/billing/apply-promo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code.trim().toUpperCase() })
+    });
+    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
+    const data = await r.json();
+    // Drop our cached subscription so the next /health/check-access reflects reality
+    clearCache();
+    return { success: r.ok && data.success !== false, ...data };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
 }
 
