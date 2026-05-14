@@ -1,7 +1,17 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
+const { invalidateUser } = require('../middleware/subscription');
 
 const router = express.Router();
+
+// POST /api/billing/refresh-access — drop the in-memory subscription cache
+// for the current user. The popup calls this right after a successful
+// payment / promo redemption so the next /health/check-access reflects the
+// fresh subscription without waiting for the negative-cache TTL.
+router.post('/refresh-access', authenticateToken, (req, res) => {
+  invalidateUser(req.user.id);
+  res.json({ success: true });
+});
 
 const STATS_EDITOR_API = (process.env.STATS_EDITOR_API_URL || 'https://stats-editor-production.up.railway.app').replace(/\/$/, '') + '/api';
 

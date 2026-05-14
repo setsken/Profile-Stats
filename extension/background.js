@@ -257,6 +257,7 @@ async function handleMessage(request, sender) {
       case 'getCryptoCurrencies':   return await apiGetCryptoCurrencies();
       case 'applyPromoCode':        return await apiApplyPromoCode(request.code);
       case 'sendSupportEmail':      return await apiSendSupportEmail(request.subject, request.message);
+      case 'refreshAccess':         return await apiRefreshAccess();
 
       default:               return { success: false, error: 'Unknown action: ' + request.action };
     }
@@ -732,6 +733,18 @@ async function apiGetCryptoCurrencies() {
     const r = await fetch(`${PROFILE_STATS_API}/billing/crypto-currencies`);
     const data = await r.json();
     return { success: r.ok, ...data };
+  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+async function apiRefreshAccess() {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
+  try {
+    const r = await authFetch(`${PROFILE_STATS_API}/billing/refresh-access`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    clearCache(); // also drop our local sub status cache
+    return { success: r.ok };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
 }
 

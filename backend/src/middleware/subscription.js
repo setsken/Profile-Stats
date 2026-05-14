@@ -2,13 +2,19 @@
 // Profile Stats does not store subscriptions itself; the source of truth is Stats Editor.
 // Result is cached per-user for 5 minutes to keep latency low and reduce upstream load.
 
-const SUB_CACHE_TTL_MS = 5 * 60 * 1000;
+// Two TTLs: paid users get cached longer (cheap revalidation isn't worth the
+// upstream call), free / inactive users get cached briefly so a fresh
+// activation (webhook from NOWPayments, promo redeem) is reflected within
+// ~20s without a manual cache flush.
+const SUB_CACHE_TTL_OK_MS    = 5 * 60 * 1000;
+const SUB_CACHE_TTL_DENY_MS  = 20 * 1000;
 const cache = new Map(); // userId -> { hasAccess, expiresAt, grantedVia, fetchedAt }
 
 function getCached(userId) {
   const entry = cache.get(userId);
   if (!entry) return null;
-  if (Date.now() - entry.fetchedAt > SUB_CACHE_TTL_MS) {
+  const ttl = entry.hasAccess ? SUB_CACHE_TTL_OK_MS : SUB_CACHE_TTL_DENY_MS;
+  if (Date.now() - entry.fetchedAt > ttl) {
     cache.delete(userId);
     return null;
   }

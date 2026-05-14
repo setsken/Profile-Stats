@@ -2206,6 +2206,7 @@ async function checkPaymentOnce(paymentId, isAuto) {
 
       await chrome.storage.local.remove('psPayment');
       await send('clearCache');
+      await send('refreshAccess');
 
       if (statusEl) {
         statusEl.className = 'payment-status success';
@@ -2338,10 +2339,11 @@ async function applyPromo(scope) {
         title: t('promoActivatedTitle'),
         message: t('promoActivatedNotif', { code, days })
       });
-      // Refresh access. If the user previously saw the paywall on Top Models
-      // or Notes, those panes were rewritten with placeholders — easiest fix
-      // is a full popup reload. Wait a tick so the success toast is visible.
+      // Refresh access. The Profile Stats backend caches negative
+      // subscription status for ~20s; refreshAccess flushes that cache so
+      // the next /health/check-access reflects the freshly redeemed promo.
       await send('clearCache');
+      await send('refreshAccess');
       setTimeout(() => { location.reload(); }, 800);
     } else {
       const errCode = (r && r.code) || '';
