@@ -44,6 +44,14 @@ html.mode-sidepanel, html.mode-sidepanel body {
   min-width: 320px;
   max-width: 100%;
 }
+/* Standalone window (opened from the badge "Renew" CTA) — same idea: let
+   the popup fill the host window instead of staying at the toolbar size. */
+html.mode-window, html.mode-window body {
+  width: 100%;
+  height: 100vh;
+  min-width: 320px;
+  max-width: 100%;
+}
 
 select option {
   background: var(--bg-secondary);

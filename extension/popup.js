@@ -2364,8 +2364,11 @@ async function applyPromo(scope) {
 }
 
 // ============ Side panel toggle ============
-const isSidePanel = new URLSearchParams(location.search).get('mode') === 'sidepanel';
+const _modeParam = new URLSearchParams(location.search).get('mode');
+const isSidePanel = _modeParam === 'sidepanel';
+const isStandaloneWindow = _modeParam === 'window';
 if (isSidePanel) document.documentElement.classList.add('mode-sidepanel');
+if (isStandaloneWindow) document.documentElement.classList.add('mode-window');
 
 function applySidePanelButtons() {
   const expand = document.getElementById('expandPanelBtn');
@@ -2648,6 +2651,13 @@ document.querySelectorAll('.notes-subtab').forEach(btn => {
     // If there was an unfinished payment when the popup last closed, jump
     // straight back to it so the user can keep paying or click Verify.
     await restorePaymentIfAny();
+    // When the popup is opened in a standalone window from the badge
+    // "Renew" CTA, the user has already expressed intent to subscribe —
+    // skip the locked Top Models view and land them on the Subscription
+    // page right away.
+    if (isStandaloneWindow) {
+      try { await openSubscriptionPage(); } catch {}
+    }
   } else {
     show('login');
   }

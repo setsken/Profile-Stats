@@ -159,9 +159,37 @@ async function handleMessage(request, sender) {
         return await apiGetAIVerdict(request.scoreData);
       }
 
-      case 'openSubscriptionTab':
-        chrome.tabs.create({ url: chrome.runtime.getURL('popup.html') });
+      case 'openSubscriptionTab': {
+        // Open the popup as a fixed-size standalone window. Opening it as a
+        // regular tab stretched the 380px-wide popup markup across the full
+        // viewport with the paywall pinned to the corner — looked broken.
+        // We anchor near the current focused window so the new popup lands
+        // on the same monitor the user is on.
+        const W = 420, H = 720;
+        try {
+          const cur = await new Promise((resolve) => {
+            try { chrome.windows.getCurrent({}, (w) => resolve(w)); }
+            catch { resolve(null); }
+          }).catch(() => null);
+          const baseLeft = cur?.left ?? 0;
+          const baseTop  = cur?.top  ?? 0;
+          const baseW    = cur?.width  ?? 1280;
+          const baseH    = cur?.height ?? 800;
+          const left = Math.max(0, Math.round(baseLeft + (baseW - W) / 2));
+          const top  = Math.max(0, Math.round(baseTop  + (baseH - H) / 2));
+          chrome.windows.create({
+            url: chrome.runtime.getURL('popup.html?mode=window'),
+            type: 'popup',
+            width: W, height: H, left, top, focused: true
+          });
+        } catch (e) {
+          chrome.windows.create({
+            url: chrome.runtime.getURL('popup.html?mode=window'),
+            type: 'popup', width: W, height: H, focused: true
+          });
+        }
         return { success: true };
+      }
 
       // ---- Fans (Profile Stats backend) ----
       case 'reportFans':              return await apiReportFans(request.username, request.fansCount, request.fansText, request.reportDay);
