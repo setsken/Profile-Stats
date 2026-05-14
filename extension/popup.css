@@ -476,6 +476,129 @@ body { background: var(--gradient-page); }
 .settings-row-title { font-size: 13px; font-weight: 600; }
 .settings-row-sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
 
+/* ============ Paywall (locked tabs in popup) ============ */
+.paywall-wrap {
+  position: relative;
+  min-height: 360px;
+}
+/* Skeleton rows behind the lock — visually masked: no real numbers/text,
+   just shape placeholders. Cannot be "unblurred" via DevTools because no
+   real data lives in this DOM (we never fetched any). */
+.paywall-masked {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 0;
+  filter: blur(4px) saturate(0.4);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+.paywall-row,
+.paywall-note-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+.paywall-rank {
+  width: 18px; height: 18px;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.paywall-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #2a3148, #1a1f33);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.paywall-row-main { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.paywall-line {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2a3148, #1a1f33);
+}
+.paywall-line-name { width: 60%; height: 10px; }
+.paywall-line-meta { width: 80%; }
+.paywall-line-1 { width: 78%; }
+.paywall-line-2 { width: 64%; }
+.paywall-line-3 { width: 86%; }
+.paywall-row-1 .paywall-line-name { width: 55%; }
+.paywall-row-2 .paywall-line-name { width: 70%; }
+.paywall-row-3 .paywall-line-name { width: 48%; }
+.paywall-score {
+  width: 44px; height: 28px;
+  background: rgba(34, 197, 94, 0.18);
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* Lock overlay sits above the masked rows with the upgrade CTA */
+.paywall-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 24px 20px;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(139, 92, 246, 0.16) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(10, 12, 20, 0.45) 0%, rgba(10, 12, 20, 0.85) 100%);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: 12px;
+}
+.paywall-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  background: radial-gradient(circle at 30% 25%, rgba(139, 92, 246, 0.32), rgba(139, 92, 246, 0.08) 70%);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+    0 0 24px rgba(139, 92, 246, 0.25),
+    0 8px 20px rgba(139, 92, 246, 0.18);
+  margin-bottom: 14px;
+  animation: paywallPulse 2.5s ease-in-out infinite;
+}
+@keyframes paywallPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3), 0 0 24px rgba(139, 92, 246, 0.25), 0 8px 20px rgba(139, 92, 246, 0.18); }
+  50%      { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 32px rgba(139, 92, 246, 0.4),  0 8px 20px rgba(139, 92, 246, 0.18); }
+}
+.paywall-title {
+  font-size: 17px; font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+.paywall-msg {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 18px;
+  max-width: 280px;
+}
+.paywall-btn {
+  height: 40px;
+  padding: 0 22px;
+  background: var(--gradient-accent);
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  color: #fff;
+  font-size: 13px; font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow:
+    0 8px 20px rgba(139, 92, 246, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+  transition: filter 0.18s, box-shadow 0.18s, transform 0.12s;
+}
+.paywall-btn:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    0 10px 26px rgba(139, 92, 246, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.22) inset;
+}
+.paywall-btn:active { transform: translateY(1px); }
+
 /* ============ Support screen ============ */
 .support-banner {
   display: flex; align-items: center; gap: 10px;
@@ -530,15 +653,43 @@ body { background: var(--gradient-page); }
 .support-success {
   display: flex; flex-direction: column; align-items: center;
   text-align: center;
-  padding: 20px 16px;
+  padding: 20px 16px 12px;
+  animation: supportFadeIn 0.4s ease-out;
 }
+@keyframes supportFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Icon: animated checkmark with halo + outer pulse rings */
 .support-success-icon {
-  width: 56px; height: 56px;
-  margin-bottom: 14px;
+  position: relative;
+  width: 84px; height: 84px;
+  margin-bottom: 18px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.18), transparent 70%);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(16, 185, 129, 0.32) 0%, rgba(16, 185, 129, 0.08) 60%, transparent 75%);
   display: flex; align-items: center; justify-content: center;
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.25),
+    0 0 28px rgba(16, 185, 129, 0.28),
+    0 10px 24px rgba(16, 185, 129, 0.18);
 }
+.support-success-icon::before,
+.support-success-icon::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  animation: supportRingPulse 2s ease-out infinite;
+}
+.support-success-icon::after { animation-delay: 1s; }
+@keyframes supportRingPulse {
+  0%   { opacity: 0.7; transform: scale(1); }
+  80%  { opacity: 0;   transform: scale(1.55); }
+  100% { opacity: 0;   transform: scale(1.55); }
+}
+
 .support-success-circle {
   stroke-dasharray: 151;
   stroke-dashoffset: 151;
@@ -549,24 +700,81 @@ body { background: var(--gradient-page); }
   stroke-dashoffset: 50;
   animation: drawCheck 0.4s ease-out 0.4s forwards;
 }
-@keyframes drawCircle {
-  to { stroke-dashoffset: 0; }
-}
-@keyframes drawCheck {
-  to { stroke-dashoffset: 0; }
-}
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawCheck  { to { stroke-dashoffset: 0; } }
+
 .support-success-title {
-  font-size: 16px; font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
   color: var(--text-primary);
+  background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .support-success-msg {
   font-size: 13px; color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 18px;
+  line-height: 1.55;
+  margin-bottom: 16px;
+  max-width: 280px;
 }
-.support-success-msg strong { color: var(--accent); display: block; margin-top: 4px; }
-.support-success #supportSuccessClose { width: 100%; max-width: 200px; }
+
+/* Email pill — visually weighty so the user can verify the address */
+.support-success-email-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 999px;
+  font-size: 13px; font-weight: 600;
+  color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.support-success-email-pill svg { color: var(--accent); flex-shrink: 0; }
+
+/* "What happens next" hint card */
+.support-success-hint {
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.support-success-hint svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.support-success #supportSuccessClose {
+  width: 100%;
+  height: 44px;
+  background: var(--gradient-accent);
+  border: 1px solid rgba(139, 92, 246, 0.6);
+  color: #fff;
+  font-size: 13px; font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow:
+    0 8px 20px rgba(139, 92, 246, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+  transition: filter 0.18s, box-shadow 0.18s, transform 0.12s;
+}
+.support-success #supportSuccessClose:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    0 10px 26px rgba(139, 92, 246, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.22) inset;
+}
+.support-success #supportSuccessClose:active { transform: translateY(1px); }
 
 /* ============ Payment screen ============ */
 /* No scroll on the payment screen — content sized to fit; card hugs content. */

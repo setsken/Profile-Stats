@@ -3032,8 +3032,14 @@
         noteStripEl.onmouseleave = function() { this.style.background='rgba(0,180,255,0.03)'; this.style.borderColor='rgba(0,180,255,0.08)'; stripDel.style.opacity='0'; };
       }
 
-      // Open independent Notes panel (hide flip card, show notes)
+      // Open independent Notes panel (hide flip card, show notes).
+      // No-op when subscription is expired — notes are part of the paid
+      // bundle, so we route the user to the upgrade tab instead.
       function _notesOpenPanel() {
+        if (_subExpired) {
+          chrome.runtime.sendMessage({ action: 'openSubscriptionTab' });
+          return;
+        }
         _notesDraftText = '';
         _notesDraftTagName = '';
         // Capture current badge height before hiding
@@ -4209,8 +4215,11 @@
         flipFront.appendChild(paywallWrap);
       }
 
-      // Note strip stays on front side (after score)
-      flipFront.appendChild(noteStripEl);
+      // Note strip stays on front side (after score) — but hidden under
+      // paywall: don't preview a saved note when access is locked.
+      if (!_subExpired) {
+        flipFront.appendChild(noteStripEl);
+      }
 
       // Assemble flip card into badge
       flipInner.appendChild(flipFront);
@@ -4339,9 +4348,23 @@
       // Notes button click handler (must be after badge assembly for querySelector)
       var notesBtnEl = badge.querySelector('#of-stats-notes-btn');
       if (notesBtnEl) {
-        notesBtnEl.addEventListener('mouseenter', function() { this.style.opacity = '1'; this.style.background = 'rgba(0,180,255,0.15)'; });
-        notesBtnEl.addEventListener('mouseleave', function() { this.style.opacity = '0.65'; this.style.background = 'rgba(0,180,255,0.08)'; });
-        notesBtnEl.addEventListener('click', function(e) { e.stopPropagation(); _notesOpenPanel(); });
+        // When subscription is expired we still want the icon visible so the
+        // user understands notes are part of the product, but clicking it must
+        // route to the upgrade tab instead of opening the panel. We also tint
+        // it muted so it's clearly disabled.
+        if (_subExpired) {
+          notesBtnEl.style.opacity = '0.45';
+          notesBtnEl.style.cursor = 'not-allowed';
+          notesBtnEl.title = t('paywallExpired') + ' — ' + t('paywallRenew');
+          notesBtnEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            chrome.runtime.sendMessage({ action: 'openSubscriptionTab' });
+          });
+        } else {
+          notesBtnEl.addEventListener('mouseenter', function() { this.style.opacity = '1'; this.style.background = 'rgba(0,180,255,0.15)'; });
+          notesBtnEl.addEventListener('mouseleave', function() { this.style.opacity = '0.65'; this.style.background = 'rgba(0,180,255,0.08)'; });
+          notesBtnEl.addEventListener('click', function(e) { e.stopPropagation(); _notesOpenPanel(); });
+        }
       }
 
       // Helper: adjust flipInner height to fit active side

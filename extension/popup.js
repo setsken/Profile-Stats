@@ -196,6 +196,10 @@ const I18N = {
     settingsVerdictSub: 'Show or hide the AI verdict card inside the badge',
     settingsLanguage: 'Language',
     settingsLanguageSub: 'Switch the popup and badge language',
+    // Paywall (popup tabs)
+    paywallPopupTitle: 'Subscription required',
+    paywallPopupHint: 'Activate Profile Stats to unlock Top Models, Notes, and the badge analytics on every OF profile.',
+    paywallRenewBtn: 'Renew Subscription',
     // Support
     supportText: 'Need help? Email us at:',
     contactSupport: 'Contact Support',
@@ -209,7 +213,9 @@ const I18N = {
     supportTooShort: 'Please describe the issue (at least 10 characters).',
     supportFailed: 'Could not send. Please try again later.',
     supportSentTitle: 'Message sent!',
-    supportSentMsg: "We'll reply to:",
+    supportSentMsg: "We'll get back to you shortly at:",
+    supportSentHint: "We typically reply within 24 hours. If your report leads to a confirmed bug fix, you'll get 1 month of Profile Stats free.",
+    done: 'Done',
     // Payment
     completePayment: 'Complete payment',
     paymentInfo: "A NOWPayments invoice was opened in a new tab. Complete the payment there — we'll detect it automatically.",
@@ -417,6 +423,9 @@ const I18N = {
     settingsVerdictSub: 'Показывать или скрывать карточку AI-вердикта в бейдже',
     settingsLanguage: 'Язык',
     settingsLanguageSub: 'Переключить язык попапа и бейджа',
+    paywallPopupTitle: 'Требуется подписка',
+    paywallPopupHint: 'Активируйте Profile Stats чтобы открыть Топ моделей, Заметки и аналитику на бейдже каждого профиля OF.',
+    paywallRenewBtn: 'Продлить подписку',
     supportText: 'Нужна помощь? Напишите нам:',
     contactSupport: 'Связаться с поддержкой',
     supportPromo: 'Нашли баг? Сообщите и получите 1 месяц Profile Stats бесплатно!',
@@ -429,7 +438,9 @@ const I18N = {
     supportTooShort: 'Опишите проблему подробнее (минимум 10 символов).',
     supportFailed: 'Не удалось отправить. Попробуйте позже.',
     supportSentTitle: 'Сообщение отправлено!',
-    supportSentMsg: 'Мы ответим на:',
+    supportSentMsg: 'Мы скоро ответим на:',
+    supportSentHint: 'Обычно отвечаем в течение 24 часов. Если ваш баг-репорт подтвердится — получите 1 месяц Profile Stats бесплатно.',
+    done: 'Готово',
     completePayment: 'Завершить оплату',
     paymentInfo: 'Счёт NOWPayments открыт в новой вкладке. Завершите оплату там — мы определим её автоматически.',
     paymentWaiting: 'Ожидание оплаты…',
@@ -1187,6 +1198,15 @@ function currentLeaderboardParams() {
 }
 
 async function loadTopTab(reset = true) {
+  // Paywall: no active subscription → render masked rows + lock overlay,
+  // do NOT hit the backend. The user can't bypass via DevTools because we
+  // never fetch real data while locked.
+  if (!hasAccess()) {
+    const pane = document.querySelector('[data-tab-pane="top"]');
+    if (pane) renderPaywall(pane, { rows: 6, variant: 'list' });
+    return;
+  }
+
   if (lbState.loading) return;
   lbState.loading = true;
   // Make sure we know which models already have notes before rendering rows.
@@ -1260,6 +1280,20 @@ async function ensureNotesLoaded() {
 
 async function loadNotesTab() {
   const content = document.getElementById('notesContent');
+  // Paywall: when there's no active sub, hide the sub-tabs (Note/Tags/Models)
+  // since none of them are usable, and replace the content with masked notes.
+  if (!hasAccess()) {
+    const pane = document.querySelector('[data-tab-pane="notes"]');
+    const subtabs = pane && pane.querySelector('.notes-subtabs');
+    if (subtabs) subtabs.style.display = 'none';
+    if (content) renderPaywall(content, { rows: 4, variant: 'notes' });
+    return;
+  }
+  // Restore sub-tabs when re-entering with access
+  const pane = document.querySelector('[data-tab-pane="notes"]');
+  const subtabs = pane && pane.querySelector('.notes-subtabs');
+  if (subtabs) subtabs.style.display = '';
+
   content.innerHTML = `<div class="list-empty">${escapeHtml(t('loading'))}</div>`;
 
   const [notesResp, tagsResp, savedDraft] = await Promise.all([
@@ -1840,6 +1874,75 @@ async function setVerdictEnabled(enabled) {
   if (cb) cb.checked = enabled;
 }
 
+// ============ Paywall (no active subscription) ============
+// True when the user has any kind of paid access (own profile_stats sub OR
+// inherited Stats Editor Pro). When false, Top Models and Notes tabs are
+// covered by a lock overlay and we never request real data from the server.
+function hasAccess() {
+  return !!(currentSubscription && currentSubscription.hasAccess);
+}
+
+// Renders a paywall overlay with masked rows + a Renew CTA into the given
+// pane. The masked rows are static placeholders (no real data leaves the
+// host — we never fetched any). After a successful renewal the popup
+// reloads itself, so we don't try to undo this DOM rewrite in place.
+function renderPaywall(container, opts) {
+  if (!container) return;
+  opts = opts || {};
+  const rows = opts.rows || 5;
+  const variant = opts.variant || 'list'; // 'list' | 'notes'
+  const hint = opts.hint || t('paywallPopupHint');
+
+  let maskedHtml = '';
+  if (variant === 'list') {
+    for (let i = 0; i < rows; i++) {
+      maskedHtml += `
+        <div class="paywall-row paywall-row-${(i % 3) + 1}">
+          <div class="paywall-rank"></div>
+          <div class="paywall-avatar"></div>
+          <div class="paywall-row-main">
+            <div class="paywall-line paywall-line-name"></div>
+            <div class="paywall-line paywall-line-meta"></div>
+          </div>
+          <div class="paywall-score"></div>
+        </div>`;
+    }
+  } else {
+    for (let i = 0; i < rows; i++) {
+      maskedHtml += `
+        <div class="paywall-note-row">
+          <div class="paywall-avatar"></div>
+          <div class="paywall-row-main">
+            <div class="paywall-line paywall-line-name"></div>
+            <div class="paywall-line paywall-line-meta paywall-line-${(i % 3) + 1}"></div>
+            <div class="paywall-line paywall-line-meta paywall-line-${((i + 1) % 3) + 1}" style="width:50%;"></div>
+          </div>
+        </div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div class="paywall-wrap">
+      <div class="paywall-masked" aria-hidden="true">${maskedHtml}</div>
+      <div class="paywall-overlay">
+        <div class="paywall-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke-linejoin="round"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div class="paywall-title">${escapeHtml(t('paywallPopupTitle'))}</div>
+        <div class="paywall-msg">${escapeHtml(hint)}</div>
+        <button type="button" class="paywall-btn" id="paywallRenewBtn-${Math.random().toString(36).slice(2,8)}">
+          ${escapeHtml(t('paywallRenewBtn'))}
+        </button>
+      </div>
+    </div>`;
+
+  const btn = container.querySelector('.paywall-btn');
+  if (btn) btn.addEventListener('click', () => openSubscriptionPage());
+}
+
 // ============ Subscription page (opened via menu) ============
 async function openSubscriptionPage() {
   const email = (await chrome.storage.local.get('userEmail')).userEmail || '';
@@ -2117,10 +2220,9 @@ async function checkPaymentOnce(paymentId, isAuto) {
         message: t('notifSubActivatedMsg')
       });
 
-      setTimeout(async () => {
-        const auth = await send('getAuthStatus');
-        await enterMainScreen({ email: auth.email });
-      }, 1500);
+      // Full popup reload — guarantees Top Models/Notes panes are restored
+      // (we replaced their HTML with the paywall placeholder while locked).
+      setTimeout(() => { location.reload(); }, 1500);
       return;
     }
 
@@ -2236,18 +2338,11 @@ async function applyPromo(scope) {
         title: t('promoActivatedTitle'),
         message: t('promoActivatedNotif', { code, days })
       });
-      // Refresh access status + repaint the Subscription page
+      // Refresh access. If the user previously saw the paywall on Top Models
+      // or Notes, those panes were rewritten with placeholders — easiest fix
+      // is a full popup reload. Wait a tick so the success toast is visible.
       await send('clearCache');
-      try {
-        const { authToken } = await chrome.storage.local.get('authToken');
-        const resp = await fetch(`${PROFILE_STATS_API}/health/check-access`, {
-          headers: { Authorization: `Bearer ${authToken}` }
-        });
-        const data = await resp.json();
-        currentSubscription = data.subscription || null;
-      } catch {}
-      applySubscriptionHeader();
-      await openSubscriptionPage();
+      setTimeout(() => { location.reload(); }, 800);
     } else {
       const errCode = (r && r.code) || '';
       const errMsg = String((r && r.error) || '').toLowerCase();
