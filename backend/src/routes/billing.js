@@ -111,7 +111,10 @@ router.post('/apply-promo', authenticateToken, async (req, res) => {
         'Content-Type': 'application/json',
         Authorization: req.headers['authorization']
       },
-      body: JSON.stringify({ code })
+      // Tell upstream this is the Profile Stats path so it can reject
+      // codes minted for stats_editor with a clear WRONG_PRODUCT error
+      // before any usage record is written.
+      body: JSON.stringify({ code, product: 'profile_stats' })
     });
     const data = await r.json();
 
