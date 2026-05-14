@@ -1599,33 +1599,37 @@
       // Subscription paywall flag — use cached value initially
       var _subExpired = settings.ofStatsSubscriptionActive === false;
 
-      // Live server check: verify subscription is still active
-      // Must use the same logic as popup.js: trust server `isActive`, then fallback to status
+      // Live server check: verify subscription is still active.
+      // hasSubscription=false (no row at all) ⇒ treat as expired too — earlier
+      // we only inspected resp.subscription, so users with NO PLAN slipped
+      // through with the cached active flag and saw the full badge.
       try {
         chrome.runtime.sendMessage({ action: 'getSubscriptionStatus' }, function(resp) {
           if (chrome.runtime.lastError) return;
-          if (resp && resp.success && resp.subscription) {
-            var sub = resp.subscription || {};
-            var serverActive = (typeof sub.isActive === 'boolean')
+          if (!resp || !resp.success) return;
+
+          var serverActive = false;
+          if (resp.hasSubscription && resp.subscription) {
+            var sub = resp.subscription;
+            serverActive = (typeof sub.isActive === 'boolean')
               ? sub.isActive
               : (sub.status === 'active' || sub.status === 'trial');
-            if (!serverActive && !_subExpired) {
-              // Server says expired but badge thinks active — update storage and reload page
-              chrome.storage.local.set({ ofStatsSubscriptionActive: false });
-              log('OF Stats: Subscription expired on server, reloading badge');
-              var oldBadge = document.getElementById('of-stats-profile-badge');
-              if (oldBadge) oldBadge.remove();
-              displayProfileData(profileData);
-              return;
-            } else if (serverActive && _subExpired) {
-              // Server says active but badge thinks expired — update storage and reload
-              chrome.storage.local.set({ ofStatsSubscriptionActive: true });
-              log('OF Stats: Subscription renewed on server, reloading badge');
-              var oldBadge2 = document.getElementById('of-stats-profile-badge');
-              if (oldBadge2) oldBadge2.remove();
-              displayProfileData(profileData);
-              return;
-            }
+          }
+
+          if (!serverActive && !_subExpired) {
+            // Server says expired / no plan but badge thinks active — flip cache and rebuild
+            chrome.storage.local.set({ ofStatsSubscriptionActive: false });
+            log('OF Stats: Subscription expired on server, reloading badge');
+            var oldBadge = document.getElementById('of-stats-profile-badge');
+            if (oldBadge) oldBadge.remove();
+            displayProfileData(profileData);
+          } else if (serverActive && _subExpired) {
+            // Server says active but badge thinks expired — flip cache and rebuild
+            chrome.storage.local.set({ ofStatsSubscriptionActive: true });
+            log('OF Stats: Subscription renewed on server, reloading badge');
+            var oldBadge2 = document.getElementById('of-stats-profile-badge');
+            if (oldBadge2) oldBadge2.remove();
+            displayProfileData(profileData);
           }
         });
       } catch (e) {}
