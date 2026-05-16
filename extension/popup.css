@@ -1185,19 +1185,30 @@ html.booting .screen { display: none !important; }
 }
 .filter-toggle-btn.active svg { color: white; }
 
+/* Full-popup overlay + centred modal for filters. Dim+blur matches the
+   user-menu dropdown so all modal layers feel consistent. */
+.filter-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5, 7, 14, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 220;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px 14px;
+  animation: modalFadeIn 0.18s ease-out;
+}
 .filter-advanced {
   display: flex; flex-direction: column;
-  max-height: 420px;
-  margin-bottom: 12px; /* breathing room from the bottom edge of the popup */
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.08), rgba(20, 24, 38, 0.6));
-  border: 1px solid var(--border-soft); border-radius: 12px;
-  backdrop-filter: blur(8px);
-  animation: slideDown 0.22s ease-out;
-  overflow: hidden; /* clip the inner scroll to rounded corners */
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  width: 100%;
+  max-width: 360px;
+  max-height: calc(100vh - 40px);
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.10), rgba(20, 24, 38, 0.95));
+  border: 1px solid var(--border-soft); border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6),
+              0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 /* Scrollable section list with sticky action bar below. */
 .filter-scroll {

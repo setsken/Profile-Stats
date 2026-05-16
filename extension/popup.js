@@ -1265,47 +1265,80 @@ function currentLeaderboardParams() {
   return params;
 }
 
-// Active-filter chips: list of {key, label, clear()} for every filter
-// that's set, rendered next to "Showing N of M". Removing a chip clears
-// its filter, resets the matching input, and reloads the leaderboard.
+// Active-filter chips next to "Showing N of M". Ranges (min/max pairs)
+// collapse into a single chip — "Score: 53–66" — and their X clears both
+// endpoints at once. Singles render as "Label: value".
 const FILTER_DEFS = [
-  { key: 'minScore',   labelEn: 'Min score',           labelRu: 'Мин. скор',           inputId: 'filterMinScore' },
-  { key: 'maxScore',   labelEn: 'Max score',           labelRu: 'Макс. скор',          inputId: 'filterMaxScore' },
-  { key: 'minFans',    labelEn: 'Min fans',            labelRu: 'Мин. фанов',          inputId: 'filterMinFans' },
-  { key: 'minQuality', labelEn: 'Min quality %',       labelRu: 'Мин. качество %',     inputId: 'filterMinQuality' },
-  { key: 'minPosts',   labelEn: 'Min posts',           labelRu: 'Мин. постов',         inputId: 'filterMinPosts' },
-  { key: 'minVideos',  labelEn: 'Min videos',          labelRu: 'Мин. видео',          inputId: 'filterMinVideos' },
-  { key: 'minStreams', labelEn: 'Min streams',         labelRu: 'Мин. стримов',        inputId: 'filterMinStreams' },
-  { key: 'minAge',     labelEn: 'Min age (months)',    labelRu: 'Мин. возраст (мес.)', inputId: 'filterMinAge' },
-  { key: 'minPrice',   labelEn: 'Min price ($)',       labelRu: 'Мин. цена ($)',       inputId: 'filterMinPrice' },
-  { key: 'maxPrice',   labelEn: 'Max price ($)',       labelRu: 'Макс. цена ($)',      inputId: 'filterMaxPrice' }
+  // Ranges
+  { kind: 'range',
+    keyMin: 'minScore', keyMax: 'maxScore',
+    inputMin: 'filterMinScore', inputMax: 'filterMaxScore',
+    labelEn: 'Score', labelRu: 'Скор' },
+  { kind: 'range',
+    keyMin: 'minPrice', keyMax: 'maxPrice',
+    inputMin: 'filterMinPrice', inputMax: 'filterMaxPrice',
+    labelEn: 'Price', labelRu: 'Цена', prefix: '$' },
+  // Singles
+  { kind: 'single', key: 'minFans',    inputId: 'filterMinFans',    labelEn: 'Min fans',         labelRu: 'Мин. фанов' },
+  { kind: 'single', key: 'minQuality', inputId: 'filterMinQuality', labelEn: 'Min quality %',    labelRu: 'Мин. качество %' },
+  { kind: 'single', key: 'minPosts',   inputId: 'filterMinPosts',   labelEn: 'Min posts',        labelRu: 'Мин. постов' },
+  { kind: 'single', key: 'minVideos',  inputId: 'filterMinVideos',  labelEn: 'Min videos',       labelRu: 'Мин. видео' },
+  { kind: 'single', key: 'minStreams', inputId: 'filterMinStreams', labelEn: 'Min streams',      labelRu: 'Мин. стримов' },
+  { kind: 'single', key: 'minAge',     inputId: 'filterMinAge',     labelEn: 'Min age (months)', labelRu: 'Мин. возраст (мес.)' }
 ];
+
+function _chipHtml(label, value) {
+  return `<span class="filter-chip-label">${escapeHtml(label)}: <b>${escapeHtml(value)}</b></span>` +
+    `<button class="filter-chip-x" type="button" aria-label="Remove">` +
+    `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>` +
+    `</button>`;
+}
 
 function renderFilterChips() {
   const wrap = document.getElementById('filterChips');
   if (!wrap) return;
   const f = lbState.filters;
-  const active = FILTER_DEFS.filter(d => f[d.key] !== '' && f[d.key] != null);
   wrap.innerHTML = '';
-  if (!active.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
-  for (const d of active) {
-    const chip = document.createElement('span');
-    chip.className = 'filter-chip';
+  let any = false;
+  for (const d of FILTER_DEFS) {
     const lbl = (currentLang === 'ru' ? d.labelRu : d.labelEn);
-    chip.innerHTML =
-      `<span class="filter-chip-label">${escapeHtml(lbl)}: <b>${escapeHtml(f[d.key])}</b></span>` +
-      `<button class="filter-chip-x" type="button" aria-label="Remove">` +
-      `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>` +
-      `</button>`;
-    chip.querySelector('.filter-chip-x').addEventListener('click', () => {
-      lbState.filters[d.key] = '';
-      const el = document.getElementById(d.inputId);
-      if (el) el.value = '';
-      loadTopTab(true);
-    });
-    wrap.appendChild(chip);
+    if (d.kind === 'range') {
+      const lo = f[d.keyMin], hi = f[d.keyMax];
+      if (lo === '' && hi === '') continue;
+      const px = d.prefix || '';
+      let value;
+      if (lo !== '' && hi !== '')      value = `${px}${lo}–${px}${hi}`;
+      else if (lo !== '' && hi === '') value = `≥ ${px}${lo}`;
+      else                              value = `≤ ${px}${hi}`;
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.innerHTML = _chipHtml(lbl, value);
+      chip.querySelector('.filter-chip-x').addEventListener('click', () => {
+        lbState.filters[d.keyMin] = '';
+        lbState.filters[d.keyMax] = '';
+        const a = document.getElementById(d.inputMin); if (a) a.value = '';
+        const b = document.getElementById(d.inputMax); if (b) b.value = '';
+        loadTopTab(true);
+      });
+      wrap.appendChild(chip);
+      any = true;
+    } else {
+      const v = f[d.key];
+      if (v === '' || v == null) continue;
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.innerHTML = _chipHtml(lbl, v);
+      chip.querySelector('.filter-chip-x').addEventListener('click', () => {
+        lbState.filters[d.key] = '';
+        const el = document.getElementById(d.inputId);
+        if (el) el.value = '';
+        loadTopTab(true);
+      });
+      wrap.appendChild(chip);
+      any = true;
+    }
   }
+  wrap.style.display = any ? '' : 'none';
 }
 
 async function loadTopTab(reset = true) {
@@ -2671,13 +2704,37 @@ wire('topSearch', 'input', (e) => {
     }
   });
 })();
-wire('filterToggleBtn', 'click', () => {
-  const adv = document.getElementById('filterAdvanced');
+// Filter modal — overlay + centred panel. Open on the filter icon, close
+// on Apply / Esc / backdrop click. (Reset stays open so the user can
+// re-tune without re-opening.)
+function _openFilterModal() {
+  const ov = document.getElementById('filterOverlay');
   const btn = document.getElementById('filterToggleBtn');
-  const open = adv.style.display === 'none';
-  adv.style.display = open ? '' : 'none';
-  btn.classList.toggle('active', open);
+  if (ov) ov.style.display = 'flex';
+  if (btn) btn.classList.add('active');
+}
+function _closeFilterPanel() {
+  const ov = document.getElementById('filterOverlay');
+  const btn = document.getElementById('filterToggleBtn');
+  if (ov) ov.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+wire('filterToggleBtn', 'click', () => {
+  const ov = document.getElementById('filterOverlay');
+  if (ov && ov.style.display !== 'none') _closeFilterPanel();
+  else _openFilterModal();
 });
+// Click on the dim backdrop (anything outside the .filter-advanced panel) closes
+document.getElementById('filterOverlay')?.addEventListener('click', (e) => {
+  if (e.target.id === 'filterOverlay') _closeFilterPanel();
+});
+// Esc closes the modal — register once at module scope, harmless when modal is hidden
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const ov = document.getElementById('filterOverlay');
+  if (ov && ov.style.display !== 'none') _closeFilterPanel();
+});
+
 const FILTER_FIELD_MAP = {
   filterMinScore:   'minScore',
   filterMaxScore:   'maxScore',
@@ -2690,12 +2747,6 @@ const FILTER_FIELD_MAP = {
   filterMinPrice:   'minPrice',
   filterMaxPrice:   'maxPrice'
 };
-function _closeFilterPanel() {
-  const adv = document.getElementById('filterAdvanced');
-  const btn = document.getElementById('filterToggleBtn');
-  if (adv) adv.style.display = 'none';
-  if (btn) btn.classList.remove('active');
-}
 wire('filterApplyBtn', 'click', () => {
   for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
     lbState.filters[key] = document.getElementById(inputId)?.value || '';
