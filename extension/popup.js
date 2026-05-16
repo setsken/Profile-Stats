@@ -1494,6 +1494,17 @@ async function loadTopTab(reset = true) {
   list.insertAdjacentHTML('beforeend', html);
   bindRowClicks(list);
 
+  // Snapshot the restore target BEFORE we overwrite persisted offset —
+  // otherwise the very first page-load on boot clobbers the "user was on
+  // page 4" record with offset=50, and the chain never starts.
+  if (reset && uiState.tab === 'top' && !_lbRestoreTarget) {
+    const savedBefore = _loadLbPersisted();
+    const targetOffset = Math.min(Number(savedBefore.offset) || 0, Number(r.total) || 0);
+    if (targetOffset > lbState.offset + models.length) {
+      _lbRestoreTarget = targetOffset;
+    }
+  }
+
   lbState.offset += models.length;
   info.textContent = t('showingOf', { n: lbState.offset, total: lbState.total });
   loadMoreBtn.style.display = lbState.offset < lbState.total ? '' : 'none';
@@ -1501,20 +1512,11 @@ async function loadTopTab(reset = true) {
   // re-load the same number of pages on next popup open.
   _saveLbPersisted({ offset: lbState.offset });
 
-  // Boot-time restore: if the persisted offset is larger than what we
-  // just fetched, the user previously scrolled past page 1 via Load
-  // more. Auto-fetch the missing pages, then restore the scroll
-  // position on top of the fully-rebuilt list.
-  if (reset && uiState.tab === 'top') {
-    const saved = _loadLbPersisted();
-    const targetOffset = Math.min(Number(saved.offset) || 0, lbState.total);
-    if (targetOffset > lbState.offset) {
-      // Mark this as a restore-in-progress so subsequent fetches don't
-      // each try to scroll-restore. The final fetch will.
-      _lbRestoreTarget = targetOffset;
-      loadTopTab(false);
-      return;
-    }
+  // If we set a restore target above, start chaining loadTopTab(false)
+  // until we materialise enough rows.
+  if (_lbRestoreTarget && lbState.offset < _lbRestoreTarget) {
+    loadTopTab(false);
+    return;
   }
   if (_lbRestoreTarget && lbState.offset >= _lbRestoreTarget) {
     // We just reached the target — restore scroll and stop the chain.
