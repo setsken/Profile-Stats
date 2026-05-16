@@ -3013,6 +3013,8 @@ wire('filterToggleBtn', 'click', () => {
 document.getElementById('filterOverlay')?.addEventListener('click', (e) => {
   if (e.target.id === 'filterOverlay') _closeFilterPanel();
 });
+// X button in the filter header
+wire('filterCloseBtn', 'click', () => _closeFilterPanel());
 // Esc closes the modal — register once at module scope, harmless when modal is hidden
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;

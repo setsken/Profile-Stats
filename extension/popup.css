@@ -1221,6 +1221,38 @@ html.booting .screen { display: none !important; }
   animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
+/* Header bar with the "Filters" title and a close button on the right.
+   Sits above the scrollable section list, stays fixed when the user
+   scrolls long lists of filters. */
+.filter-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+.filter-header-title {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+.filter-close-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.filter-close-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.25), 0 0 10px rgba(139, 92, 246, 0.18);
+}
+.filter-close-btn:active { transform: translateY(1px); }
+
 /* Scrollable section list with sticky action bar below. */
 .filter-scroll {
   overflow-y: auto;
