@@ -1497,17 +1497,49 @@ async function loadTopTab(reset = true) {
   lbState.offset += models.length;
   info.textContent = t('showingOf', { n: lbState.offset, total: lbState.total });
   loadMoreBtn.style.display = lbState.offset < lbState.total ? '' : 'none';
+  // Persist how much of the list the user has materialised so we can
+  // re-load the same number of pages on next popup open.
+  _saveLbPersisted({ offset: lbState.offset });
 
-  // After the very first paint of rows, restore the persisted scroll
-  // position so a re-opened popup lands on the same row the user was
-  // looking at when they clicked a model.
-  if (reset && uiState.tab === 'top' && tabScroll.top > 0) {
+  // Boot-time restore: if the persisted offset is larger than what we
+  // just fetched, the user previously scrolled past page 1 via Load
+  // more. Auto-fetch the missing pages, then restore the scroll
+  // position on top of the fully-rebuilt list.
+  if (reset && uiState.tab === 'top') {
+    const saved = _loadLbPersisted();
+    const targetOffset = Math.min(Number(saved.offset) || 0, lbState.total);
+    if (targetOffset > lbState.offset) {
+      // Mark this as a restore-in-progress so subsequent fetches don't
+      // each try to scroll-restore. The final fetch will.
+      _lbRestoreTarget = targetOffset;
+      loadTopTab(false);
+      return;
+    }
+  }
+  if (_lbRestoreTarget && lbState.offset >= _lbRestoreTarget) {
+    // We just reached the target — restore scroll and stop the chain.
+    _lbRestoreTarget = 0;
+    if (uiState.tab === 'top' && tabScroll.top > 0) {
+      requestAnimationFrame(() => {
+        const b = getMainBody();
+        if (b) b.scrollTop = tabScroll.top;
+      });
+    }
+  } else if (!_lbRestoreTarget && reset && uiState.tab === 'top' && tabScroll.top > 0) {
+    // No restore chain needed (offset == 0 saved or list is short) —
+    // just snap scroll once after the first paint.
     requestAnimationFrame(() => {
       const b = getMainBody();
       if (b) b.scrollTop = tabScroll.top;
     });
+  } else if (_lbRestoreTarget) {
+    // Mid-chain: keep fetching until we reach the target.
+    loadTopTab(false);
   }
 }
+// Sentinel for boot-time multi-page restore — non-zero while we're
+// chaining loadTopTab(false) calls to reach the persisted offset.
+let _lbRestoreTarget = 0;
 
 // Throttled persist of the main scroll position on every user scroll.
 (function _wireScrollPersist() {
