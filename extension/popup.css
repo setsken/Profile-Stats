@@ -161,6 +161,22 @@ html.booting .screen { display: none !important; }
   backdrop-filter: blur(8px);
 }
 .header-left { display: flex; align-items: center; gap: 11px; min-width: 0; }
+
+/* Sub-screens (Settings, Subscription, Support, Payment back-button view):
+   back button stays at the left edge, the page title is centred. We use an
+   absolutely-positioned .header-left so the title sits on the geometric
+   centre of the header regardless of back-button width, and we disable
+   pointer-events on it so the back button stays clickable across the
+   whole row. */
+.app-header-subscreen { position: relative; justify-content: flex-start; }
+.app-header-subscreen .header-left {
+  position: absolute;
+  left: 0; right: 0;
+  justify-content: center;
+  pointer-events: none;
+  margin: 0;
+}
+.app-header-subscreen .header-left .logo-text { text-align: center; }
 .logo-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 12px;
