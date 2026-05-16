@@ -1187,7 +1187,8 @@ html.booting .screen { display: none !important; }
 
 .filter-advanced {
   display: flex; flex-direction: column;
-  max-height: 440px;
+  max-height: 420px;
+  margin-bottom: 12px; /* breathing room from the bottom edge of the popup */
   background: linear-gradient(160deg, rgba(139, 92, 246, 0.08), rgba(20, 24, 38, 0.6));
   border: 1px solid var(--border-soft); border-radius: 12px;
   backdrop-filter: blur(8px);
@@ -1276,36 +1277,49 @@ html.booting .screen { display: none !important; }
 
 /* Sticky footer with Apply / Reset — always reachable without scrolling. */
 .filter-actions {
-  display: flex; gap: 8px;
-  padding: 10px 14px;
+  display: flex; gap: 10px;
+  padding: 12px 14px;
   background: rgba(10, 12, 20, 0.6);
   border-top: 1px solid var(--border-soft);
   flex-shrink: 0;
+  align-items: stretch;
+}
+.filter-apply-btn,
+.filter-reset-btn {
+  height: 40px;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 .filter-apply-btn {
-  flex: 1; height: 36px;
-  background: var(--gradient-accent); border: none; border-radius: 8px;
-  color: white; font-size: 12px; font-weight: 700; cursor: pointer;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  transition: all 0.15s;
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  flex: 1;
+  background: var(--gradient-accent); border: 1px solid rgba(139, 92, 246, 0.6);
+  color: white;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3),
+              0 1px 0 rgba(255, 255, 255, 0.18) inset;
 }
 .filter-apply-btn:hover {
-  transform: translateY(-1px);
   filter: brightness(1.06);
-  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4),
+              0 1px 0 rgba(255, 255, 255, 0.22) inset;
 }
+.filter-apply-btn:active { transform: translateY(1px); }
 .filter-reset-btn {
-  height: 36px; padding: 0 16px;
-  background: transparent; border: 1px solid var(--border-color); border-radius: 8px;
-  color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: all 0.15s;
+  /* Match Apply's visual weight without screaming — outline button */
+  min-width: 96px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
 }
 .filter-reset-btn:hover {
   color: var(--error);
   border-color: var(--error);
-  background: rgba(239, 68, 68, 0.06);
+  background: rgba(239, 68, 68, 0.08);
 }
+.filter-reset-btn:active { transform: translateY(1px); }
 
 .filter-note {
   font-size: 11px; color: var(--text-muted); line-height: 1.5;
