@@ -1025,6 +1025,9 @@ async function enterMainScreen(user) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === targetTab));
     document.querySelectorAll('.tab-pane').forEach(p => p.style.display = p.dataset.tabPane === targetTab ? '' : 'none');
     uiState.tab = targetTab;
+    // Hydrate filter inputs + sort dropdown from the persisted state
+    // BEFORE we ask for data, so the first server call honours them.
+    try { applyRestoredFiltersToDom(); } catch {}
     if (targetTab === 'top') loadTopTab();
     else loadNotesTab();
   } else if (targetScreen === 'subscription') {
@@ -1088,7 +1091,15 @@ document.getElementById('userMenuBackdrop')?.addEventListener('click', () => clo
 
 // ============ Tabs ============
 // Scroll positions per tab so leaving and returning lands on the same row.
-const tabScroll = { top: 0, notes: 0 };
+// Hydrated from the persisted lbState so a popup re-open after a model
+// click lands at the same row instead of the top.
+const tabScroll = (() => {
+  const saved = _loadLbPersisted();
+  return {
+    top: Number(saved.scrollTop) || 0,
+    notes: Number(saved.scrollNotes) || 0
+  };
+})();
 function getMainBody() {
   return document.querySelector('#mainScreen .main-body');
 }
@@ -1098,6 +1109,8 @@ function activateTab(name) {
   const body = getMainBody();
   if (body && uiState.tab && uiState.tab !== name) {
     tabScroll[uiState.tab] = body.scrollTop;
+    if (uiState.tab === 'top')        persistLbScroll(body.scrollTop);
+    else if (uiState.tab === 'notes') persistLbNotesScroll(body.scrollTop);
   }
 
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === name));
@@ -1248,6 +1261,56 @@ const lbState = {
   }
 };
 
+// Synchronously rehydrate filters / sort from localStorage before the
+// first loadTopTab() call, so a re-opened popup keeps the user's view.
+(function _restoreLbFilters() {
+  try {
+    const saved = _loadLbPersisted();
+    if (saved && saved.filters && typeof saved.filters === 'object') {
+      for (const k of Object.keys(lbState.filters)) {
+        if (typeof saved.filters[k] === 'string') lbState.filters[k] = saved.filters[k];
+      }
+    }
+  } catch {}
+})();
+
+// Push the restored values into the actual DOM inputs + sort dropdown
+// after they're rendered. Called from boot once the DOM is ready.
+function applyRestoredFiltersToDom() {
+  const map = {
+    filterMinScore: 'minScore', filterMaxScore: 'maxScore',
+    filterMinFans: 'minFans', filterMinQuality: 'minQuality',
+    filterMinPosts: 'minPosts', filterMinVideos: 'minVideos',
+    filterMinStreams: 'minStreams', filterMinAge: 'minAge',
+    filterMinPrice: 'minPrice', filterMaxPrice: 'maxPrice'
+  };
+  for (const [inputId, key] of Object.entries(map)) {
+    const el = document.getElementById(inputId);
+    if (el) el.value = lbState.filters[key] || '';
+  }
+  // Search field
+  const search = document.getElementById('topSearch');
+  if (search) search.value = lbState.filters.search || '';
+  // Sort dropdown — apply selected state + label
+  const sortVal = lbState.filters.sort || 'score';
+  const sortWrap = document.getElementById('sortDropdown');
+  const sortLabel = document.getElementById('sortDropdownLabel');
+  if (sortWrap && sortLabel) {
+    let selectedOpt = null;
+    sortWrap.querySelectorAll('.custom-dropdown-option').forEach(o => {
+      const match = o.dataset.value === sortVal;
+      o.classList.toggle('selected', match);
+      if (match) selectedOpt = o;
+    });
+    if (selectedOpt) {
+      const inner = selectedOpt.querySelector('[data-i18n]');
+      const k = inner && inner.getAttribute('data-i18n');
+      if (k) sortLabel.innerHTML =
+        `<span data-i18n="${k}">${escapeHtml(t(k))}</span> <span class="opt-arrow">↓</span>`;
+    }
+  }
+}
+
 function currentLeaderboardParams() {
   const f = lbState.filters;
   const params = { offset: lbState.offset, limit: PAGE_SIZE, sort: f.sort };
@@ -1264,6 +1327,24 @@ function currentLeaderboardParams() {
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
   return params;
 }
+
+// Persist leaderboard filters + sort + scroll across popup re-opens.
+// localStorage is sync and survives the popup teardown that async
+// chrome.storage.local writes don't always finish in time for.
+const LB_STATE_KEY = 'psLbState';
+function _loadLbPersisted() {
+  try { return JSON.parse(localStorage.getItem(LB_STATE_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+function _saveLbPersisted(patch) {
+  try {
+    const cur = _loadLbPersisted();
+    localStorage.setItem(LB_STATE_KEY, JSON.stringify({ ...cur, ...patch }));
+  } catch {}
+}
+function persistLbFilters() { _saveLbPersisted({ filters: { ...lbState.filters } }); }
+function persistLbScroll(top)  { _saveLbPersisted({ scrollTop: top || 0 }); }
+function persistLbNotesScroll(top) { _saveLbPersisted({ scrollNotes: top || 0 }); }
 
 // Active-filter chips next to "Showing N of M". Ranges (min/max pairs)
 // collapse into a single chip — "Score: 53–66" — and their X clears both
@@ -1318,6 +1399,7 @@ function renderFilterChips() {
         lbState.filters[d.keyMax] = '';
         const a = document.getElementById(d.inputMin); if (a) a.value = '';
         const b = document.getElementById(d.inputMax); if (b) b.value = '';
+        persistLbFilters();
         loadTopTab(true);
       });
       wrap.appendChild(chip);
@@ -1332,6 +1414,7 @@ function renderFilterChips() {
         lbState.filters[d.key] = '';
         const el = document.getElementById(d.inputId);
         if (el) el.value = '';
+        persistLbFilters();
         loadTopTab(true);
       });
       wrap.appendChild(chip);
@@ -1406,7 +1489,33 @@ async function loadTopTab(reset = true) {
   lbState.offset += models.length;
   info.textContent = t('showingOf', { n: lbState.offset, total: lbState.total });
   loadMoreBtn.style.display = lbState.offset < lbState.total ? '' : 'none';
+
+  // After the very first paint of rows, restore the persisted scroll
+  // position so a re-opened popup lands on the same row the user was
+  // looking at when they clicked a model.
+  if (reset && uiState.tab === 'top' && tabScroll.top > 0) {
+    requestAnimationFrame(() => {
+      const b = getMainBody();
+      if (b) b.scrollTop = tabScroll.top;
+    });
+  }
 }
+
+// Throttled persist of the main scroll position on every user scroll.
+(function _wireScrollPersist() {
+  let raf = 0;
+  document.addEventListener('scroll', (e) => {
+    const body = e.target;
+    if (!body || !body.classList || !body.classList.contains('main-body')) return;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const top = body.scrollTop || 0;
+      if (uiState.tab === 'top')        { tabScroll.top = top;        persistLbScroll(top); }
+      else if (uiState.tab === 'notes') { tabScroll.notes = top;      persistLbNotesScroll(top); }
+    });
+  }, true /* capture — main-body's scroll doesn't bubble to document by default */);
+})();
 
 // ============ Notes Tab (sub-tabs: editor / tags / models) ============
 
@@ -2663,6 +2772,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 let searchDebounce = null;
 wire('topSearch', 'input', (e) => {
   lbState.filters.search = e.target.value.trim();
+  persistLbFilters();
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => loadTopTab(true), 300);
 });
@@ -2693,6 +2803,7 @@ wire('topSearch', 'input', (e) => {
       wrap.classList.remove('open');
       btn.classList.remove('open');
       lbState.filters.sort = val;
+      persistLbFilters();
       loadTopTab(true);
     });
   });
@@ -2751,6 +2862,7 @@ wire('filterApplyBtn', 'click', () => {
   for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
     lbState.filters[key] = document.getElementById(inputId)?.value || '';
   }
+  persistLbFilters();
   _closeFilterPanel();
   loadTopTab(true);
 });
@@ -2759,6 +2871,7 @@ wire('filterResetBtn', 'click', () => {
     const el = document.getElementById(inputId); if (el) el.value = '';
     lbState.filters[key] = '';
   }
+  persistLbFilters();
   loadTopTab(true);
 });
 wire('loadMoreBtn', 'click', () => loadTopTab(false));
