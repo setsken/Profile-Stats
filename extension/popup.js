@@ -954,6 +954,14 @@ async function enterMainScreen(user) {
   const email = user?.email || (await send('getAuthStatus')).email || '';
   document.getElementById('userMenuEmail').textContent = email;
 
+  // Drop the Profile Stats backend's 5-minute positive cache before reading
+  // subscription status. Otherwise an externally-modified subscription
+  // (admin revoked it, expired naturally, downgraded plan) keeps surfacing
+  // as 'active' in the popup for up to 5 minutes after the change, while
+  // the badge — which polls SE directly — already shows the right state.
+  // refreshAccess() is a cheap no-op when nothing changed.
+  try { await send('refreshAccess'); } catch {}
+
   // Load subscription status to decide subtitle + access state
   const { authToken } = await chrome.storage.local.get('authToken');
   try {
