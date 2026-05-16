@@ -207,6 +207,9 @@ const I18N = {
     youPayExactly: 'You pay exactly',
     noExtraFees: 'No extra fees.',
     networkFailed: 'Could not start payment. Try another network or refresh.',
+    alreadySubTitle: "You're already subscribed",
+    alreadySubMsg: 'Your Profile Stats subscription is already active. You can renew it once it expires.',
+    ok: 'OK',
     // Promo
     promoCodeLabel: 'Have a promo code?',
     promoCodePh: 'Enter code',
@@ -444,6 +447,9 @@ const I18N = {
     youPayExactly: 'Вы платите ровно',
     noExtraFees: 'Без скрытых комиссий.',
     networkFailed: 'Не удалось создать счёт. Попробуйте другую сеть или обновите.',
+    alreadySubTitle: 'Подписка уже активна',
+    alreadySubMsg: 'Ваша подписка Profile Stats ещё действует. Продлить её можно после истечения срока.',
+    ok: 'OK',
     promoCodeLabel: 'Есть промокод?',
     promoCodePh: 'Введите код',
     promoApply: 'Применить',
@@ -876,10 +882,27 @@ function _sendOnce(action, payload) {
 }
 
 // Promise-based custom confirm dialog (replaces native window.confirm).
-function showConfirm({ title, message = '', confirmText, cancelText, danger = true } = {}) {
+// Built-in SVG sets for the modal icon. `danger` keeps the trash bin so
+// the existing delete prompts look the same. `info` and `success` are
+// used by alert-style invocations (one-button, no destructive action).
+const MODAL_ICONS = {
+  danger: '<svg viewBox="0 0 24 24" fill="none" width="22" height="22" stroke="currentColor" stroke-width="2">' +
+    '<polyline points="3 6 5 6 21 6"/>' +
+    '<path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" width="22" height="22" stroke="currentColor" stroke-width="2">' +
+    '<circle cx="12" cy="12" r="10"/>' +
+    '<line x1="12" y1="16" x2="12" y2="12"/>' +
+    '<line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  success: '<svg viewBox="0 0 24 24" fill="none" width="22" height="22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+    '<polyline points="20 6 9 17 4 12"/></svg>'
+};
+
+function showConfirm({ title, message = '', confirmText, cancelText, danger = true, icon } = {}) {
   if (title == null) title = t('confirm');
   if (confirmText == null) confirmText = t('confirm');
-  if (cancelText == null) cancelText = t('cancel');
+  // cancelText === null means "no cancel button" — show as a single-action alert
+  const hideCancel = cancelText === null;
+  if (cancelText == null && !hideCancel) cancelText = t('cancel');
   return new Promise((resolve) => {
     const overlay = document.getElementById('confirmOverlay');
     const titleEl = document.getElementById('confirmTitle');
@@ -891,13 +914,22 @@ function showConfirm({ title, message = '', confirmText, cancelText, danger = tr
     titleEl.textContent = title;
     msgEl.textContent = message;
     okBtn.textContent = confirmText;
-    cancelBtn.textContent = cancelText;
+    if (hideCancel) {
+      cancelBtn.style.display = 'none';
+    } else {
+      cancelBtn.style.display = '';
+      cancelBtn.textContent = cancelText;
+    }
+    // Icon: explicit `icon` wins, otherwise pick from danger flag.
+    const iconKey = icon || (danger ? 'danger' : 'info');
+    iconEl.innerHTML = MODAL_ICONS[iconKey] || MODAL_ICONS.danger;
+    iconEl.className = 'modal-icon' + (iconKey !== 'danger' ? ' ' + iconKey : '');
     okBtn.className = 'modal-btn ' + (danger ? 'modal-btn-danger' : 'modal-btn-primary');
-    iconEl.className = 'modal-icon' + (danger ? '' : ' info');
     overlay.style.display = 'flex';
 
     function cleanup(result) {
       overlay.style.display = 'none';
+      cancelBtn.style.display = ''; // restore for next caller
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
       overlay.removeEventListener('click', onBackdrop);
@@ -906,9 +938,14 @@ function showConfirm({ title, message = '', confirmText, cancelText, danger = tr
     }
     function onOk() { cleanup(true); }
     function onCancel() { cleanup(false); }
-    function onBackdrop(e) { if (e.target === overlay) cleanup(false); }
+    function onBackdrop(e) {
+      if (e.target !== overlay) return;
+      // Backdrop click resolves to true for single-action alerts (treat
+      // as "I've read this") and false otherwise (regular cancel).
+      cleanup(hideCancel ? true : false);
+    }
     function onKey(e) {
-      if (e.key === 'Escape') cleanup(false);
+      if (e.key === 'Escape') cleanup(hideCancel ? true : false);
       else if (e.key === 'Enter') cleanup(true);
     }
     okBtn.addEventListener('click', onOk);
@@ -2394,6 +2431,25 @@ async function selectNetwork(networkId, cardEl) {
   try {
     const r = await send('createPayment', { currency: networkId });
     if (!r || !r.success) {
+      // Special-case the "already paid" guard from the backend — surface
+      // it as a friendly modal instead of a stub error chip and route
+      // the user back to the Subscription page where they see their
+      // current expiry.
+      const code = r && r.code;
+      const errLower = String((r && r.error) || '').toLowerCase();
+      if (code === 'ALREADY_SUBSCRIBED' || errLower.includes('already have an active')) {
+        document.querySelectorAll('#networkScreen .network-card').forEach(c => c.classList.remove('busy'));
+        await showConfirm({
+          icon: 'success',
+          title: t('alreadySubTitle'),
+          message: t('alreadySubMsg'),
+          confirmText: t('ok'),
+          cancelText: null,
+          danger: false
+        });
+        show('subscription');
+        return;
+      }
       setError('networkError', (r && r.error) || t('networkFailed'));
       document.querySelectorAll('#networkScreen .network-card').forEach(c => c.classList.remove('busy'));
       return;
