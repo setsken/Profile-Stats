@@ -181,11 +181,19 @@ html.booting .screen { display: none !important; }
   position: relative;
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
-  background: transparent; border: none; border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent; /* reserved space so hover doesn't jiggle layout */
+  border-radius: 8px;
   color: var(--text-secondary); cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.header-icon-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.header-icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.25), 0 0 12px rgba(139, 92, 246, 0.2);
+}
+.header-icon-btn:active { transform: translateY(1px); }
 
 .notification-badge {
   position: absolute; top: 5px; right: 5px;
