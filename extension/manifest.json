@@ -9,7 +9,8 @@
     "activeTab",
     "scripting",
     "alarms",
-    "sidePanel"
+    "sidePanel",
+    "webNavigation"
   ],
   "host_permissions": [
     "https://onlyfans.com/*",

@@ -91,10 +91,33 @@ function clearCache(key) {
   else Object.keys(apiCache).forEach(k => delete apiCache[k]);
 }
 
-// Load token on startup.
+// Load token on startup. If we already have one, broadcast 'authenticated'
+// to every open OF tab so inject-early.js sees psAuthStatus even when the
+// user never opened the popup in this session — otherwise inject-early
+// falls back to Stats Editor's shared key and the badge dies when SE
+// logs out.
 chrome.storage.local.get(['authToken'], (r) => {
-  if (r.authToken) { authToken = r.authToken; log('PS: token loaded'); }
+  if (r.authToken) {
+    authToken = r.authToken;
+    log('PS: token loaded');
+    broadcastAuthStatus(true).catch(() => {});
+  } else {
+    // Make absence explicit so we don't leak SE's authenticated flag
+    // through the legacy fallback on tabs that had it set previously.
+    broadcastAuthStatus(false).catch(() => {});
+  }
 });
+
+// Re-stamp psAuthStatus on every OF tab navigation. Service workers
+// suspend, the user can install PS, log in, close the popup, then go
+// browse OF for the first time — without this, inject-early on that
+// first page load would never see our key.
+chrome.webNavigation && chrome.webNavigation.onCommitted.addListener((details) => {
+  if (details.frameId !== 0) return;
+  if (!/^https:\/\/(?:www\.)?onlyfans\.com\//.test(details.url || '')) return;
+  // Fire-and-forget — auth state may be stale by milliseconds, that's OK
+  broadcastAuthStatus(!!authToken).catch(() => {});
+}, { url: [{ hostEquals: 'onlyfans.com' }] });
 
 // ==================== MESSAGE ROUTER ====================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
