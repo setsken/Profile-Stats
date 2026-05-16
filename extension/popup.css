@@ -1333,9 +1333,41 @@ html.booting .screen { display: none !important; }
   color: var(--accent); font-weight: 700;
 }
 
+.leaderboard-meta {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 8px; padding: 0 2px;
+}
 .leaderboard-info {
   font-size: 11px; color: var(--text-muted);
-  margin-bottom: 8px; padding: 0 2px;
+}
+
+/* Active-filter chips — sit right under "Showing N of M".
+   Each chip = label + value + X to clear that one filter. */
+.filter-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 4px 4px 10px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 999px;
+  font-size: 11px; color: var(--text-primary);
+  line-height: 1;
+}
+.filter-chip-label b { font-weight: 700; color: var(--accent); }
+.filter-chip-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  background: rgba(255,255,255,0.04);
+  border: none; border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.filter-chip-x:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
 }
 
 .list-item-rank {

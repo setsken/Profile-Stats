@@ -553,6 +553,10 @@ function applyLanguage() {
   // Re-render the upgrade card features (they live in i18n, not the DOM)
   const upgradeCard = document.getElementById('upgradeCard');
   if (upgradeCard && upgradeCard.style.display !== 'none') loadPlanFeatures();
+  // Active-filter chips have locale-specific labels — re-render so a
+  // language switch updates them in place without waiting for the next
+  // leaderboard reload.
+  try { renderFilterChips(); } catch {}
 }
 
 async function setLanguage(lang) {
@@ -1240,7 +1244,7 @@ const lbState = {
     search: '', sort: 'score',
     minScore: '', maxScore: '', minFans: '', minQuality: '',
     minPosts: '', minVideos: '', minStreams: '', minAge: '',
-    minPrice: '', maxPrice: '', hasSocials: ''
+    minPrice: '', maxPrice: ''
   }
 };
 
@@ -1258,8 +1262,50 @@ function currentLeaderboardParams() {
   if (f.minAge !== '')     params.minAgeMonths = f.minAge;
   if (f.minPrice !== '')   params.minPrice   = f.minPrice;
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
-  if (f.hasSocials !== '') params.hasSocials = f.hasSocials;
   return params;
+}
+
+// Active-filter chips: list of {key, label, clear()} for every filter
+// that's set, rendered next to "Showing N of M". Removing a chip clears
+// its filter, resets the matching input, and reloads the leaderboard.
+const FILTER_DEFS = [
+  { key: 'minScore',   labelEn: 'Min score',           labelRu: 'Мин. скор',           inputId: 'filterMinScore' },
+  { key: 'maxScore',   labelEn: 'Max score',           labelRu: 'Макс. скор',          inputId: 'filterMaxScore' },
+  { key: 'minFans',    labelEn: 'Min fans',            labelRu: 'Мин. фанов',          inputId: 'filterMinFans' },
+  { key: 'minQuality', labelEn: 'Min quality %',       labelRu: 'Мин. качество %',     inputId: 'filterMinQuality' },
+  { key: 'minPosts',   labelEn: 'Min posts',           labelRu: 'Мин. постов',         inputId: 'filterMinPosts' },
+  { key: 'minVideos',  labelEn: 'Min videos',          labelRu: 'Мин. видео',          inputId: 'filterMinVideos' },
+  { key: 'minStreams', labelEn: 'Min streams',         labelRu: 'Мин. стримов',        inputId: 'filterMinStreams' },
+  { key: 'minAge',     labelEn: 'Min age (months)',    labelRu: 'Мин. возраст (мес.)', inputId: 'filterMinAge' },
+  { key: 'minPrice',   labelEn: 'Min price ($)',       labelRu: 'Мин. цена ($)',       inputId: 'filterMinPrice' },
+  { key: 'maxPrice',   labelEn: 'Max price ($)',       labelRu: 'Макс. цена ($)',      inputId: 'filterMaxPrice' }
+];
+
+function renderFilterChips() {
+  const wrap = document.getElementById('filterChips');
+  if (!wrap) return;
+  const f = lbState.filters;
+  const active = FILTER_DEFS.filter(d => f[d.key] !== '' && f[d.key] != null);
+  wrap.innerHTML = '';
+  if (!active.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  for (const d of active) {
+    const chip = document.createElement('span');
+    chip.className = 'filter-chip';
+    const lbl = (currentLang === 'ru' ? d.labelRu : d.labelEn);
+    chip.innerHTML =
+      `<span class="filter-chip-label">${escapeHtml(lbl)}: <b>${escapeHtml(f[d.key])}</b></span>` +
+      `<button class="filter-chip-x" type="button" aria-label="Remove">` +
+      `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>` +
+      `</button>`;
+    chip.querySelector('.filter-chip-x').addEventListener('click', () => {
+      lbState.filters[d.key] = '';
+      const el = document.getElementById(d.inputId);
+      if (el) el.value = '';
+      loadTopTab(true);
+    });
+    wrap.appendChild(chip);
+  }
 }
 
 async function loadTopTab(reset = true) {
@@ -1289,6 +1335,7 @@ async function loadTopTab(reset = true) {
     empty.style.display = '';
     info.textContent = '';
     loadMoreBtn.style.display = 'none';
+    renderFilterChips();
   } else {
     loadMoreBtn.textContent = t('loading');
     loadMoreBtn.disabled = true;
@@ -2643,10 +2690,17 @@ const FILTER_FIELD_MAP = {
   filterMinPrice:   'minPrice',
   filterMaxPrice:   'maxPrice'
 };
+function _closeFilterPanel() {
+  const adv = document.getElementById('filterAdvanced');
+  const btn = document.getElementById('filterToggleBtn');
+  if (adv) adv.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
 wire('filterApplyBtn', 'click', () => {
   for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
     lbState.filters[key] = document.getElementById(inputId)?.value || '';
   }
+  _closeFilterPanel();
   loadTopTab(true);
 });
 wire('filterResetBtn', 'click', () => {
@@ -2654,51 +2708,9 @@ wire('filterResetBtn', 'click', () => {
     const el = document.getElementById(inputId); if (el) el.value = '';
     lbState.filters[key] = '';
   }
-  // Reset Socials dropdown to "Any"
-  lbState.filters.hasSocials = '';
-  const sd = document.getElementById('socialsDropdown');
-  const sdLabel = document.getElementById('socialsDropdownLabel');
-  if (sd && sdLabel) {
-    sd.querySelectorAll('.custom-dropdown-option').forEach(o => o.classList.toggle('selected', o.dataset.value === ''));
-    sdLabel.setAttribute('data-i18n', 'socialsAny');
-    sdLabel.textContent = t('socialsAny');
-  }
   loadTopTab(true);
 });
 wire('loadMoreBtn', 'click', () => loadTopTab(false));
-
-// Socials dropdown
-(function setupSocialsDropdown() {
-  const wrap = document.getElementById('socialsDropdown');
-  const btn = document.getElementById('socialsDropdownBtn');
-  const label = document.getElementById('socialsDropdownLabel');
-  if (!wrap || !btn) return;
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    wrap.classList.toggle('open');
-    btn.classList.toggle('open', wrap.classList.contains('open'));
-  });
-  wrap.querySelectorAll('.custom-dropdown-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      const val = opt.dataset.value;
-      wrap.querySelectorAll('.custom-dropdown-option').forEach(o => o.classList.toggle('selected', o === opt));
-      const key = opt.getAttribute('data-i18n');
-      if (key) {
-        label.setAttribute('data-i18n', key);
-        label.textContent = t(key);
-      } else {
-        label.removeAttribute('data-i18n');
-        label.textContent = opt.textContent.trim();
-      }
-      wrap.classList.remove('open');
-      btn.classList.remove('open');
-      lbState.filters.hasSocials = val;
-    });
-  });
-  document.addEventListener('click', (e) => {
-    if (!wrap.contains(e.target)) { wrap.classList.remove('open'); btn.classList.remove('open'); }
-  });
-})();
 
 // Notes sub-tabs
 document.querySelectorAll('.notes-subtab').forEach(btn => {
