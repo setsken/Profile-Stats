@@ -894,6 +894,30 @@ function show(name) {
     uiState.screen = name;
     persistUiState();
   }
+  // Reset/verify screens need their own persistence: the user just entered
+  // an email and is waiting for a one-time code. If the popup closes
+  // (autoclose on focus loss, taskbar click, etc.) we want them to land
+  // right back on the same code-entry form, not at Sign In.
+  if (name === 'resetCode' || name === 'verifyEmail') {
+    persistAuthScreen(name, pendingEmail);
+  } else if (name === 'login' || name === 'register' || name === 'forgot') {
+    // Stepping back to an entry screen invalidates the pending code flow.
+    clearAuthScreen();
+  }
+}
+
+const AUTH_SCREEN_KEY = 'psAuthScreen';
+async function persistAuthScreen(screen, email) {
+  try { await chrome.storage.local.set({ [AUTH_SCREEN_KEY]: { screen, email } }); } catch {}
+}
+async function clearAuthScreen() {
+  try { await chrome.storage.local.remove(AUTH_SCREEN_KEY); } catch {}
+}
+async function loadAuthScreen() {
+  try {
+    const r = await chrome.storage.local.get(AUTH_SCREEN_KEY);
+    return r[AUTH_SCREEN_KEY] || null;
+  } catch { return null; }
 }
 
 function setError(id, msg) {
@@ -1086,6 +1110,7 @@ async function doResetPassword(code, newPassword, confirm) {
     if (!r.success) { setError('resetCodeError', r.error || t('resetFailed')); return; }
     setSuccess('resetCodeSuccess', t('resetSuccess'));
     pendingEmail = null;
+    await clearAuthScreen();
     setTimeout(() => show('login'), 1200);
   } finally { setLoading('resetCodeBtn', false); }
 }
@@ -1098,6 +1123,7 @@ async function doVerifyEmail(code) {
     const r = await send('verifyEmail', { email: pendingEmail, code });
     if (!r.success) { setError('verifyError', r.error || t('verifyFailed')); return; }
     pendingEmail = null;
+    await clearAuthScreen();
     await enterMainScreen(r.user);
   } finally { setLoading('verifyBtn', false); }
 }
@@ -1172,6 +1198,8 @@ async function doSSO() {
 let currentSubscription = null;
 
 async function enterMainScreen(user) {
+  // User is in — any half-finished reset/verify flow is stale now.
+  await clearAuthScreen();
   const email = user?.email || (await send('getAuthStatus')).email || '';
   document.getElementById('userMenuEmail').textContent = email;
 
@@ -3233,6 +3261,17 @@ document.querySelectorAll('.notes-subtab').forEach(btn => {
       try { await openSubscriptionPage(); } catch {}
     }
   } else {
-    show('login');
+    // Restore an in-progress reset/verify flow so a popup close mid-code
+    // doesn't drop the user back at Sign In with nowhere to type the code.
+    const saved = await loadAuthScreen();
+    if (saved && saved.email && (saved.screen === 'resetCode' || saved.screen === 'verifyEmail')) {
+      pendingEmail = saved.email;
+      const dispId = saved.screen === 'resetCode' ? 'resetEmailDisplay' : 'verifyEmailDisplay';
+      const disp = document.getElementById(dispId);
+      if (disp) disp.textContent = saved.email;
+      show(saved.screen);
+    } else {
+      show('login');
+    }
   }
 })();
