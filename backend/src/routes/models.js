@@ -179,12 +179,13 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
       where.push(`COALESCE(ms.has_socials, false) = $${params.length}`);
     }
 
-    // Inner select pulls the last fan count per model so we can both filter
-    // and sort on it without repeating the correlated subquery everywhere.
-    let havingClause = '';
+    // Min-fans filter is applied against the `last_fans` column from the
+    // CTE — we add it as an extra clause to the same WHERE the other
+    // filters compose, not a second WHERE (Postgres rejects that).
+    let fansClause = '';
     if (minFans > 0) {
       params.push(minFans);
-      havingClause = `WHERE last_fans >= $${params.length}`;
+      fansClause = `last_fans >= $${params.length}`;
     }
 
     // Sort key drives BOTH the leaderboard ordering and the global rank,
@@ -200,7 +201,11 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     const limitParamIdx = params.length - 1;
     const offsetParamIdx = params.length;
 
-    const filterWhere = where.join(' AND ').replace(/\bms\./g, '');
+    // Merge primary filter clauses + the fans clause into a single WHERE.
+    // If both are empty we still need a valid WHERE expression for the SQL
+    // template — `TRUE` keeps the planner happy without filtering anything.
+    const allWhere = [...where, fansClause].filter(Boolean).join(' AND ').replace(/\bms\./g, '');
+    const filterWhere = allWhere || 'TRUE';
 
     const sql = `
       WITH base AS (
@@ -249,7 +254,6 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
       filtered AS (
         SELECT * FROM ranked
         WHERE ${filterWhere}
-        ${havingClause}
       )
       SELECT *, COUNT(*) OVER() AS total_count
       FROM filtered
