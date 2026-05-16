@@ -5,6 +5,31 @@
 const PROFILE_STATS_API = 'https://profile-stats-production.up.railway.app/api';
 const STATS_EDITOR_EXTENSION_ID = 'mflgdblgjakdfkjnfdkfmmobgppgjgom';
 
+// Persist leaderboard filters + sort + scroll across popup re-opens.
+// localStorage is sync and survives the popup teardown that async
+// chrome.storage.local writes don't always finish in time for.
+//
+// These helpers are declared at the very top so the early IIFEs that
+// hydrate lbState / tabScroll from storage can call them — putting the
+// const LB_STATE_KEY further down hits the TDZ and silently returned {}.
+const LB_STATE_KEY = 'psLbState';
+function _loadLbPersisted() {
+  try { return JSON.parse(localStorage.getItem(LB_STATE_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+function _saveLbPersisted(patch) {
+  try {
+    const cur = _loadLbPersisted();
+    localStorage.setItem(LB_STATE_KEY, JSON.stringify({ ...cur, ...patch }));
+  } catch {}
+}
+function persistLbScroll(top)       { _saveLbPersisted({ scrollTop: top || 0 }); }
+function persistLbNotesScroll(top)  { _saveLbPersisted({ scrollNotes: top || 0 }); }
+// persistLbFilters lives further down because it needs lbState which
+// isn't initialised yet at this point in the module. We can still write
+// filters via _saveLbPersisted directly from any call site that already
+// has access to the current filters object.
+
 // ==================== i18n ====================
 // Two-language dictionary for the entire popup. Use t('key') for plain text
 // and t('key', { name: 'value' }) for {name}-style interpolation. HTML markup
@@ -1260,6 +1285,7 @@ const lbState = {
     minPrice: '', maxPrice: ''
   }
 };
+function persistLbFilters() { _saveLbPersisted({ filters: { ...lbState.filters } }); }
 
 // Synchronously rehydrate filters / sort from localStorage before the
 // first loadTopTab() call, so a re-opened popup keeps the user's view.
@@ -1327,24 +1353,6 @@ function currentLeaderboardParams() {
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
   return params;
 }
-
-// Persist leaderboard filters + sort + scroll across popup re-opens.
-// localStorage is sync and survives the popup teardown that async
-// chrome.storage.local writes don't always finish in time for.
-const LB_STATE_KEY = 'psLbState';
-function _loadLbPersisted() {
-  try { return JSON.parse(localStorage.getItem(LB_STATE_KEY) || '{}') || {}; }
-  catch { return {}; }
-}
-function _saveLbPersisted(patch) {
-  try {
-    const cur = _loadLbPersisted();
-    localStorage.setItem(LB_STATE_KEY, JSON.stringify({ ...cur, ...patch }));
-  } catch {}
-}
-function persistLbFilters() { _saveLbPersisted({ filters: { ...lbState.filters } }); }
-function persistLbScroll(top)  { _saveLbPersisted({ scrollTop: top || 0 }); }
-function persistLbNotesScroll(top) { _saveLbPersisted({ scrollNotes: top || 0 }); }
 
 // Active-filter chips next to "Showing N of M". Ranges (min/max pairs)
 // collapse into a single chip — "Score: 53–66" — and their X clears both
