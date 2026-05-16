@@ -1046,20 +1046,27 @@ function applySubscriptionHeader() {
 }
 
 // ============ Dropdown menu ============
+function _setDropdownOpen(open) {
+  const d = document.getElementById('userMenuDropdown');
+  const bd = document.getElementById('userMenuBackdrop');
+  if (d) d.style.display = open ? '' : 'none';
+  if (bd) bd.classList.toggle('open', open);
+}
 function toggleDropdown() {
   const d = document.getElementById('userMenuDropdown');
-  d.style.display = d.style.display === 'none' ? '' : 'none';
+  _setDropdownOpen(d && d.style.display === 'none');
 }
-function closeDropdown() {
-  const d = document.getElementById('userMenuDropdown');
-  if (d) d.style.display = 'none';
-}
+function closeDropdown() { _setDropdownOpen(false); }
+
 document.addEventListener('click', (e) => {
   const d = document.getElementById('userMenuDropdown');
   const btn = document.getElementById('headerMenuBtn');
   if (!d || !btn) return;
   if (d.style.display !== 'none' && !d.contains(e.target) && !btn.contains(e.target)) closeDropdown();
 });
+// Clicking the dim backdrop closes the menu too — same as the
+// notifications overlay behaviour.
+document.getElementById('userMenuBackdrop')?.addEventListener('click', () => closeDropdown());
 
 // ============ Tabs ============
 // Scroll positions per tab so leaving and returning lands on the same row.
