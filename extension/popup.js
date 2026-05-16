@@ -77,6 +77,7 @@ const I18N = {
     // Header / actions
     pluginToggleTitle: 'Enable / Disable Profile Stats',
     notifications: 'Notifications',
+    scrollTop: 'Back to top',
     openSidePanel: 'Open in side panel',
     closeSidePanel: 'Close side panel',
     menu: 'Menu',
@@ -324,6 +325,7 @@ const I18N = {
     ssoStoreFailed: 'Не удалось сохранить токен',
     pluginToggleTitle: 'Включить / выключить Profile Stats',
     notifications: 'Уведомления',
+    scrollTop: 'Наверх',
     openSidePanel: 'Открыть в боковой панели',
     closeSidePanel: 'Закрыть боковую панель',
     menu: 'Меню',
@@ -1574,9 +1576,12 @@ function _hideRestoreCurtain() {
   if (loader) loader.remove();
 }
 
-// Throttled persist of the main scroll position on every user scroll.
+// Throttled persist of the main scroll position on every user scroll,
+// plus back-to-top FAB visibility. The FAB only appears once the user
+// has scrolled past ~one viewport so it doesn't crowd the empty state.
 (function _wireScrollPersist() {
   let raf = 0;
+  const FAB_THRESHOLD = 600;
   document.addEventListener('scroll', (e) => {
     const body = e.target;
     if (!body || !body.classList || !body.classList.contains('main-body')) return;
@@ -1586,9 +1591,24 @@ function _hideRestoreCurtain() {
       const top = body.scrollTop || 0;
       if (uiState.tab === 'top')        { tabScroll.top = top;        persistLbScroll(top); }
       else if (uiState.tab === 'notes') { tabScroll.notes = top;      persistLbNotesScroll(top); }
+      const fab = document.getElementById('scrollTopFab');
+      if (fab) fab.classList.toggle('visible', top > FAB_THRESHOLD);
     });
   }, true /* capture — main-body's scroll doesn't bubble to document by default */);
 })();
+
+// Wire back-to-top FAB
+document.getElementById('scrollTopFab')?.addEventListener('click', () => {
+  const body = getMainBody();
+  if (!body) return;
+  body.scrollTo({ top: 0, behavior: 'smooth' });
+  // Persist the new position immediately so a popup re-open after a
+  // back-to-top click lands at the top rather than the saved deep scroll.
+  if (uiState.tab === 'top')        { tabScroll.top = 0;   persistLbScroll(0); }
+  else if (uiState.tab === 'notes') { tabScroll.notes = 0; persistLbNotesScroll(0); }
+  const fab = document.getElementById('scrollTopFab');
+  if (fab) fab.classList.remove('visible');
+});
 
 // ============ Notes Tab (sub-tabs: editor / tags / models) ============
 
