@@ -1664,15 +1664,29 @@ html.booting .screen { display: none !important; }
 .notes-model-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .notes-model-arrow { color: var(--text-muted); flex-shrink: 0; }
 
-/* Trash button on a model row (quick delete in Models sub-tab) */
-.notes-model-delete {
+/* Shared trash button used on Tags and Models list rows. Always-on subtle
+   chip so the action reads as a real button at rest, with a red wash and
+   gentle glow on hover so destructive intent is unmistakable. */
+.trash-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  background: transparent; border: 1px solid transparent; border-radius: 6px;
-  color: var(--text-muted); cursor: pointer; flex-shrink: 0;
-  transition: all 0.12s;
+  width: 30px; height: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
-.notes-model-delete:hover { color: var(--error); background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); }
+.trash-btn:hover {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.55);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+.trash-btn:active { transform: scale(0.94); }
+.trash-btn svg { display: block; }
 
 /* Editor footer: Save (primary, fills the row) and Delete (matching height). */
 .editor-actions { display: flex; gap: 8px; align-items: stretch; }
@@ -1760,13 +1774,7 @@ html.booting .screen { display: none !important; }
 }
 .tag-row-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
 .tag-row-name { flex: 1; font-size: 13px; color: var(--text-primary); }
-.tag-row-delete {
-  background: transparent; border: none; cursor: pointer;
-  color: var(--text-muted); padding: 4px;
-  border-radius: 4px;
-  transition: color 0.12s, background 0.12s;
-}
-.tag-row-delete:hover { color: var(--error); background: rgba(239, 68, 68, 0.08); }
+/* tag-row-delete shares all visual rules with .trash-btn now. */
 
 /* ============ Confirm modal ============ */
 .modal-overlay {

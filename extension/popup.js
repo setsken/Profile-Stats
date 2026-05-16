@@ -1165,7 +1165,22 @@ function setupPasswordToggles() {
   });
 }
 
-async function doLogout() { await send('logout'); show('login'); }
+async function doLogout() {
+  await send('logout');
+  // Drop the previous user's notes/tags from popup memory. Without this,
+  // logging into a different account (and especially back into the
+  // original one) leaves notesState.loaded === true with the prior
+  // account's data, so ensureNotesLoaded() short-circuits and the Top
+  // Models tab never repaints with the current user's note marks.
+  notesState.loaded = false;
+  notesState.notes = {};
+  notesState.avatars = {};
+  notesState.tags = [];
+  notesState.editingUsername = null;
+  notesState.editingTagIds = null;
+  notesState.draftText = '';
+  show('login');
+}
 
 async function doSSO() {
   setError('loginError', '');
@@ -2165,9 +2180,12 @@ function renderTagList() {
     row.innerHTML = `
       <div class="tag-row-dot" style="background:${tagColor(tag.ci)}"></div>
       <div class="tag-row-name">${escapeHtml(tag.name)}</div>
-      <button class="tag-row-delete" data-tag-id="${tag.id}" title="${escapeHtml(t('deleteTitle'))}">
-        <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+      <button class="trash-btn tag-row-delete" data-tag-id="${tag.id}" title="${escapeHtml(t('deleteTitle'))}" aria-label="${escapeHtml(t('deleteTitle'))}">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
         </svg>
       </button>`;
     row.querySelector('.tag-row-delete').addEventListener('click', () => deleteTag(tag.id));
@@ -2270,9 +2288,12 @@ function renderModelsListBody() {
           <div class="notes-model-preview">${preview || `<em style="opacity:.6;">${escapeHtml(t('noText'))}</em>`}</div>
           ${chips ? `<div class="notes-model-tags">${chips}</div>` : ''}
         </div>
-        <button class="notes-model-delete" data-delete-username="${escapeHtml(username)}" title="${escapeHtml(t('deleteNoteTooltip'))}">
-          <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/>
+        <button class="trash-btn notes-model-delete" data-delete-username="${escapeHtml(username)}" title="${escapeHtml(t('deleteNoteTooltip'))}" aria-label="${escapeHtml(t('deleteNoteTooltip'))}">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
           </svg>
         </button>
       </div>`;
