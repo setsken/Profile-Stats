@@ -65,7 +65,11 @@
   }
 
   // ==================== i18n for Badge ====================
-  var _ofLang = localStorage.getItem('ofStatsLang') || 'ru';
+  // Default to English to match the popup's default (Settings → Language).
+  // Russian-fallback was a holdover from when this code was forked from
+  // Stats Editor — it produced an inconsistent state on fresh installs
+  // (popup said EN, badge spoke RU).
+  var _ofLang = localStorage.getItem('ofStatsLang') || 'en';
   var _lastBadgeProfileData = null;
   var _compareModelData = null; // saved model for comparison (loaded from chrome.storage)
   var _badgeI18n = {
@@ -421,11 +425,11 @@
       flagLabels: {}
     }
   };
-  function t(key) { return (_badgeI18n[_ofLang] || _badgeI18n.ru)[key] || (_badgeI18n.ru)[key] || key; }
+  function t(key) { return (_badgeI18n[_ofLang] || _badgeI18n.en)[key] || (_badgeI18n.en)[key] || key; }
   // Look up a chip/flag label in the current locale, falling back to the
   // original English text if no translation is registered.
   function tLabel(text) {
-    var dict = _badgeI18n[_ofLang] || _badgeI18n.ru;
+    var dict = _badgeI18n[_ofLang] || _badgeI18n.en;
     var labels = dict.flagLabels || {};
     return labels[text] || text;
   }
@@ -1696,7 +1700,7 @@
       }
 
       // Refresh language setting
-      _ofLang = settings.ofStatsLang || 'ru';
+      _ofLang = settings.ofStatsLang || 'en';
       
       // Only display on profile pages (not own stats/settings pages)
       if (window.location.pathname.startsWith('/my/')) return;

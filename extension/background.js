@@ -119,6 +119,42 @@ chrome.webNavigation && chrome.webNavigation.onCommitted.addListener((details) =
   broadcastAuthStatus(!!authToken).catch(() => {});
 }, { url: [{ hostEquals: 'onlyfans.com' }] });
 
+// On install / update, inject content scripts into any already-open OF
+// tabs so the user doesn't need to manually F5 every tab to get the
+// badge. content_scripts in the manifest only attach on subsequent
+// navigations; existing tabs stay bare until we push the scripts in.
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    const tabs = await chrome.tabs.query({ url: 'https://onlyfans.com/*' });
+    for (const tab of tabs) {
+      if (!tab.id) continue;
+      // Match the manifest content_scripts entries (excluding page-interceptor
+      // which is loaded as a page-context <script> by inject-early itself).
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: false },
+          files: ['inject-early.js']
+        });
+      } catch (e) { log('PS: inject inject-early failed for tab', tab.id, e.message); }
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: false },
+          files: ['content.js']
+        });
+      } catch (e) { log('PS: inject content failed for tab', tab.id, e.message); }
+      try {
+        await chrome.scripting.insertCSS({
+          target: { tabId: tab.id, allFrames: false },
+          files: ['content.css']
+        });
+      } catch (e) { log('PS: insert CSS failed for tab', tab.id, e.message); }
+    }
+    log('PS: re-injected scripts into', tabs.length, 'OF tab(s) on install/update');
+  } catch (e) {
+    log('PS: onInstalled re-inject failed', e);
+  }
+});
+
 // ==================== MESSAGE ROUTER ====================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   handleMessage(request, sender).then(sendResponse);
