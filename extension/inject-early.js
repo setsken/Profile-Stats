@@ -1,11 +1,14 @@
 // Early injection script - runs at document_start before any content renders
 (async function() {
   'use strict';
-  
+
   // Debug flag - set to false in production to disable all console logs
   const DEBUG = false;
   function log(...args) { if (DEBUG) log(...args); }
   function logError(...args) { if (DEBUG) logError(...args); }
+  // Temporary auth-flow logging so we can see what's happening on a real
+  // user's tab when the badge fails to appear. Remove once stabilised.
+  function authLog(...args) { try { console.log('[PS auth]', ...args); } catch {} }
   
   // Check if user is authenticated.
   // Read OUR flag (psAuthStatus) first — set by Profile Stats background on
@@ -16,6 +19,7 @@
   const seStatus = localStorage.getItem('ofStatsAuthStatus');
   const localSaysAuth = psStatus === 'authenticated'
     || (psStatus == null && seStatus === 'authenticated');
+  authLog('boot', { psStatus, seStatus, localSaysAuth, url: location.href });
 
   // Synchronous fast-path: if localStorage already says authenticated, run
   // the badge logic immediately so the user sees zero delay.
@@ -28,22 +32,34 @@
   let isAuthenticated = localSaysAuth;
   if (!isAuthenticated) {
     try {
+      authLog('asking background for auth status…');
       const resp = await new Promise((resolve) => {
         try {
           chrome.runtime.sendMessage({ action: 'getAuthStatus' }, (r) => {
-            if (chrome.runtime.lastError) resolve(null);
-            else resolve(r);
+            if (chrome.runtime.lastError) {
+              authLog('sendMessage error:', chrome.runtime.lastError.message);
+              resolve(null);
+            } else {
+              resolve(r);
+            }
           });
-        } catch { resolve(null); }
+        } catch (e) {
+          authLog('sendMessage threw:', e && e.message);
+          resolve(null);
+        }
       });
+      authLog('background response:', resp);
       if (resp && resp.isAuthenticated) {
         isAuthenticated = true;
         // Persist for future quick-starts on this origin
         try { localStorage.setItem('psAuthStatus', 'authenticated'); } catch {}
       }
-    } catch {}
+    } catch (e) {
+      authLog('await failed:', e && e.message);
+    }
   }
 
+  authLog('final decision: isAuthenticated =', isAuthenticated);
   // If not authenticated, don't run any plugin functionality
   if (!isAuthenticated) {
     log('OF Stats Early: Not authenticated, plugin disabled');
