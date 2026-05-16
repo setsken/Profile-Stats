@@ -119,39 +119,29 @@ chrome.webNavigation && chrome.webNavigation.onCommitted.addListener((details) =
   broadcastAuthStatus(!!authToken).catch(() => {});
 }, { url: [{ hostEquals: 'onlyfans.com' }] });
 
-// On install / update, inject content scripts into any already-open OF
-// tabs so the user doesn't need to manually F5 every tab to get the
-// badge. content_scripts in the manifest only attach on subsequent
-// navigations; existing tabs stay bare until we push the scripts in.
-chrome.runtime.onInstalled.addListener(async () => {
+// On install / update, reload every open OF tab so the freshly-installed
+// content scripts attach cleanly. Just calling chrome.scripting.executeScript
+// produced "Extension context invalidated" errors: the old inject-early
+// from the previous extension instance was still alive in the page, the
+// page-context fetch interceptor kept firing events into that dead
+// context, and the user saw a noisy console + missing badge. A full
+// tab reload removes the stale instance, attaches the new content
+// scripts via the manifest, and the badge appears on the next load.
+chrome.runtime.onInstalled.addListener(async (details) => {
+  // Skip if Chrome triggered onInstalled on browser startup (rare) — the
+  // event always fires with reason='install' or 'update' / 'chrome_update'.
+  // Skip chrome_update — that's the browser updating, not us.
+  if (details.reason === 'chrome_update') return;
   try {
     const tabs = await chrome.tabs.query({ url: 'https://onlyfans.com/*' });
     for (const tab of tabs) {
       if (!tab.id) continue;
-      // Match the manifest content_scripts entries (excluding page-interceptor
-      // which is loaded as a page-context <script> by inject-early itself).
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: false },
-          files: ['inject-early.js']
-        });
-      } catch (e) { log('PS: inject inject-early failed for tab', tab.id, e.message); }
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: false },
-          files: ['content.js']
-        });
-      } catch (e) { log('PS: inject content failed for tab', tab.id, e.message); }
-      try {
-        await chrome.scripting.insertCSS({
-          target: { tabId: tab.id, allFrames: false },
-          files: ['content.css']
-        });
-      } catch (e) { log('PS: insert CSS failed for tab', tab.id, e.message); }
+      try { await chrome.tabs.reload(tab.id, { bypassCache: false }); }
+      catch (e) { log('PS: tab reload failed', tab.id, e.message); }
     }
-    log('PS: re-injected scripts into', tabs.length, 'OF tab(s) on install/update');
+    log('PS: reloaded', tabs.length, 'OF tab(s) after', details.reason);
   } catch (e) {
-    log('PS: onInstalled re-inject failed', e);
+    log('PS: onInstalled reload failed', e);
   }
 });
 
