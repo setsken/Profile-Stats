@@ -2,11 +2,11 @@
 (async function() {
   'use strict';
 
-  // Debug flag - set to false in production to disable all console logs
-  const DEBUG = false;
-  function log(...args) { if (DEBUG) log(...args); }
-  function logError(...args) { if (DEBUG) logError(...args); }
-  // Auth-flow logging — gated by DEBUG, kept around for future bisects.
+  // Debug flag — TEMPORARILY ON while we chase missing-badge cases.
+  // Set back to false once stabilised.
+  const DEBUG = true;
+  function log(...args) { if (DEBUG) try { console.log('[PS]', ...args); } catch {} }
+  function logError(...args) { if (DEBUG) try { console.error('[PS]', ...args); } catch {} }
   function authLog(...args) { if (DEBUG) try { console.log('[PS auth]', ...args); } catch {} }
   
   // Check if user is authenticated.
@@ -573,7 +573,7 @@
     // Listen for profile data events dispatched from page context
     window.addEventListener('ofStatsProfileData', async function(e) {
       const profileData = e.detail;
-      log('OF Stats: Received profile data event:', profileData);
+      log('Received profile data event:', profileData && profileData.username);
       
       // Report fans to global registry if visible AND model is verified (has checkmark)
       // Only verified creators should be tracked in global registry
@@ -1634,6 +1634,7 @@
 
     // Function to display profile data badge on the page
     function displayProfileData(profileData) {
+      log('displayProfileData() called for @' + (profileData && profileData.username));
       // Check if user is authenticated — use our own key (psAuthStatus) so
       // an SE-side logout doesn't kill the PS badge. The boot-time gate
       // above already async-resolves auth via the SW and stamps
@@ -1643,9 +1644,10 @@
       const _authed = _ps === 'authenticated'
         || (_ps == null && _se === 'authenticated');
       if (!_authed) {
-        log('OF Stats: Not authenticated, skipping profile badge');
+        log('Skipping badge — auth gate denied', { ps: _ps, se: _se });
         return;
       }
+      log('Badge auth gate passed, rendering…');
 
       // Read settings from chrome.storage.local (shared with popup)
       chrome.storage.local.get(['ofStatsBadgeEnabled', 'ofStatsVerdictEnabled', 'ofStatsLang', 'ofStatsSubscriptionActive'], function(settings) {
