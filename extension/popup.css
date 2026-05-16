@@ -320,9 +320,17 @@ html.booting .screen { display: none !important; }
   border: 1px solid var(--border-soft); border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1);
   z-index: 210;
-  padding: 6px 0;
+  padding: 6px 0 0; /* keep top padding, drop bottom so the last item flushes to the edge */
   backdrop-filter: blur(12px);
   animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden; /* clip the last item's hover fill to the rounded corner */
+}
+/* Last item in the dropdown owns the bottom edge — round its bottom
+   corners so the hover fill matches the menu silhouette instead of
+   leaving a bare strip below it. */
+.dropdown-menu > .dropdown-item:last-child {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* Backdrop shown behind the menu — same dim-the-popup treatment used by
