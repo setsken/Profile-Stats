@@ -319,9 +319,23 @@ html.booting .screen { display: none !important; }
   background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
   border: 1px solid var(--border-soft); border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1);
-  z-index: 100;
+  z-index: 200;
   padding: 6px 0;
   backdrop-filter: blur(12px);
+  animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Dim the whole popup behind the dropdown so it reads as a modal layer,
+   the same way the notifications overlay does. ::before sits behind the
+   menu (negative z-offset relative to its parent on the stacking
+   context) and covers the viewport via position:fixed. */
+.dropdown-menu::before {
+  content: "";
+  position: fixed; inset: 0;
+  background: rgba(5, 7, 14, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: -1;
+  animation: modalFadeIn 0.18s ease-out;
 }
 .dropdown-header { padding: 12px 14px; border-bottom: 1px solid var(--border-color); margin-bottom: 4px; }
 .dropdown-email { font-size: 12px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
