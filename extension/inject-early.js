@@ -6,9 +6,8 @@
   const DEBUG = false;
   function log(...args) { if (DEBUG) log(...args); }
   function logError(...args) { if (DEBUG) logError(...args); }
-  // Temporary auth-flow logging so we can see what's happening on a real
-  // user's tab when the badge fails to appear. Remove once stabilised.
-  function authLog(...args) { try { console.log('[PS auth]', ...args); } catch {} }
+  // Auth-flow logging — gated by DEBUG, kept around for future bisects.
+  function authLog(...args) { if (DEBUG) try { console.log('[PS auth]', ...args); } catch {} }
   
   // Check if user is authenticated.
   // Read OUR flag (psAuthStatus) first — set by Profile Stats background on
@@ -1635,9 +1634,15 @@
 
     // Function to display profile data badge on the page
     function displayProfileData(profileData) {
-      // Check if user is authenticated - don't show if not logged in
-      const authStatus = localStorage.getItem('ofStatsAuthStatus');
-      if (authStatus !== 'authenticated') {
+      // Check if user is authenticated — use our own key (psAuthStatus) so
+      // an SE-side logout doesn't kill the PS badge. The boot-time gate
+      // above already async-resolves auth via the SW and stamps
+      // psAuthStatus, so by the time this is called the key is set.
+      const _ps = localStorage.getItem('psAuthStatus');
+      const _se = localStorage.getItem('ofStatsAuthStatus');
+      const _authed = _ps === 'authenticated'
+        || (_ps == null && _se === 'authenticated');
+      if (!_authed) {
         log('OF Stats: Not authenticated, skipping profile badge');
         return;
       }
