@@ -2,15 +2,26 @@
 // It must be loaded as a file (not inline) due to CSP restrictions
 
 (function() {
-  // Debug flag - set to false in production to disable all console logs
+  // Debug flag - set to false in production to disable all console logs.
+  // Logs route to console.* directly — the previous version called log()
+  // recursively from inside log() which would stack-overflow whenever
+  // DEBUG was true.
   const DEBUG = false;
-  function log(...args) { if (DEBUG) log(...args); }
-  function logError(...args) { if (DEBUG) logError(...args); }
-  
-  // Check authentication before running
-  const authStatus = localStorage.getItem('ofStatsAuthStatus');
-  if (authStatus !== 'authenticated') {
-    log('OF Stats: User not authenticated, interceptor disabled');
+  function log(...args) { if (DEBUG) try { console.log('[PS page]', ...args); } catch {} }
+  function logError(...args) { if (DEBUG) try { console.error('[PS page]', ...args); } catch {} }
+
+  // Check authentication before installing the fetch hook. PS owns
+  // psAuthStatus; we fall back to the legacy ofStatsAuthStatus only when
+  // PS hasn't stamped anything yet (first run after install, before the
+  // SW broadcast has hit this tab). Without this fallback an SE logout
+  // wrote 'not_authenticated' into the shared key and PS's interceptor
+  // bailed out — the badge never rendered even though PS was signed in.
+  const _ps = localStorage.getItem('psAuthStatus');
+  const _se = localStorage.getItem('ofStatsAuthStatus');
+  const isAuthenticated = _ps === 'authenticated'
+    || (_ps == null && _se === 'authenticated');
+  if (!isAuthenticated) {
+    log('User not authenticated, interceptor disabled', { ps: _ps, se: _se });
     return;
   }
   
