@@ -9,9 +9,13 @@
   
   log('OF Stats Editor Pro: Content script loaded');
   
-  // Check if user is authenticated
-  const authStatus = localStorage.getItem('ofStatsAuthStatus');
-  const isAuthenticated = authStatus === 'authenticated';
+  // Check if user is authenticated — use our own key (psAuthStatus) so an
+  // SE-side logout doesn't shut PS down. Legacy fallback on the shared key
+  // for installs that haven't pumped psAuthStatus yet.
+  const ps = localStorage.getItem('psAuthStatus');
+  const se = localStorage.getItem('ofStatsAuthStatus');
+  const isAuthenticated = ps === 'authenticated'
+    || (ps == null && se === 'authenticated');
   
   // If not authenticated, only allow message handling for auth sync, but disable all other functionality
   if (!isAuthenticated) {

@@ -1,5 +1,5 @@
 // Early injection script - runs at document_start before any content renders
-(function() {
+(async function() {
   'use strict';
   
   // Debug flag - set to false in production to disable all console logs
@@ -14,8 +14,35 @@
   // until the next PS login round-trip writes the new key.
   const psStatus = localStorage.getItem('psAuthStatus');
   const seStatus = localStorage.getItem('ofStatsAuthStatus');
-  const isAuthenticated = psStatus === 'authenticated'
+  const localSaysAuth = psStatus === 'authenticated'
     || (psStatus == null && seStatus === 'authenticated');
+
+  // Synchronous fast-path: if localStorage already says authenticated, run
+  // the badge logic immediately so the user sees zero delay.
+  // Otherwise we don't bail — instead we ask our background service worker
+  // (single source of truth for the PS authToken) and only abort if it
+  // confirms no auth. This fixes a startup race: inject-early runs at
+  // document_start, but the SW broadcast that stamps psAuthStatus may
+  // arrive several ms later, leaving us with a stale 'not_authenticated'
+  // from SE's last logout.
+  let isAuthenticated = localSaysAuth;
+  if (!isAuthenticated) {
+    try {
+      const resp = await new Promise((resolve) => {
+        try {
+          chrome.runtime.sendMessage({ action: 'getAuthStatus' }, (r) => {
+            if (chrome.runtime.lastError) resolve(null);
+            else resolve(r);
+          });
+        } catch { resolve(null); }
+      });
+      if (resp && resp.isAuthenticated) {
+        isAuthenticated = true;
+        // Persist for future quick-starts on this origin
+        try { localStorage.setItem('psAuthStatus', 'authenticated'); } catch {}
+      }
+    } catch {}
+  }
 
   // If not authenticated, don't run any plugin functionality
   if (!isAuthenticated) {
