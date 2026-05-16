@@ -490,6 +490,14 @@ function t(key, vars) {
   return s;
 }
 
+// Single date formatter for the popup. European day-first ordering for
+// both locales (en-GB / ru-RU) — never US month-first.
+function formatDate(d) {
+  if (!d) return '';
+  const locale = currentLang === 'ru' ? 'ru-RU' : 'en-GB';
+  try { return d.toLocaleDateString(locale); } catch { return ''; }
+}
+
 // Apply current language to every static element marked with data-i18n*
 // attributes. Called after boot and whenever the user toggles the language.
 function applyLanguage() {
@@ -1025,9 +1033,11 @@ function applySubscriptionHeader() {
     if (sub.plan === 'profile_stats') label = (t('subActive') || 'Active').toUpperCase();
     subtitle.textContent = label;
     plan.textContent = label;
-    const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US';
+    // European DD/MM/YYYY (en-GB) for EN, DD.MM.YYYY (ru-RU) for RU —
+    // we never want US month-first ordering since the user base reads
+    // dates day-first.
     const d = sub.expiresAt ? new Date(sub.expiresAt) : null;
-    exp.textContent = d ? '• ' + d.toLocaleDateString(locale) : '';
+    exp.textContent = d ? '• ' + formatDate(d) : '';
   } else {
     subtitle.textContent = t('subNone');
     plan.textContent = t('subInactiveLabel');
@@ -1990,8 +2000,7 @@ async function openSubscriptionPage() {
   const renewCard = document.getElementById('renewCard');
 
   if (sub.hasAccess) {
-    const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US';
-    const date = sub.expiresAt ? new Date(sub.expiresAt).toLocaleDateString(locale) : '?';
+    const date = sub.expiresAt ? formatDate(new Date(sub.expiresAt)) : '?';
     const plan = (sub.plan || t('subActive')).toUpperCase();
     const key = sub.grantedVia === 'stats_editor_pro' ? 'activeUntilVia' : 'activeUntil';
     document.getElementById('subUserSub').textContent = t(key, { plan, date });
