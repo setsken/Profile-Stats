@@ -2,9 +2,8 @@
 (async function() {
   'use strict';
 
-  // Debug flag — TEMPORARILY ON while we chase missing-badge cases.
-  // Set back to false once stabilised.
-  const DEBUG = true;
+  // Debug flag — flip to true when bisecting auth / badge issues.
+  const DEBUG = false;
   function log(...args) { if (DEBUG) try { console.log('[PS]', ...args); } catch {} }
   function logError(...args) { if (DEBUG) try { console.error('[PS]', ...args); } catch {} }
   function authLog(...args) { if (DEBUG) try { console.log('[PS auth]', ...args); } catch {} }
