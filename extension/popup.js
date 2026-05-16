@@ -757,7 +757,28 @@ function show(name) {
     if (!el) continue; // tolerate missing screens
     el.style.display = k === name ? 'flex' : 'none';
   }
+  // The first show() call wins the race against the booting CSS guard
+  // (html.booting hides every .screen) — strip it now so the chosen
+  // screen actually paints.
+  document.documentElement.classList.remove('booting');
   closeDropdown();
+
+  // Coming back to main from a side screen (Support, Settings, etc.) —
+  // make sure the current tab actually has rows. If the previous load got
+  // interrupted or never finished (popup was closed mid-fetch, user
+  // switched screens before the request resolved) the pane stays stuck
+  // on "Loading…". Kick it again here.
+  if (name === 'main') {
+    const tab = uiState.tab;
+    if (tab === 'top') {
+      const hasRows = document.querySelectorAll('#topList .list-item').length > 0;
+      if (!hasRows && !lbState.loading) loadTopTab();
+    } else if (tab === 'notes') {
+      const content = document.getElementById('notesContent');
+      const empty = content && content.querySelector('.list-empty');
+      if (empty && /Loading|Загруз/i.test(empty.textContent || '')) loadNotesTab();
+    }
+  }
   // Persist only screens that make sense to restore after re-open. Auth
   // screens fall through — those are gated by the auth status anyway.
   // Don't persist transient checkout screens (network/payment) — landing
@@ -1776,20 +1797,24 @@ async function setPluginEnabled(enabled) {
 // ============ Support form ============
 // Draft persistence: keep subject/message across popup re-opens so a user
 // who accidentally closes the popup mid-typing doesn't lose their report.
+// We use localStorage (sync) instead of chrome.storage.local (async) — the
+// previous version lost the last keystroke when the user closed the popup
+// before the async write could land. localStorage commits synchronously
+// on each call and survives the popup teardown.
 const SUPPORT_DRAFT_KEY = 'psSupportDraft';
 
-async function loadSupportDraft() {
-  try { const r = await chrome.storage.local.get(SUPPORT_DRAFT_KEY); return r[SUPPORT_DRAFT_KEY] || {}; }
+function loadSupportDraft() {
+  try { return JSON.parse(localStorage.getItem(SUPPORT_DRAFT_KEY) || '{}') || {}; }
   catch { return {}; }
 }
-async function saveSupportDraft(patch) {
+function saveSupportDraft(patch) {
   try {
-    const cur = await loadSupportDraft();
-    await chrome.storage.local.set({ [SUPPORT_DRAFT_KEY]: { ...cur, ...patch } });
+    const cur = loadSupportDraft();
+    localStorage.setItem(SUPPORT_DRAFT_KEY, JSON.stringify({ ...cur, ...patch }));
   } catch {}
 }
-async function clearSupportDraft() {
-  try { await chrome.storage.local.remove(SUPPORT_DRAFT_KEY); } catch {}
+function clearSupportDraft() {
+  try { localStorage.removeItem(SUPPORT_DRAFT_KEY); } catch {}
 }
 
 async function openSupportPage() {
@@ -1809,7 +1834,7 @@ async function openSupportPage() {
   if (emailEl) emailEl.value = auth.email || '';
 
   // Restore draft (subject defaults to the localised "Bug Report — Profile Stats").
-  const draft = await loadSupportDraft();
+  const draft = loadSupportDraft();
   const subjectEl = document.getElementById('supportSubject');
   const msgEl = document.getElementById('supportMessage');
   if (subjectEl) subjectEl.value = draft.subject || t('supportSubjectDefault');
@@ -1846,7 +1871,7 @@ async function submitSupportForm(e) {
       return;
     }
     // Success → swap to confirmation view, drop the draft
-    await clearSupportDraft();
+    clearSupportDraft();
     const successEmail = document.getElementById('supportSuccessEmail');
     if (successEmail) successEmail.textContent = email;
     document.getElementById('supportForm').style.display = 'none';

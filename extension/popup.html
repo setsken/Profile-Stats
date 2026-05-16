@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="booting">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -622,17 +622,28 @@
       <!-- Success state -->
       <div class="support-success" id="supportSuccess" style="display:none;">
         <div class="support-success-icon">
-          <svg viewBox="0 0 52 52" width="48" height="48">
+          <svg viewBox="0 0 52 52" width="52" height="52">
             <circle class="support-success-circle" cx="26" cy="26" r="24" fill="none" stroke="#10b981" stroke-width="3"/>
             <path class="support-success-check" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M14 27l8 8 16-18"/>
           </svg>
         </div>
         <div class="support-success-title" data-i18n="supportSentTitle">Message sent!</div>
-        <div class="support-success-msg">
-          <span data-i18n="supportSentMsg">We'll reply to:</span>
-          <strong id="supportSuccessEmail">—</strong>
+        <div class="support-success-msg" data-i18n="supportSentMsg">We'll get back to you shortly at:</div>
+        <div class="support-success-email-pill">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <span id="supportSuccessEmail">—</span>
         </div>
-        <button type="button" class="modal-btn modal-btn-cancel" id="supportSuccessClose" data-i18n="close">Close</button>
+        <div class="support-success-hint">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span data-i18n="supportSentHint">We typically reply within 24 hours. If your report leads to a confirmed bug fix, you'll get 1 month of Profile Stats free.</span>
+        </div>
+        <button type="button" id="supportSuccessClose" data-i18n="done">Done</button>
       </div>
     </div>
   </div>
