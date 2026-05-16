@@ -2869,6 +2869,31 @@ wire('topSearch', 'input', (e) => {
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => loadTopTab(true), 300);
 });
+
+// Numeric inputs whose value is logically capped to a fixed range. The
+// type="number" max= attribute is only used for HTML form validation,
+// not as an input filter — without this clamp the user could type 32134
+// into Min quality % and it would silently shoot through to the backend.
+[
+  { id: 'filterMinScore',   min: 0, max: 100 },
+  { id: 'filterMaxScore',   min: 0, max: 100 },
+  { id: 'filterMinQuality', min: 0, max: 100 }
+].forEach(({ id, min, max }) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const clamp = () => {
+    if (el.value === '' || el.value == null) return;
+    let n = Number(el.value);
+    if (!Number.isFinite(n)) { el.value = ''; return; }
+    if (n < min) n = min;
+    if (n > max) n = max;
+    // Drop fractional input for integer-only fields
+    n = Math.floor(n);
+    el.value = String(n);
+  };
+  el.addEventListener('input', clamp);
+  el.addEventListener('blur', clamp);
+});
 // Custom sort dropdown
 (function setupSortDropdown() {
   const wrap = document.getElementById('sortDropdown');
