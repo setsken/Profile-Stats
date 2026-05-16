@@ -342,7 +342,7 @@ async function apiRegister(email, password) {
     const r = await fetch(`${STATS_EDITOR_API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, product: 'profile_stats' })
     });
     const data = await r.json();
     if (r.ok) {
@@ -418,7 +418,7 @@ async function apiForgotPassword(email) {
   try {
     const r = await fetch(`${STATS_EDITOR_API}/auth/forgot-password`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, product: 'profile_stats' })
     });
     const data = await r.json();
     return { success: true, message: data.message };

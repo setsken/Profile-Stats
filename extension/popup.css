@@ -1226,7 +1226,7 @@ html.booting .screen { display: none !important; }
    scrolls long lists of filters. */
 .filter-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
@@ -1256,14 +1256,14 @@ html.booting .screen { display: none !important; }
 /* Scrollable section list with sticky action bar below. */
 .filter-scroll {
   overflow-y: auto;
-  padding: 14px 14px 4px;
-  display: flex; flex-direction: column; gap: 14px;
+  padding: 10px 14px 4px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .filter-scroll::-webkit-scrollbar { width: 6px; }
 .filter-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 .filter-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent-soft); }
 
-.filter-section { display: flex; flex-direction: column; gap: 8px; }
+.filter-section { display: flex; flex-direction: column; gap: 6px; }
 .filter-section-title {
   font-size: 11px; font-weight: 700;
   color: var(--accent);
@@ -1332,7 +1332,7 @@ html.booting .screen { display: none !important; }
 /* Sticky footer with Apply / Reset — always reachable without scrolling. */
 .filter-actions {
   display: flex; gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   background: rgba(10, 12, 20, 0.6);
   border-top: 1px solid var(--border-soft);
   flex-shrink: 0;
@@ -1376,8 +1376,8 @@ html.booting .screen { display: none !important; }
 .filter-reset-btn:active { transform: translateY(1px); }
 
 .filter-note {
-  font-size: 11px; color: var(--text-muted); line-height: 1.5;
-  padding-top: 8px;
+  font-size: 11px; color: var(--text-muted); line-height: 1.4;
+  padding-top: 6px;
   border-top: 1px dashed var(--border-color);
   display: flex; align-items: flex-start; gap: 6px;
 }
