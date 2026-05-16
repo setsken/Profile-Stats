@@ -57,6 +57,7 @@ const I18N = {
     registerTitle: 'Create Account',
     registerSubtitle: '7 days of Profile Stats free',
     passwordMin6: 'Min 6 characters',
+    confirmPassword: 'Confirm Password',
     createAccount: 'Create Account',
     haveAccount: 'Already have an account?',
     // Auth — forgot
@@ -64,10 +65,31 @@ const I18N = {
     resetSubtitle: 'Enter your email to receive a reset code',
     sendResetCode: 'Send Reset Code',
     backToSignIn: 'Back to sign in',
+    // Auth — reset code screen
+    checkEmail: 'Check Your Email',
+    enterCodeSentTo: 'Enter the code sent to',
+    resetCode: 'Reset Code',
+    enterCodePlaceholder: 'Enter code from email',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    resetPasswordBtn: 'Reset Password',
+    resendCode: 'Resend code',
+    changeEmail: 'Change email',
+    // Auth — verify email screen
+    verifyEmail: 'Verify Your Email',
+    verificationCode: 'Verification Code',
+    enter6DigitCode: 'Enter 6-digit code',
+    verifyEmailBtn: 'Verify Email',
     // Auth — errors / status
     loginFailed: 'Login failed',
     registerFailed: 'Registration failed',
     accountCreatedCheckEmail: 'Account created. Check your email then sign in.',
+    passwordsNoMatch: 'Passwords do not match',
+    passwordTooShort: 'Password must be at least 6 characters',
+    resetFailed: 'Invalid or expired code',
+    resetSuccess: 'Password reset successful. Please sign in.',
+    verifyFailed: 'Invalid verification code',
+    codeResent: 'Code resent. Check your email.',
     forgotFailed: 'Failed to send reset code',
     forgotSuccess: 'Reset code sent. Check your email.',
     ssoNotAuth: 'Sign in to Stats Editor first, then click this button again.',
@@ -311,15 +333,35 @@ const I18N = {
     registerTitle: 'Создать аккаунт',
     registerSubtitle: '7 дней Profile Stats бесплатно',
     passwordMin6: 'Минимум 6 символов',
+    confirmPassword: 'Подтвердите пароль',
     createAccount: 'Создать аккаунт',
     haveAccount: 'Уже есть аккаунт?',
     resetTitle: 'Сброс пароля',
     resetSubtitle: 'Введите email для получения кода сброса',
     sendResetCode: 'Отправить код',
     backToSignIn: 'Назад ко входу',
+    checkEmail: 'Проверьте почту',
+    enterCodeSentTo: 'Введите код, отправленный на',
+    resetCode: 'Код сброса',
+    enterCodePlaceholder: 'Введите код из письма',
+    newPassword: 'Новый пароль',
+    confirmNewPassword: 'Подтвердите новый пароль',
+    resetPasswordBtn: 'Сбросить пароль',
+    resendCode: 'Отправить код снова',
+    changeEmail: 'Сменить email',
+    verifyEmail: 'Подтвердите email',
+    verificationCode: 'Код подтверждения',
+    enter6DigitCode: 'Введите 6-значный код',
+    verifyEmailBtn: 'Подтвердить email',
     loginFailed: 'Не удалось войти',
     registerFailed: 'Не удалось зарегистрироваться',
     accountCreatedCheckEmail: 'Аккаунт создан. Проверьте email и войдите.',
+    passwordsNoMatch: 'Пароли не совпадают',
+    passwordTooShort: 'Пароль должен быть не менее 6 символов',
+    resetFailed: 'Неверный или истёкший код',
+    resetSuccess: 'Пароль успешно изменён. Войдите.',
+    verifyFailed: 'Неверный код подтверждения',
+    codeResent: 'Код отправлен повторно. Проверьте email.',
     forgotFailed: 'Не удалось отправить код',
     forgotSuccess: 'Код сброса отправлен. Проверьте email.',
     ssoNotAuth: 'Сначала войдите в Stats Editor, затем нажмите кнопку снова.',
@@ -603,6 +645,8 @@ const screens = {
   login:        document.getElementById('loginScreen'),
   register:     document.getElementById('registerScreen'),
   forgot:       document.getElementById('forgotScreen'),
+  resetCode:    document.getElementById('resetCodeScreen'),
+  verifyEmail:  document.getElementById('verifyEmailScreen'),
   main:         document.getElementById('mainScreen'),
   subscription: document.getElementById('subscriptionScreen'),
   settings:     document.getElementById('settingsScreen'),
@@ -610,6 +654,10 @@ const screens = {
   network:      document.getElementById('networkScreen'),
   payment:      document.getElementById('paymentScreen')
 };
+
+// Email being verified or reset — survives between forgot → resetCode and
+// register → verifyEmail screens so handlers know which account to act on.
+let pendingEmail = null;
 
 const TAG_COLORS = [
   '#8b5cf6', '#10b981', '#ef4444', '#f59e0b',
@@ -984,15 +1032,21 @@ async function doLogin(email, password) {
   } finally { setLoading('loginBtn', false); }
 }
 
-async function doRegister(email, password) {
+async function doRegister(email, password, confirm) {
   setError('registerError', '');
+  if (password !== confirm) { setError('registerError', t('passwordsNoMatch')); return; }
+  if (password.length < 6) { setError('registerError', t('passwordTooShort')); return; }
   setLoading('registerBtn', true);
   try {
     const r = await send('register', { email, password });
     if (!r.success) { setError('registerError', r.error || t('registerFailed')); return; }
     if (r.requiresVerification) {
-      setError('registerError', t('accountCreatedCheckEmail'));
-      show('login'); return;
+      pendingEmail = email;
+      const disp = document.getElementById('verifyEmailDisplay');
+      if (disp) disp.textContent = email;
+      setError('verifyError', ''); setSuccess('verifySuccess', '');
+      show('verifyEmail');
+      return;
     }
     await enterMainScreen(r.user);
   } finally { setLoading('registerBtn', false); }
@@ -1004,8 +1058,85 @@ async function doForgot(email) {
   try {
     const r = await send('forgotPassword', { email });
     if (!r.success) { setError('forgotError', r.error || t('forgotFailed')); return; }
-    setSuccess('forgotSuccess', r.message || t('forgotSuccess'));
+    // Move to the code-entry screen the same way Stats Editor does, instead
+    // of just printing a status line and waiting for the user to figure it
+    // out. pendingEmail tells handleReset/Resend which account to act on.
+    pendingEmail = email;
+    const disp = document.getElementById('resetEmailDisplay');
+    if (disp) disp.textContent = email;
+    setError('resetCodeError', ''); setSuccess('resetCodeSuccess', '');
+    const codeInput = document.getElementById('resetCodeInput');
+    const newPw = document.getElementById('newPassword');
+    const newPwC = document.getElementById('newPasswordConfirm');
+    if (codeInput) codeInput.value = '';
+    if (newPw) newPw.value = '';
+    if (newPwC) newPwC.value = '';
+    show('resetCode');
   } finally { setLoading('forgotBtn', false); }
+}
+
+async function doResetPassword(code, newPassword, confirm) {
+  setError('resetCodeError', ''); setSuccess('resetCodeSuccess', '');
+  if (!pendingEmail) { setError('resetCodeError', t('resetFailed')); return; }
+  if (newPassword !== confirm) { setError('resetCodeError', t('passwordsNoMatch')); return; }
+  if (newPassword.length < 6) { setError('resetCodeError', t('passwordTooShort')); return; }
+  setLoading('resetCodeBtn', true);
+  try {
+    const r = await send('resetPassword', { email: pendingEmail, token: code, newPassword });
+    if (!r.success) { setError('resetCodeError', r.error || t('resetFailed')); return; }
+    setSuccess('resetCodeSuccess', t('resetSuccess'));
+    pendingEmail = null;
+    setTimeout(() => show('login'), 1200);
+  } finally { setLoading('resetCodeBtn', false); }
+}
+
+async function doVerifyEmail(code) {
+  setError('verifyError', ''); setSuccess('verifySuccess', '');
+  if (!pendingEmail) { setError('verifyError', t('verifyFailed')); return; }
+  setLoading('verifyBtn', true);
+  try {
+    const r = await send('verifyEmail', { email: pendingEmail, code });
+    if (!r.success) { setError('verifyError', r.error || t('verifyFailed')); return; }
+    pendingEmail = null;
+    await enterMainScreen(r.user);
+  } finally { setLoading('verifyBtn', false); }
+}
+
+async function doResendResetCode() {
+  if (!pendingEmail) return;
+  setError('resetCodeError', ''); setSuccess('resetCodeSuccess', '');
+  const r = await send('forgotPassword', { email: pendingEmail });
+  if (r.success) setSuccess('resetCodeSuccess', t('codeResent'));
+  else setError('resetCodeError', r.error || t('forgotFailed'));
+}
+
+async function doResendVerifyCode() {
+  if (!pendingEmail) return;
+  setError('verifyError', ''); setSuccess('verifySuccess', '');
+  const r = await send('resendVerification', { email: pendingEmail });
+  if (r.success) setSuccess('verifySuccess', t('codeResent'));
+  else setError('verifyError', r.error || t('forgotFailed'));
+}
+
+// Click handler for any .password-toggle button. Switches the linked
+// input between password/text and flips the eye icon via CSS.
+function setupPasswordToggles() {
+  document.querySelectorAll('.password-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const targetId = btn.getAttribute('data-target');
+      const input = targetId && document.getElementById(targetId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.classList.add('showing');
+      } else {
+        input.type = 'password';
+        btn.classList.remove('showing');
+      }
+    });
+  });
 }
 
 async function doLogout() { await send('logout'); show('login'); }
@@ -2810,17 +2941,38 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
 });
 document.getElementById('registerForm').addEventListener('submit', (e) => {
   e.preventDefault();
-  doRegister(document.getElementById('registerEmail').value.trim(), document.getElementById('registerPassword').value);
+  doRegister(
+    document.getElementById('registerEmail').value.trim(),
+    document.getElementById('registerPassword').value,
+    document.getElementById('registerConfirm').value
+  );
 });
 document.getElementById('forgotForm').addEventListener('submit', (e) => {
   e.preventDefault();
   doForgot(document.getElementById('forgotEmail').value.trim());
 });
+document.getElementById('resetCodeForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  doResetPassword(
+    document.getElementById('resetCodeInput').value.trim(),
+    document.getElementById('newPassword').value,
+    document.getElementById('newPasswordConfirm').value
+  );
+});
+document.getElementById('verifyEmailForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  doVerifyEmail(document.getElementById('verifyCodeInput').value.trim());
+});
 wire('showRegister', 'click', (e) => { e.preventDefault(); show('register'); });
 wire('showLogin',    'click', (e) => { e.preventDefault(); show('login'); });
 wire('forgotLink',   'click', (e) => { e.preventDefault(); show('forgot'); });
 wire('backToLoginFromForgot', 'click', (e) => { e.preventDefault(); show('login'); });
+wire('resendResetCode', 'click', (e) => { e.preventDefault(); doResendResetCode(); });
+wire('backToForgot', 'click', (e) => { e.preventDefault(); show('forgot'); });
+wire('resendVerifyCode', 'click', (e) => { e.preventDefault(); doResendVerifyCode(); });
+wire('backToRegister', 'click', (e) => { e.preventDefault(); show('register'); });
 wire('ssoBtn', 'click', () => doSSO());
+setupPasswordToggles();
 
 // Header
 wire('pluginEnabled', 'change', (e) => setPluginEnabled(e.target.checked));

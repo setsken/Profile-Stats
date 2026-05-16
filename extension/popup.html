@@ -31,7 +31,13 @@
         </div>
         <div class="auth-input-group">
           <label class="auth-label" data-i18n="password">Password</label>
-          <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle" data-target="loginPassword" aria-label="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
         </div>
         <div class="auth-error" id="loginError"></div>
         <a href="#" class="auth-link auth-forgot" id="forgotLink" data-i18n="forgotPassword">Forgot password?</a>
@@ -81,7 +87,23 @@
         </div>
         <div class="auth-input-group">
           <label class="auth-label" data-i18n="password">Password</label>
-          <input type="password" id="registerPassword" class="auth-input" data-i18n-placeholder="passwordMin6" placeholder="Min 6 characters" required minlength="6">
+          <div class="password-wrapper">
+            <input type="password" id="registerPassword" class="auth-input" data-i18n-placeholder="passwordMin6" placeholder="Min 6 characters" required minlength="6">
+            <button type="button" class="password-toggle" data-target="registerPassword" aria-label="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" data-i18n="confirmPassword">Confirm Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="registerConfirm" class="auth-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle" data-target="registerConfirm" aria-label="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
         </div>
         <div class="auth-error" id="registerError"></div>
         <button type="submit" class="auth-btn" id="registerBtn">
@@ -128,6 +150,96 @@
 
       <div class="auth-footer">
         <a href="#" class="auth-link" id="backToLoginFromForgot" data-i18n="backToSignIn">Back to sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== RESET CODE SCREEN =============== -->
+  <div class="screen" id="resetCodeScreen" style="display:none;">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="auth-logo" style="color: #10b981;">
+          <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/>
+            <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+        <h1 class="auth-title" data-i18n="checkEmail">Check Your Email</h1>
+        <p class="auth-subtitle"><span data-i18n="enterCodeSentTo">Enter the code sent to</span> <span id="resetEmailDisplay"></span></p>
+      </div>
+
+      <form class="auth-form" id="resetCodeForm">
+        <div class="auth-input-group">
+          <label class="auth-label" data-i18n="resetCode">Reset Code</label>
+          <input type="text" id="resetCodeInput" class="auth-input" data-i18n-placeholder="enterCodePlaceholder" placeholder="Enter code from email" required>
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" data-i18n="newPassword">New Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="newPassword" class="auth-input" data-i18n-placeholder="passwordMin6" placeholder="Min 6 characters" required minlength="6">
+            <button type="button" class="password-toggle" data-target="newPassword" aria-label="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-input-group">
+          <label class="auth-label" data-i18n="confirmNewPassword">Confirm New Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="newPasswordConfirm" class="auth-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle" data-target="newPasswordConfirm" aria-label="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-error" id="resetCodeError"></div>
+        <div class="auth-success" id="resetCodeSuccess"></div>
+        <button type="submit" class="auth-btn" id="resetCodeBtn">
+          <span class="btn-text" data-i18n="resetPasswordBtn">Reset Password</span>
+          <div class="btn-loader" style="display:none;"></div>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <a href="#" class="auth-link" id="resendResetCode" data-i18n="resendCode">Resend code</a>
+        <span> | </span>
+        <a href="#" class="auth-link" id="backToForgot" data-i18n="changeEmail">Change email</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== VERIFY EMAIL SCREEN =============== -->
+  <div class="screen" id="verifyEmailScreen" style="display:none;">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="auth-logo" style="color: #10b981;">
+          <svg viewBox="0 0 24 24" fill="none" width="48" height="48">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/>
+            <polyline points="22,6 12,13 2,6" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+        <h1 class="auth-title" data-i18n="verifyEmail">Verify Your Email</h1>
+        <p class="auth-subtitle"><span data-i18n="enterCodeSentTo">Enter the code sent to</span> <span id="verifyEmailDisplay"></span></p>
+      </div>
+
+      <form class="auth-form" id="verifyEmailForm">
+        <div class="auth-input-group">
+          <label class="auth-label" data-i18n="verificationCode">Verification Code</label>
+          <input type="text" id="verifyCodeInput" class="auth-input" data-i18n-placeholder="enter6DigitCode" placeholder="Enter 6-digit code" required maxlength="6">
+        </div>
+        <div class="auth-error" id="verifyError"></div>
+        <div class="auth-success" id="verifySuccess"></div>
+        <button type="submit" class="auth-btn" id="verifyBtn">
+          <span class="btn-text" data-i18n="verifyEmailBtn">Verify Email</span>
+          <div class="btn-loader" style="display:none;"></div>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <a href="#" class="auth-link" id="resendVerifyCode" data-i18n="resendCode">Resend code</a>
+        <span> | </span>
+        <a href="#" class="auth-link" id="backToRegister" data-i18n="changeEmail">Change email</a>
       </div>
     </div>
   </div>

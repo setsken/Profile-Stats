@@ -112,6 +112,24 @@ html.booting .screen { display: none !important; }
 }
 .auth-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper .auth-input { width: 100%; padding-right: 44px; }
+.password-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.15s, transform 0.15s;
+}
+.password-toggle:hover { color: var(--accent); }
+.password-toggle:active { transform: translateY(-50%) scale(0.92); }
+.eye-icon { width: 18px; height: 18px; }
+.password-toggle.showing .eye-open { display: none !important; }
+.password-toggle.showing .eye-closed { display: block !important; }
+.password-toggle:not(.showing) .eye-open { display: block !important; }
+.password-toggle:not(.showing) .eye-closed { display: none !important; }
+
 .auth-error {
   display: none; padding: 9px 12px;
   background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;
