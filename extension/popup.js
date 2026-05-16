@@ -984,9 +984,8 @@ async function enterMainScreen(user) {
     : 'main';
   const targetTab = saved && ['top', 'notes'].includes(saved.tab) ? saved.tab : 'top';
 
-  show(targetScreen);
-
   if (targetScreen === 'main') {
+    show(targetScreen);
     // Apply tab without going through activateTab (which would persist state
     // we just read). Inline the visible swap, then call the loader.
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('tab-active', b.dataset.tab === targetTab));
@@ -996,8 +995,14 @@ async function enterMainScreen(user) {
     else loadNotesTab();
   } else if (targetScreen === 'subscription') {
     openSubscriptionPage();
+  } else if (targetScreen === 'support') {
+    // Use the full opener — it refills email + restores the saved draft.
+    // A bare show('support') would land on empty inputs even when there's
+    // a saved draft from a previous session.
+    openSupportPage();
+  } else {
+    show(targetScreen);
   }
-  // settings / support are static — nothing to load.
 }
 
 function applySubscriptionHeader() {
