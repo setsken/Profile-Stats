@@ -1786,9 +1786,17 @@ html.booting .screen { display: none !important; }
     0 0 0 1px rgba(16, 185, 129, 0.3),
     0 0 24px rgba(16, 185, 129, 0.25),
     0 8px 20px rgba(16, 185, 129, 0.18);
+  /* Override the base red iconPulse with a matching green pulse — without
+     this the keyframed box-shadow on .modal-icon kept painting red glow
+     over our static green one. */
+  animation: iconPulseSuccess 2.5s ease-in-out infinite;
 }
 .modal-icon.success::after {
   background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 65%);
+}
+@keyframes iconPulseSuccess {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 0 24px rgba(16, 185, 129, 0.25), 0 8px 20px rgba(16, 185, 129, 0.18); }
+  50%      { box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 0 32px rgba(16, 185, 129, 0.4),  0 8px 20px rgba(16, 185, 129, 0.18); }
 }
 .modal-title {
   font-size: 18px; font-weight: 700;
