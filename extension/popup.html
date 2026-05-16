@@ -301,65 +301,88 @@
             </button>
           </div>
           <div class="filter-advanced" id="filterAdvanced" style="display:none;">
-            <div class="filter-field">
-              <label data-i18n="filterMinScore">Min score</label>
-              <input type="number" id="filterMinScore" min="0" max="100" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMaxScore">Max score</label>
-              <input type="number" id="filterMaxScore" min="0" max="100" placeholder="100">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinFans">Min fans</label>
-              <input type="number" id="filterMinFans" min="0" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinQuality">Min quality %</label>
-              <input type="number" id="filterMinQuality" min="0" max="99" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinPosts">Min posts</label>
-              <input type="number" id="filterMinPosts" min="0" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinVideos">Min videos</label>
-              <input type="number" id="filterMinVideos" min="0" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinStreams">Min streams</label>
-              <input type="number" id="filterMinStreams" min="0" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinAge">Min age (months)</label>
-              <input type="number" id="filterMinAge" min="0" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMinPrice">Min price ($)</label>
-              <input type="number" id="filterMinPrice" min="0" step="0.01" placeholder="0">
-            </div>
-            <div class="filter-field">
-              <label data-i18n="filterMaxPrice">Max price ($)</label>
-              <input type="number" id="filterMaxPrice" min="0" step="0.01" placeholder="∞">
-            </div>
-            <div class="filter-field" style="grid-column: span 2;">
-              <label data-i18n="filterSocials">Socials</label>
-              <div class="custom-dropdown" id="socialsDropdown">
-                <button class="custom-dropdown-btn" id="socialsDropdownBtn" type="button">
-                  <span id="socialsDropdownLabel" data-i18n="socialsAny">Any</span>
-                  <svg class="caret" viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="custom-dropdown-list" role="listbox">
-                  <div class="custom-dropdown-option selected" data-value="" data-i18n="socialsAny">Any</div>
-                  <div class="custom-dropdown-option" data-value="1" data-i18n="socialsWith">With socials only</div>
-                  <div class="custom-dropdown-option" data-value="0" data-i18n="socialsWithout">No socials only</div>
+            <div class="filter-scroll">
+              <!-- Score range -->
+              <div class="filter-section">
+                <div class="filter-section-title" data-i18n="filterSectionScore">Score</div>
+                <div class="filter-range">
+                  <input type="number" id="filterMinScore" min="0" max="100" data-i18n-placeholder="filterMin" placeholder="Min">
+                  <span class="filter-range-sep">—</span>
+                  <input type="number" id="filterMaxScore" min="0" max="100" data-i18n-placeholder="filterMax" placeholder="Max">
                 </div>
               </div>
+
+              <!-- Audience -->
+              <div class="filter-section">
+                <div class="filter-section-title" data-i18n="filterSectionAudience">Audience</div>
+                <div class="filter-grid-2">
+                  <div class="filter-field">
+                    <label data-i18n="filterMinFans">Min fans</label>
+                    <input type="number" id="filterMinFans" min="0" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                  <div class="filter-field">
+                    <label data-i18n="filterMinQuality">Min quality %</label>
+                    <input type="number" id="filterMinQuality" min="0" max="99" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Content activity -->
+              <div class="filter-section">
+                <div class="filter-section-title" data-i18n="filterSectionActivity">Activity</div>
+                <div class="filter-grid-2">
+                  <div class="filter-field">
+                    <label data-i18n="filterMinPosts">Min posts</label>
+                    <input type="number" id="filterMinPosts" min="0" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                  <div class="filter-field">
+                    <label data-i18n="filterMinVideos">Min videos</label>
+                    <input type="number" id="filterMinVideos" min="0" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                  <div class="filter-field">
+                    <label data-i18n="filterMinStreams">Min streams</label>
+                    <input type="number" id="filterMinStreams" min="0" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                  <div class="filter-field">
+                    <label data-i18n="filterMinAge">Min age (months)</label>
+                    <input type="number" id="filterMinAge" min="0" data-i18n-placeholder="filterAny" placeholder="Any">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price range -->
+              <div class="filter-section">
+                <div class="filter-section-title" data-i18n="filterSectionPrice">Subscription price ($)</div>
+                <div class="filter-range">
+                  <input type="number" id="filterMinPrice" min="0" step="0.01" data-i18n-placeholder="filterMin" placeholder="Min">
+                  <span class="filter-range-sep">—</span>
+                  <input type="number" id="filterMaxPrice" min="0" step="0.01" data-i18n-placeholder="filterMax" placeholder="Max">
+                </div>
+              </div>
+
+              <!-- Socials -->
+              <div class="filter-section">
+                <div class="filter-section-title" data-i18n="filterSocials">Socials</div>
+                <div class="custom-dropdown" id="socialsDropdown">
+                  <button class="custom-dropdown-btn" id="socialsDropdownBtn" type="button">
+                    <span id="socialsDropdownLabel" data-i18n="socialsAny">Any</span>
+                    <svg class="caret" viewBox="0 0 24 24" fill="none" width="12" height="12" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="custom-dropdown-list" role="listbox">
+                    <div class="custom-dropdown-option selected" data-value="" data-i18n="socialsAny">Any</div>
+                    <div class="custom-dropdown-option" data-value="1" data-i18n="socialsWith">With socials only</div>
+                    <div class="custom-dropdown-option" data-value="0" data-i18n="socialsWithout">No socials only</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="filter-note" data-i18n="filterNote">Filters fill in for models that have been recently viewed. Older models without data are excluded only when a min/max value is set.</div>
             </div>
+
             <div class="filter-actions">
-              <button class="filter-apply-btn" id="filterApplyBtn" data-i18n="apply">Apply</button>
               <button class="filter-reset-btn" id="filterResetBtn" data-i18n="reset">Reset</button>
+              <button class="filter-apply-btn" id="filterApplyBtn" data-i18n="apply">Apply</button>
             </div>
-            <div class="filter-note" data-i18n="filterNote">Filters fill in for models that have been recently viewed. Older models without data are excluded only when a min/max value is set.</div>
           </div>
         </div>
 
