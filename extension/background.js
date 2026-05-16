@@ -267,7 +267,11 @@ async function handleMessage(request, sender) {
   }
 }
 
-// Broadcast auth status to all OnlyFans tabs so inject-early can react.
+// Broadcast PS auth status to all OnlyFans tabs so inject-early can react.
+// We use our own localStorage key (psAuthStatus) instead of the shared
+// ofStatsAuthStatus that Stats Editor manages — otherwise an SE logout
+// would wipe the shared key and silently disable the PS badge, even
+// though the PS user is still signed in.
 async function broadcastAuthStatus(isAuthenticated) {
   try {
     const tabs = await chrome.tabs.query({ url: 'https://onlyfans.com/*' });
@@ -275,7 +279,7 @@ async function broadcastAuthStatus(isAuthenticated) {
       try {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          func: (s) => { localStorage.setItem('ofStatsAuthStatus', s ? 'authenticated' : 'not_authenticated'); },
+          func: (s) => { localStorage.setItem('psAuthStatus', s ? 'authenticated' : 'not_authenticated'); },
           args: [isAuthenticated]
         });
       } catch {}

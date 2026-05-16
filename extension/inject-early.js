@@ -7,10 +7,16 @@
   function log(...args) { if (DEBUG) log(...args); }
   function logError(...args) { if (DEBUG) logError(...args); }
   
-  // Check if user is authenticated
-  const authStatus = localStorage.getItem('ofStatsAuthStatus');
-  const isAuthenticated = authStatus === 'authenticated';
-  
+  // Check if user is authenticated.
+  // Read OUR flag (psAuthStatus) first — set by Profile Stats background on
+  // login/logout. Fall back to the legacy ofStatsAuthStatus from Stats
+  // Editor so users who installed only PS before this change keep working
+  // until the next PS login round-trip writes the new key.
+  const psStatus = localStorage.getItem('psAuthStatus');
+  const seStatus = localStorage.getItem('ofStatsAuthStatus');
+  const isAuthenticated = psStatus === 'authenticated'
+    || (psStatus == null && seStatus === 'authenticated');
+
   // If not authenticated, don't run any plugin functionality
   if (!isAuthenticated) {
     log('OF Stats Early: Not authenticated, plugin disabled');
