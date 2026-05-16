@@ -1245,9 +1245,11 @@ async function enterMainScreen(user) {
   notifEvaluateSubscription().catch(() => {});
   notifLoad().then(notifRefreshBadge);
 
-  // Warm the notes/tags cache so the Top Models tab can light up models that
-  // already have notes without a second round-trip.
-  ensureNotesLoaded().catch(() => {});
+  // Block on the notes/tags cache so the very first Top Models paint
+  // already includes has-note marks — otherwise the user sees the list
+  // render once without marks and then re-render once notes resolve.
+  // Costs ~1 backend round-trip; worth it for a clean first paint.
+  await ensureNotesLoaded().catch(() => {});
 
   // Pull saved UI state to decide where to land. Default = main / Top Models.
   const saved = await loadUiState();
