@@ -1502,6 +1502,10 @@ async function loadTopTab(reset = true) {
     const targetOffset = Math.min(Number(savedBefore.offset) || 0, Number(r.total) || 0);
     if (targetOffset > lbState.offset + models.length) {
       _lbRestoreTarget = targetOffset;
+      // Hide the half-built list and surface a full-pane loader so the
+      // user doesn't see rows 1–50 flash by while we chain Load more
+      // calls to reach their saved position.
+      _showRestoreCurtain();
     }
   }
 
@@ -1519,14 +1523,15 @@ async function loadTopTab(reset = true) {
     return;
   }
   if (_lbRestoreTarget && lbState.offset >= _lbRestoreTarget) {
-    // We just reached the target — restore scroll and stop the chain.
+    // We just reached the target — restore scroll first (still under the
+    // curtain), then drop the curtain so the user sees the list already
+    // at the right row without the flash-of-page-1 jump.
     _lbRestoreTarget = 0;
     if (uiState.tab === 'top' && tabScroll.top > 0) {
-      requestAnimationFrame(() => {
-        const b = getMainBody();
-        if (b) b.scrollTop = tabScroll.top;
-      });
+      const b = getMainBody();
+      if (b) b.scrollTop = tabScroll.top; // synchronous, before paint
     }
+    _hideRestoreCurtain();
   } else if (!_lbRestoreTarget && reset && uiState.tab === 'top' && tabScroll.top > 0) {
     // No restore chain needed (offset == 0 saved or list is short) —
     // just snap scroll once after the first paint.
@@ -1542,6 +1547,32 @@ async function loadTopTab(reset = true) {
 // Sentinel for boot-time multi-page restore — non-zero while we're
 // chaining loadTopTab(false) calls to reach the persisted offset.
 let _lbRestoreTarget = 0;
+
+// "Restore curtain" — hides the half-built list and shows a centred
+// loader while we chain Load more fetches to the saved offset. Otherwise
+// the user sees rows 1–50 flash and then the page jumps to row 100,
+// which feels like the popup forgot where they were.
+function _showRestoreCurtain() {
+  const pane = document.querySelector('[data-tab-pane="top"]');
+  if (!pane) return;
+  pane.classList.add('restoring');
+  if (!document.getElementById('topRestoreLoader')) {
+    const loader = document.createElement('div');
+    loader.id = 'topRestoreLoader';
+    loader.className = 'top-restore-loader';
+    loader.innerHTML = `
+      <div class="top-restore-spinner"></div>
+      <div class="top-restore-text">${escapeHtml(t('loading'))}</div>`;
+    pane.appendChild(loader);
+  }
+}
+function _hideRestoreCurtain() {
+  const pane = document.querySelector('[data-tab-pane="top"]');
+  if (!pane) return;
+  pane.classList.remove('restoring');
+  const loader = document.getElementById('topRestoreLoader');
+  if (loader) loader.remove();
+}
 
 // Throttled persist of the main scroll position on every user scroll.
 (function _wireScrollPersist() {

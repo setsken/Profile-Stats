@@ -1344,6 +1344,31 @@ html.booting .screen { display: none !important; }
   color: var(--accent); font-weight: 700;
 }
 
+/* Restore curtain: hides the half-built list while we chain Load more
+   fetches to the user's saved offset, replaces it with a centred loader. */
+[data-tab-pane="top"].restoring .leaderboard-meta,
+[data-tab-pane="top"].restoring #topList,
+[data-tab-pane="top"].restoring #topEmpty,
+[data-tab-pane="top"].restoring #loadMoreBtn {
+  visibility: hidden;
+}
+.top-restore-loader {
+  position: absolute;
+  left: 0; right: 0; top: 130px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.top-restore-spinner {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(139, 92, 246, 0.18);
+  border-top-color: var(--accent);
+  animation: btnSpin 0.8s linear infinite;
+}
+[data-tab-pane="top"] { position: relative; }
+
 .leaderboard-meta {
   display: flex; flex-direction: column; gap: 6px;
   margin-bottom: 8px; padding: 0 2px;
