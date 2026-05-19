@@ -433,7 +433,11 @@ html.booting .screen { display: none !important; }
 .tab-btn.tab-active svg { color: white; }
 
 /* ============ Main body ============ */
-.main-body { flex: 1; padding: 14px; overflow-y: auto; }
+/* padding-right is 14 + scrollbar width (8px) so content has the same
+   visible breathing room from the scrollbar as it does from the left
+   edge — otherwise the filter button on the right of the controls row
+   ends up nearly touching the scrollbar. */
+.main-body { flex: 1; padding: 14px 22px 14px 14px; overflow-y: auto; }
 
 .tab-pane { display: flex; flex-direction: column; gap: 8px; }
 .list { display: flex; flex-direction: column; gap: 8px; }
