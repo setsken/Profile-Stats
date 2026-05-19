@@ -246,6 +246,86 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
   }
 });
 
+// POST /snapshot/:username — write the extended metrics for a profile
+// view without requiring score/organicity/engagementRate. /percentile
+// already does this as a side-effect, but only fires when the radar
+// panel is built. This endpoint guarantees the DB grows on every
+// profile view so leaderboard filters stay representative even when
+// users never open the radar tab (e.g. trial expired).
+router.post('/snapshot/:username', optionalAuth, async (req, res) => {
+  try {
+    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
+    if (!cleanUsername) return res.status(400).json({ error: 'username required' });
+
+    const intOrNull = (v, max = 10_000_000) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n), max) : null;
+    };
+    const boolOrNull = (v) => (typeof v === 'boolean' ? v : null);
+    const priceOrNull = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n * 100) / 100, 99999) : null;
+    };
+    const avatarUrl = typeof req.body?.avatarUrl === 'string' && req.body.avatarUrl.startsWith('http')
+      ? req.body.avatarUrl.slice(0, 500) : null;
+    const postsCount     = intOrNull(req.body?.postsCount);
+    const videosCount    = intOrNull(req.body?.videosCount);
+    const photosCount    = intOrNull(req.body?.photosCount);
+    const streamsCount   = intOrNull(req.body?.streamsCount);
+    const likesCount     = intOrNull(req.body?.likesCount, 1_000_000_000);
+    const subscribePrice = priceOrNull(req.body?.subscribePrice);
+    const accountMonths  = intOrNull(req.body?.accountMonths, 600);
+    const fansVisible    = boolOrNull(req.body?.fansVisible);
+    const hasSocials     = boolOrNull(req.body?.hasSocials);
+    const commentsEnabled = boolOrNull(req.body?.commentsEnabled);
+    const joinedDate = (() => {
+      const v = req.body?.joinedDate;
+      if (typeof v !== 'string') return null;
+      const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return null;
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return null;
+      return m[0];
+    })();
+
+    // INSERT with NULLs for the quality fields when no row exists yet.
+    // On conflict we touch only the extended fields, leaving any prior
+    // score/organicity/engagement_rate intact for radar/percentile.
+    await query(
+      `INSERT INTO model_quality_snapshots
+        (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
+         avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
+         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date, updated_at)
+       VALUES ($1, NULL, NULL, NULL, NULL, 0,
+         $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+       ON CONFLICT (model_username)
+       DO UPDATE SET
+         avatar_url = COALESCE(EXCLUDED.avatar_url, model_quality_snapshots.avatar_url),
+         posts_count = COALESCE(EXCLUDED.posts_count, model_quality_snapshots.posts_count),
+         videos_count = COALESCE(EXCLUDED.videos_count, model_quality_snapshots.videos_count),
+         photos_count = COALESCE(EXCLUDED.photos_count, model_quality_snapshots.photos_count),
+         streams_count = COALESCE(EXCLUDED.streams_count, model_quality_snapshots.streams_count),
+         likes_count = COALESCE(EXCLUDED.likes_count, model_quality_snapshots.likes_count),
+         subscribe_price = COALESCE(EXCLUDED.subscribe_price, model_quality_snapshots.subscribe_price),
+         account_months = COALESCE(EXCLUDED.account_months, model_quality_snapshots.account_months),
+         fans_visible = COALESCE(EXCLUDED.fans_visible, model_quality_snapshots.fans_visible),
+         has_socials = COALESCE(EXCLUDED.has_socials, model_quality_snapshots.has_socials),
+         comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
+         joined_date = COALESCE(EXCLUDED.joined_date, model_quality_snapshots.joined_date),
+         updated_at = NOW()`,
+      [
+        cleanUsername, avatarUrl, postsCount, videosCount, photosCount, streamsCount,
+        likesCount, subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate
+      ]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Snapshot error:', error);
+    res.status(500).json({ error: 'Failed to record snapshot' });
+  }
+});
+
 // GET /:username — last known fans for a model
 router.get('/:username', optionalAuth, async (req, res) => {
   try {

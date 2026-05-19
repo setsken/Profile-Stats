@@ -683,6 +683,41 @@
       
       displayProfileData(profileData);
       _lastBadgeProfileData = profileData;
+
+      // Guaranteed write of extended metrics on every profile view, even
+      // when the radar panel never builds (trial expired, user closes
+      // the tab early, etc.). The percentile call inside the radar
+      // panel will later UPSERT with COALESCE so any field we missed
+      // here (e.g. _detectedSocials populated by the late scan) still
+      // lands eventually.
+      if (profileData.username) {
+        try {
+          var snapshotMetrics = {
+            avatarUrl: profileData.avatar || null,
+            postsCount: Number(profileData.postsCount) || 0,
+            videosCount: Number(profileData.videosCount) || 0,
+            photosCount: Number(profileData.photosCount) || 0,
+            streamsCount: Number(profileData.finishedStreamsCount) || 0,
+            likesCount: Number(profileData.favoritedCount) || 0,
+            subscribePrice: Number(profileData.subscribePrice) || 0
+          };
+          if (profileData.joined) {
+            var jt = Date.parse(profileData.joined);
+            if (!isNaN(jt)) {
+              snapshotMetrics.accountMonths = Math.max(1, Math.floor((Date.now() - jt) / (1000*60*60*24*30)));
+              snapshotMetrics.joinedDate = new Date(jt).toISOString().slice(0, 10);
+            }
+          }
+          if (typeof profileData.subscribers === 'number') snapshotMetrics.fansVisible = profileData.subscribers > 0;
+          if (Array.isArray(profileData._detectedSocials)) snapshotMetrics.hasSocials = profileData._detectedSocials.length > 0;
+          if (typeof profileData._farmedStatus === 'string') snapshotMetrics.commentsEnabled = profileData._farmedStatus === 'ready';
+          chrome.runtime.sendMessage({
+            action: 'reportProfileMetrics',
+            username: profileData.username,
+            metrics: snapshotMetrics
+          }).catch(function() { /* non-blocking */ });
+        } catch (e) { /* swallow */ }
+      }
     });
     
     // ==================== MODEL SCORE CALCULATOR ====================

@@ -246,6 +246,7 @@ async function handleMessage(request, sender) {
       case 'batchGetFans':            return await apiBatchGetFans(request.usernames);
       case 'getFansTrend':            return await apiGetFansTrend(request.username, request.days);
       case 'getEngagementPercentile': return await apiGetEngagementPercentile(request.username, request.metrics);
+      case 'reportProfileMetrics':    return await apiReportProfileMetrics(request.username, request.metrics);
 
       // ---- Alerts (Profile Stats backend) ----
       case 'reportAlerts':            return await apiReportAlerts(request.username, request.alerts);
@@ -648,6 +649,20 @@ async function apiGetFansTrend(username, days) {
     const data = await r.json();
     return { success: r.ok, ...data };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
+}
+
+// Non-blocking write of extended metrics on every profile view.
+// Independent of the percentile call so the DB grows even when the
+// radar panel never builds (e.g. trial expired, user closes the page).
+async function apiReportProfileMetrics(username, metrics) {
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const r = await fetch(`${PROFILE_STATS_API}/fans/snapshot/${encodeURIComponent(username)}`, {
+      method: 'POST', headers, body: JSON.stringify(metrics || {})
+    });
+    return { success: r.ok };
+  } catch (e) { logError(e); return { success: false }; }
 }
 
 async function apiGetEngagementPercentile(username, metrics) {
