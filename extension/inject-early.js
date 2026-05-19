@@ -3594,7 +3594,7 @@
       var _vGradeLabel = (t('verdictGrade') || {})[scoreResult.grade] || '';
 
       const verdictDiv = document.createElement('div');
-      verdictDiv.style.cssText = 'margin-top:8px;border-radius:8px;overflow:hidden;border:1.5px solid ' + _vGradeColor + '66;background:linear-gradient(135deg,' + _vGradeColor + '14,' + _vGradeColor + '05);box-shadow:0 0 0 1px ' + _vGradeColor + '14;';
+      verdictDiv.style.cssText = 'margin-top:16px;margin-bottom:2px;border-radius:8px;overflow:hidden;border:1.5px solid ' + _vGradeColor + '66;background:linear-gradient(135deg,' + _vGradeColor + '14,' + _vGradeColor + '05);box-shadow:0 0 0 1px ' + _vGradeColor + '14;';
       // Hide verdict if disabled in settings OR subscription expired
       if (settings.ofStatsVerdictEnabled === false || _subExpired) {
         verdictDiv.style.display = 'none';
@@ -4318,7 +4318,7 @@
 
       // === COMPARE BUTTON (Feature #6) ===
       var compareRow = document.createElement('div');
-      compareRow.style.cssText = 'margin-top:0px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:6px;';
+      compareRow.style.cssText = 'margin-top:0px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:6px;';
 
       var compareBtn = document.createElement('button');
       compareBtn.id = 'of-stats-compare-btn';
