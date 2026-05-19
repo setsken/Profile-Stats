@@ -1376,6 +1376,56 @@ html.booting .screen { display: none !important; }
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
 }
 
+/* Custom checkbox used inside the filter modal — hides the native input
+   and renders a 16x16 box that fills with the accent gradient + check
+   glyph when selected. Click anywhere on the label toggles it. */
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 4px 0;
+}
+.filter-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.filter-checkbox-mark {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+.filter-checkbox:hover .filter-checkbox-mark { border-color: var(--accent-soft); }
+.filter-checkbox input:checked + .filter-checkbox-mark {
+  background: var(--gradient-accent);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.35);
+}
+.filter-checkbox input:checked + .filter-checkbox-mark::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.filter-checkbox input:focus-visible + .filter-checkbox-mark {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.filter-checkbox-label { line-height: 1.3; }
+
 /* Sticky footer with Apply / Reset — always reachable without scrolling. */
 .filter-actions {
   display: flex; gap: 10px;

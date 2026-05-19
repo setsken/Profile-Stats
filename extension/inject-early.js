@@ -711,6 +711,7 @@
           if (typeof profileData.subscribers === 'number') snapshotMetrics.fansVisible = profileData.subscribers > 0;
           if (Array.isArray(profileData._detectedSocials)) snapshotMetrics.hasSocials = profileData._detectedSocials.length > 0;
           if (typeof profileData._farmedStatus === 'string') snapshotMetrics.commentsEnabled = profileData._farmedStatus === 'ready';
+          if (typeof profileData._isBotted === 'boolean') snapshotMetrics.isBotted = profileData._isBotted;
           try {
             var socialsWithUrls = scanSocialLinksWithUrls();
             if (socialsWithUrls.length > 0) snapshotMetrics.socials = socialsWithUrls;
@@ -1334,6 +1335,13 @@
 
       // Store achIcons reference for display
       result._achIcons = achIcons;
+      // Expose the inflation/botted verdict for downstream consumers
+      // (snapshot/percentile payload, Hide-botted filter on Top Models).
+      result.isBotted = !!(isBottedLikes || isInflatedLikes);
+      // Mirror on profileData so callers outside displayProfileData (e.g.
+      // the post-display snapshot call) can pick up the verdict without
+      // re-running the whole score calc.
+      try { profileData._isBotted = result.isBotted; } catch (e) {}
 
       return result;
     }
@@ -3767,6 +3775,7 @@
               if (typeof profileData._farmedStatus === 'string') {
                 m.commentsEnabled = profileData._farmedStatus === 'ready';
               }
+              if (typeof scoreResult.isBotted === 'boolean') m.isBotted = scoreResult.isBotted;
               return m;
             })()
           }).then(function(resp) {

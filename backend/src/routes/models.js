@@ -161,6 +161,10 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     const commentsFilter = req.query.comments === 'open' ? true
                          : req.query.comments === 'closed' ? false
                          : null;
+    // hideBotted=1 → exclude every snapshot the badge flagged as inflated.
+    // NULL is_botted treated as "unknown" → kept (don't punish models we
+    // haven't classified yet).
+    const hideBotted = req.query.hideBotted === '1';
 
     const params = [];
     const where = [];
@@ -188,6 +192,9 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     if (commentsFilter !== null) {
       params.push(commentsFilter);
       where.push(`COALESCE(ms.comments_enabled, false) = $${params.length}`);
+    }
+    if (hideBotted) {
+      where.push(`COALESCE(ms.is_botted, false) = false`);
     }
 
     // Min-fans filter is applied against the `last_fans` column from the
@@ -246,6 +253,7 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
           ms.socials_json,
           ms.comments_enabled,
           ms.joined_date,
+          ms.is_botted,
           ms.updated_at,
           (
             SELECT mfh.fans_count
@@ -314,6 +322,7 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
         socials: Array.isArray(r.socials_json) ? r.socials_json : null,
         commentsEnabled: r.comments_enabled,
         joinedDate: r.joined_date,
+        isBotted: r.is_botted,
         updatedAt: r.updated_at,
         globalRank: Number(r.global_rank)
       }))

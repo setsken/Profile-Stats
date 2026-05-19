@@ -152,6 +152,10 @@ async function runMigrations() {
     // Per-platform social links the badge detected on the profile page.
     // Shape: [{ platform: 'instagram', url: 'https://...' }, ...]
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS socials_json JSONB').catch(() => {});
+    // Inflation/botted verdict — true when the badge's scoring fired any
+    // of the "Botted Likes" / "Boosted Likes" / "Fake Fans" / "Suspect
+    // Growth" achievements. Powers the Hide-botted filter.
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS is_botted BOOLEAN').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).

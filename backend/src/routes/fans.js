@@ -173,6 +173,7 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
     const fansVisible   = boolOrNull(req.body?.fansVisible);
     const hasSocials    = boolOrNull(req.body?.hasSocials);
     const commentsEnabled = boolOrNull(req.body?.commentsEnabled);
+    const isBotted = boolOrNull(req.body?.isBotted);
     // joined_date: accept ISO YYYY-MM-DD only. Anything else is dropped
     // so we never write a malformed value into a DATE column.
     const joinedDate = (() => {
@@ -208,8 +209,8 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
         (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
          avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
          subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date,
-         socials_json, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+         socials_json, is_botted, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          quality_score = EXCLUDED.quality_score,
@@ -230,12 +231,13 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
          comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
          joined_date = COALESCE(EXCLUDED.joined_date, model_quality_snapshots.joined_date),
          socials_json = COALESCE(EXCLUDED.socials_json, model_quality_snapshots.socials_json),
+         is_botted = COALESCE(EXCLUDED.is_botted, model_quality_snapshots.is_botted),
          updated_at = NOW()`,
       [
         cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount,
         avatarUrl, postsCount, videosCount, photosCount, streamsCount, likesCount,
         subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate,
-        socialsJson
+        socialsJson, isBotted
       ]
     );
 
@@ -313,6 +315,7 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
     const fansVisible    = boolOrNull(req.body?.fansVisible);
     const hasSocials     = boolOrNull(req.body?.hasSocials);
     const commentsEnabled = boolOrNull(req.body?.commentsEnabled);
+    const isBotted = boolOrNull(req.body?.isBotted);
     const joinedDate = (() => {
       const v = req.body?.joinedDate;
       if (typeof v !== 'string') return null;
@@ -332,9 +335,9 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
         (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
          avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
          subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date,
-         socials_json, updated_at)
+         socials_json, is_botted, updated_at)
        VALUES ($1, NULL, NULL, NULL, NULL, 0,
-         $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+         $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          avatar_url = COALESCE(EXCLUDED.avatar_url, model_quality_snapshots.avatar_url),
@@ -350,11 +353,12 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
          comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
          joined_date = COALESCE(EXCLUDED.joined_date, model_quality_snapshots.joined_date),
          socials_json = COALESCE(EXCLUDED.socials_json, model_quality_snapshots.socials_json),
+         is_botted = COALESCE(EXCLUDED.is_botted, model_quality_snapshots.is_botted),
          updated_at = NOW()`,
       [
         cleanUsername, avatarUrl, postsCount, videosCount, photosCount, streamsCount,
         likesCount, subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate,
-        socialsJson
+        socialsJson, isBotted
       ]
     );
 

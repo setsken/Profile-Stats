@@ -143,6 +143,9 @@ const I18N = {
     filterSectionActivity: 'Activity',
     filterSectionPrice: 'Subscription price ($)',
     filterSectionComments: 'Comments',
+    filterSectionQuality: 'Quality',
+    filterHideBotted: 'Hide botted accounts',
+    filterHideBottedChip: 'No botted',
     filterCommentsOpen: 'Open',
     filterCommentsClosed: 'Closed',
     filterCommentsLabel: 'Comments',
@@ -427,6 +430,9 @@ const I18N = {
     filterSectionActivity: 'Активность',
     filterSectionPrice: 'Цена подписки ($)',
     filterSectionComments: 'Комментарии',
+    filterSectionQuality: 'Качество',
+    filterHideBotted: 'Скрыть аккаунты с накруткой',
+    filterHideBottedChip: 'Без накрутки',
     filterCommentsOpen: 'Открыты',
     filterCommentsClosed: 'Закрыты',
     filterCommentsLabel: 'Комментарии',
@@ -1616,7 +1622,11 @@ const lbState = {
     minPosts: '', minVideos: '', minStreams: '', minLikes: '', minAge: '',
     minPrice: '', maxPrice: '',
     // Tri-state: '' = any, 'open' = open only, 'closed' = closed only
-    comments: ''
+    comments: '',
+    // Hide accounts flagged as botted by the badge's score calculator.
+    // Stored as '1' / '' so the same restore code path used for other
+    // filter strings keeps working.
+    hideBotted: ''
   }
 };
 function persistLbFilters() { _saveLbPersisted({ filters: { ...lbState.filters } }); }
@@ -1656,6 +1666,9 @@ function applyRestoredFiltersToDom() {
       p.classList.toggle('active', (p.dataset.value || '') === current);
     });
   }
+  // Hide-botted checkbox
+  const hideBottedEl = document.getElementById('filterHideBotted');
+  if (hideBottedEl) hideBottedEl.checked = lbState.filters.hideBotted === '1';
   // Search field
   const search = document.getElementById('topSearch');
   if (search) search.value = lbState.filters.search || '';
@@ -1695,6 +1708,7 @@ function currentLeaderboardParams() {
   if (f.minPrice !== '')   params.minPrice   = f.minPrice;
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
   if (f.comments === 'open' || f.comments === 'closed') params.comments = f.comments;
+  if (f.hideBotted === '1') params.hideBotted = '1';
   return params;
 }
 
@@ -1722,7 +1736,11 @@ const FILTER_DEFS = [
   // Pill: value is 'open' or 'closed', rendered as a translated label.
   { kind: 'pill', key: 'comments', groupId: 'filterCommentsGroup',
     labelKey: 'filterCommentsLabel',
-    valueLabels: { open: 'filterCommentsOpen', closed: 'filterCommentsClosed' } }
+    valueLabels: { open: 'filterCommentsOpen', closed: 'filterCommentsClosed' } },
+  // Checkbox: '1' = on, '' = off. Chip is rendered without a value
+  // since the label ('No botted') is self-explanatory.
+  { kind: 'checkbox', key: 'hideBotted', checkboxId: 'filterHideBotted',
+    labelKey: 'filterHideBottedChip' }
 ];
 
 function _chipHtml(label, value) {
@@ -1754,6 +1772,25 @@ function renderFilterChips() {
         if (grp) grp.querySelectorAll('.filter-pill').forEach(p => {
           p.classList.toggle('active', !p.dataset.value);
         });
+        persistLbFilters();
+        loadTopTab(true);
+      });
+      wrap.appendChild(chip);
+      any = true;
+    } else if (d.kind === 'checkbox') {
+      if (f[d.key] !== '1') continue;
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      // Toggle-on chip — just show the label, no separate value half.
+      chip.innerHTML =
+        `<span class="filter-chip-label"><b>${escapeHtml(lbl)}</b></span>` +
+        `<button class="filter-chip-x" type="button" aria-label="Remove">` +
+        `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>` +
+        `</button>`;
+      chip.querySelector('.filter-chip-x').addEventListener('click', () => {
+        lbState.filters[d.key] = '';
+        const box = document.getElementById(d.checkboxId);
+        if (box) box.checked = false;
         persistLbFilters();
         loadTopTab(true);
       });
@@ -3413,6 +3450,7 @@ wire('filterApplyBtn', 'click', () => {
     lbState.filters[key] = document.getElementById(inputId)?.value || '';
   }
   lbState.filters.comments = _activePillValue('filterCommentsGroup');
+  lbState.filters.hideBotted = document.getElementById('filterHideBotted')?.checked ? '1' : '';
   persistLbFilters();
   _closeFilterPanel();
   loadTopTab(true);
@@ -3427,6 +3465,9 @@ wire('filterResetBtn', 'click', () => {
     grp.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', !p.dataset.value));
   });
   lbState.filters.comments = '';
+  const hideBottedEl = document.getElementById('filterHideBotted');
+  if (hideBottedEl) hideBottedEl.checked = false;
+  lbState.filters.hideBotted = '';
   persistLbFilters();
   loadTopTab(true);
 });
