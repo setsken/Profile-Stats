@@ -4305,15 +4305,19 @@
       function _switchBackTab(active) {
         var allTabs = [tabRadar, tabTrend];
         var allPanels = { radar: 'of-stats-tab-radar', trend: 'of-stats-tab-trend' };
-        allTabs.forEach(function(tb) {
+        allTabs.forEach(function (tb) {
           if (tb.dataset.tab === active) { tb.style.color = '#00b4ff'; tb.style.borderBottomColor = '#00b4ff'; }
           else { tb.style.color = '#556677'; tb.style.borderBottomColor = 'transparent'; }
         });
-        Object.keys(allPanels).forEach(function(k) {
+        Object.keys(allPanels).forEach(function (k) {
           var el = document.getElementById(allPanels[k]);
           if (el) el.style.display = (k === active) ? '' : 'none';
         });
-        adjustFlipHeight(true);
+        // No height change on sub-tab switch — Radar and Trend should
+        // visually stay in the same envelope. The Radar height is the
+        // dominant one (locked on first flip via adjustFlipHeight) and
+        // Trend slots into the same room. We rely on the trend tab
+        // having overflow-y handled within its own content.
       }
       tabRadar.addEventListener('click', function() { _switchBackTab('radar'); });
       tabTrend.addEventListener('click', function() { _switchBackTab('trend'); });
@@ -4653,19 +4657,25 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
-        // CSS keeps the active side in flow and the inactive side
-        // absolute, so we can read the active side's scrollHeight
-        // directly without any temporary style swaps.
-        var activeSide = toBack ? flipBack : flipFront;
-        // Pin current rendered heights as the transition start so
-        // both wrappers glide from the previous value to the new one.
-        flipInner.style.minHeight = flipInner.offsetHeight + 'px';
-        badge.style.minHeight = badge.offsetHeight + 'px';
-        var target = activeSide.scrollHeight;
-        // Animate on next frame.
+        // The active side is in flow (CSS rule based on .flipped),
+        // so its scrollHeight is its natural content height. Both
+        // flipInner and badge have a min-height transition, so just
+        // assigning the new value triggers the animation — provided
+        // the previous min-height was a numeric value (which
+        // _initBadgeMinHeight guarantees after first paint).
+        //
+        // The double rAF gives the browser a chance to commit the
+        // .flipped class change to layout before we read scrollHeight,
+        // otherwise we'd occasionally measure the OUTGOING side and
+        // the badge would snap instead of animating.
         requestAnimationFrame(function () {
-          flipInner.style.minHeight = target + 'px';
-          badge.style.minHeight = (target + 32) + 'px'; // +badge padding
+          requestAnimationFrame(function () {
+            var activeSide = toBack ? flipBack : flipFront;
+            var target = activeSide.scrollHeight;
+            if (target <= 0) return;
+            flipInner.style.minHeight = target + 'px';
+            badge.style.minHeight = (target + 32) + 'px'; // + badge padding
+          });
         });
       }
       
