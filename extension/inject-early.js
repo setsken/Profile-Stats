@@ -711,6 +711,10 @@
           if (typeof profileData.subscribers === 'number') snapshotMetrics.fansVisible = profileData.subscribers > 0;
           if (Array.isArray(profileData._detectedSocials)) snapshotMetrics.hasSocials = profileData._detectedSocials.length > 0;
           if (typeof profileData._farmedStatus === 'string') snapshotMetrics.commentsEnabled = profileData._farmedStatus === 'ready';
+          try {
+            var socialsWithUrls = scanSocialLinksWithUrls();
+            if (socialsWithUrls.length > 0) snapshotMetrics.socials = socialsWithUrls;
+          } catch (e) {}
           chrome.runtime.sendMessage({
             action: 'reportProfileMetrics',
             username: profileData.username,
@@ -1353,6 +1357,34 @@
       } catch (e) {}
       // Deduplicate
       return socials.filter(function(v, i, a) { return a.indexOf(v) === i; });
+    }
+
+    // Same matcher as scanSocialLinksFromDOM but keeps the actual href
+    // for each detected link. Used when sending profile metrics to the
+    // backend so Top Models rows can render a clickable social icon.
+    function scanSocialLinksWithUrls() {
+      var out = [];
+      var seen = {};
+      try {
+        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"], a[href*="reddit.com"], a[href*="youtube.com"], a[href*="snapchat.com"], a[href*="twitch.tv"]');
+        socialLinks.forEach(function(link) {
+          var href = link.href || '';
+          var h = href.toLowerCase();
+          var platform = null;
+          if (h.indexOf('instagram.com') !== -1 || h.indexOf('instagr.am') !== -1) platform = 'instagram';
+          else if (h.indexOf('tiktok.com') !== -1) platform = 'tiktok';
+          else if (h.indexOf('twitter.com') !== -1 || h.indexOf('x.com/') !== -1) platform = 'twitter';
+          else if (h.indexOf('reddit.com') !== -1) platform = 'reddit';
+          else if (h.indexOf('youtube.com') !== -1 || h.indexOf('youtu.be') !== -1) platform = 'youtube';
+          else if (h.indexOf('snapchat.com') !== -1) platform = 'snapchat';
+          else if (h.indexOf('twitch.tv') !== -1) platform = 'twitch';
+          if (platform && !seen[platform] && href) {
+            seen[platform] = true;
+            out.push({ platform: platform, url: href.slice(0, 500) });
+          }
+        });
+      } catch (e) {}
+      return out;
     }
 
     // ==================== COMPARISON PANEL (Feature #6) ====================
@@ -3725,6 +3757,10 @@
               else if (typeof profileData.subscribers === 'number') m.fansVisible = profileData.subscribers > 0;
               // _detectedSocials is populated by the badge's late social-link scan.
               if (Array.isArray(profileData._detectedSocials)) m.hasSocials = profileData._detectedSocials.length > 0;
+              try {
+                var sx = scanSocialLinksWithUrls();
+                if (sx.length > 0) m.socials = sx;
+              } catch (e) {}
               // Comments open/closed: _farmedStatus === 'ready' is the badge's
               // own signal that comments are open on this profile, available
               // regardless of whether the user is subscribed.

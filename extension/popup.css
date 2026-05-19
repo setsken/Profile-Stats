@@ -1693,6 +1693,28 @@ html.booting .screen { display: none !important; }
 .notes-model-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .notes-model-arrow { color: var(--text-muted); flex-shrink: 0; }
 
+/* Compact social-link glyphs displayed inline next to the @username on
+   Top Models rows. Click opens the URL in a new tab. */
+.row-socials {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.row-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, transform 0.1s;
+}
+.row-social:hover { color: var(--accent); background: var(--accent-soft); }
+.row-social:active { transform: scale(0.92); }
+
 /* Shared trash button used on Tags and Models list rows. Always-on subtle
    chip so the action reads as a real button at rest, with a red wash and
    gentle glow on hover so destructive intent is unmistakable. */

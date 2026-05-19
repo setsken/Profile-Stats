@@ -1525,12 +1525,14 @@ function modelRowHtml(model, extras = {}) {
          <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
        </svg>`;
 
+  const socialsHtml = _renderRowSocials(model.socials);
+
   return `
     <div class="list-item${itemRankClass}${hasNote ? ' has-note' : ''}" data-username="${escapeHtml(username)}">
       ${rankHtml}
       ${avatar}
       <div class="list-item-main">
-        <div class="list-item-name">@${escapeHtml(username)}</div>
+        <div class="list-item-name">@${escapeHtml(username)}${socialsHtml}</div>
         <div class="list-item-meta">${meta}</div>
       </div>
       <button class="row-note-btn${hasNote ? ' active' : ''}" data-note-username="${escapeHtml(username)}" title="${escapeHtml(noteBtnTitle)}">
@@ -1540,6 +1542,33 @@ function modelRowHtml(model, extras = {}) {
         ${score} <span style="opacity:.8; font-weight:600; font-size:11px;">${grade}</span>
       </div>
     </div>`;
+}
+
+// Tiny social platform glyphs used to the right of the @username on
+// Top Models rows. Click opens the URL in a new tab.
+const SOCIAL_GLYPHS = {
+  instagram: '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.85.07 1.17.05 1.81.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s0 3.58-.07 4.85c-.05 1.17-.25 1.81-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58 0-4.85-.07c-1.17-.05-1.81-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23C2.2 15.58 2.2 15.2 2.2 12s0-3.58.07-4.85c.05-1.17.25-1.81.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.2 8.8 2.2 12 2.2zm0 1.8c-3.15 0-3.5 0-4.74.07-1.07.05-1.65.23-2.04.38-.51.2-.88.44-1.27.83-.39.39-.63.76-.83 1.27-.15.39-.33.97-.38 2.04C2.67 8.5 2.67 8.85 2.67 12s0 3.5.07 4.74c.05 1.07.23 1.65.38 2.04.2.51.44.88.83 1.27.39.39.76.63 1.27.83.39.15.97.33 2.04.38 1.24.07 1.59.07 4.74.07s3.5 0 4.74-.07c1.07-.05 1.65-.23 2.04-.38.51-.2.88-.44 1.27-.83.39-.39.63-.76.83-1.27.15-.39.33-.97.38-2.04.07-1.24.07-1.59.07-4.74s0-3.5-.07-4.74c-.05-1.07-.23-1.65-.38-2.04-.2-.51-.44-.88-.83-1.27-.39-.39-.76-.63-1.27-.83-.39-.15-.97-.33-2.04-.38C15.5 4 15.15 4 12 4zm0 3.07a4.93 4.93 0 110 9.86 4.93 4.93 0 010-9.86zm0 8.13a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zm5.13-8.27a1.15 1.15 0 110 2.3 1.15 1.15 0 010-2.3z"/></svg>',
+  tiktok:    '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64c.3 0 .58.04.85.13V9.4a6.34 6.34 0 00-1-.08A6.33 6.33 0 005 15.66 6.34 6.34 0 0011.34 22a6.34 6.34 0 006.34-6.34V8.66a8.16 8.16 0 004.77 1.52V6.69h-1.86z"/></svg>',
+  twitter:   '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>',
+  reddit:    '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 0a12 12 0 100 24 12 12 0 000-24zm5.91 13.06a3.45 3.45 0 01-.07.68 5.43 5.43 0 011.85-.15c.06.31.09.62.09.94 0 3.05-3.55 5.52-7.93 5.52s-7.93-2.47-7.93-5.52c0-.32.03-.63.09-.94a5.43 5.43 0 011.85.15 3.45 3.45 0 01-.07-.68c0-1.36 1.1-2.46 2.46-2.46.66 0 1.26.26 1.71.68A9.62 9.62 0 0111.99 9l.91-4.32c.04-.2.23-.32.42-.28l3.02.65a1.74 1.74 0 11-.18.85l-2.69-.58-.81 3.83a9.6 9.6 0 014.83 1.28 2.46 2.46 0 014.18 1.84zM9.5 14.5a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5zm5 0a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5zm-2.5 3.27a3.32 3.32 0 002.36-.95.27.27 0 00-.37-.4 2.8 2.8 0 01-1.99.8 2.8 2.8 0 01-1.99-.8.27.27 0 00-.37.4 3.32 3.32 0 002.36.95z"/></svg>',
+  youtube:   '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2 31 31 0 000 12a31 31 0 00.5 5.8 3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1A31 31 0 0024 12a31 31 0 00-.5-5.8zM9.8 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>',
+  snapchat:  '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 1.8c4.4 0 6.5 3.3 6.5 6.3 0 .8 0 1.7-.1 2.6.5.2 1.1.3 1.8.3.7 0 .9.4.9.7 0 .5-.7.9-1.8 1.3-.5.2-.6.5-.4 1 .4.8 1.4 2 3 2.4.4.1.6.4.4.9-.4 1-2.3 1.4-3.5 1.6-.2.5 0 1.6-.4 2-.4.4-1.6 0-2.7 0-1.4 0-2.2 1.5-3.7 1.5S9.3 21 8 21c-1.1 0-2.3.4-2.7 0-.4-.4-.2-1.5-.4-2-1.2-.2-3.1-.6-3.5-1.6-.2-.5 0-.8.4-.9 1.6-.4 2.6-1.6 3-2.4.2-.5.1-.8-.4-1-1.1-.4-1.8-.8-1.8-1.3 0-.3.2-.7.9-.7.7 0 1.3-.1 1.8-.3-.1-.9-.1-1.8-.1-2.6 0-3 2.1-6.3 6.5-6.3z"/></svg>',
+  twitch:    '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M2.149 0L.537 4.296v17.408h5.916V24h3.225l3.225-2.296h4.836l6.453-6.453V0H2.149zm2.149 2.149h17.408v12.572l-3.762 3.762h-5.913L8.06 20.776v-2.293H4.298V2.149zm5.376 10.737h2.149V6.452h-2.149v6.434zm5.913 0h2.149V6.452h-2.149v6.434z"/></svg>'
+};
+
+function _renderRowSocials(socials) {
+  if (!Array.isArray(socials) || socials.length === 0) return '';
+  const parts = [];
+  for (const s of socials) {
+    if (!s || !s.platform || !s.url) continue;
+    const glyph = SOCIAL_GLYPHS[s.platform];
+    if (!glyph) continue;
+    if (!/^https?:\/\//i.test(s.url)) continue; // last-ditch URL guard
+    parts.push(
+      `<a class="row-social" data-url="${escapeHtml(s.url)}" title="${escapeHtml(s.platform)}" aria-label="${escapeHtml(s.platform)}">${glyph}</a>`
+    );
+  }
+  return parts.length ? `<span class="row-socials">${parts.join('')}</span>` : '';
 }
 
 function bindRowClicks(container) {
@@ -1556,6 +1585,15 @@ function bindRowClicks(container) {
       notesState.activeView = 'editor';
       persistDraft();
       activateTab('notes');
+    });
+  });
+  // Social icon — open the URL in a new tab. stopPropagation so the row
+  // click handler does not also open the OF profile.
+  container.querySelectorAll('.row-social[data-url]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = el.dataset.url;
+      if (url) chrome.tabs.create({ url });
     });
   });
   container.querySelectorAll('.list-item[data-username]').forEach(el => {

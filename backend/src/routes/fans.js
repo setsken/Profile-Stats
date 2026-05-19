@@ -4,6 +4,35 @@ const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Allowed social platforms. Anything else from the badge is dropped
+// rather than stored, so a future bug in the scraper can't leak weird
+// keys into the JSONB column.
+const ALLOWED_SOCIAL_PLATFORMS = new Set([
+  'instagram', 'tiktok', 'twitter', 'reddit', 'youtube', 'snapchat', 'twitch'
+]);
+
+// Validate and clamp an array of {platform, url} entries from the badge.
+// Returns a JSON string for parameterised query insertion, or null when
+// nothing usable was provided so COALESCE can preserve any prior value.
+function sanitizeSocials(input) {
+  if (!Array.isArray(input)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const item of input) {
+    if (!item || typeof item !== 'object') continue;
+    const platform = typeof item.platform === 'string' ? item.platform.toLowerCase().trim() : null;
+    const url = typeof item.url === 'string' ? item.url.trim() : null;
+    if (!platform || !url) continue;
+    if (!ALLOWED_SOCIAL_PLATFORMS.has(platform)) continue;
+    if (!/^https?:\/\//i.test(url)) continue;
+    if (seen.has(platform)) continue;
+    seen.add(platform);
+    out.push({ platform, url: url.slice(0, 500) });
+    if (out.length >= 10) break;
+  }
+  return out.length > 0 ? JSON.stringify(out) : null;
+}
+
 // DEBUG: recent fans records (no auth)
 router.get('/debug/recent', async (req, res) => {
   try {
@@ -155,6 +184,9 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
       if (isNaN(d.getTime())) return null;
       return m[0]; // canonical YYYY-MM-DD
     })();
+    // socials: array of {platform, url}. Whitelist platform values and
+    // reject any URL that isn't http(s). Cap at 10 items to bound size.
+    const socialsJson = sanitizeSocials(req.body?.socials);
 
     const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : null;
     const organicity = Number.isFinite(rawOrganicity) ? Math.max(0, Math.min(25, rawOrganicity)) : null;
@@ -175,8 +207,9 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
       `INSERT INTO model_quality_snapshots
         (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
          avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
-         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date,
+         socials_json, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          quality_score = EXCLUDED.quality_score,
@@ -196,11 +229,13 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
          has_socials = COALESCE(EXCLUDED.has_socials, model_quality_snapshots.has_socials),
          comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
          joined_date = COALESCE(EXCLUDED.joined_date, model_quality_snapshots.joined_date),
+         socials_json = COALESCE(EXCLUDED.socials_json, model_quality_snapshots.socials_json),
          updated_at = NOW()`,
       [
         cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount,
         avatarUrl, postsCount, videosCount, photosCount, streamsCount, likesCount,
-        subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate
+        subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate,
+        socialsJson
       ]
     );
 
@@ -287,6 +322,7 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
       if (isNaN(d.getTime())) return null;
       return m[0];
     })();
+    const socialsJson = sanitizeSocials(req.body?.socials);
 
     // INSERT with NULLs for the quality fields when no row exists yet.
     // On conflict we touch only the extended fields, leaving any prior
@@ -295,9 +331,10 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
       `INSERT INTO model_quality_snapshots
         (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
          avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
-         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date, updated_at)
+         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, joined_date,
+         socials_json, updated_at)
        VALUES ($1, NULL, NULL, NULL, NULL, 0,
-         $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+         $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          avatar_url = COALESCE(EXCLUDED.avatar_url, model_quality_snapshots.avatar_url),
@@ -312,10 +349,12 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
          has_socials = COALESCE(EXCLUDED.has_socials, model_quality_snapshots.has_socials),
          comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
          joined_date = COALESCE(EXCLUDED.joined_date, model_quality_snapshots.joined_date),
+         socials_json = COALESCE(EXCLUDED.socials_json, model_quality_snapshots.socials_json),
          updated_at = NOW()`,
       [
         cleanUsername, avatarUrl, postsCount, videosCount, photosCount, streamsCount,
-        likesCount, subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate
+        likesCount, subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled, joinedDate,
+        socialsJson
       ]
     );
 

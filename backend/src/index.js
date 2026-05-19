@@ -149,6 +149,9 @@ async function runMigrations() {
     // Exact join date — account_months remains for fast filtering, but
     // joined_date is what we display and sort by in Top Models.
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS joined_date DATE').catch(() => {});
+    // Per-platform social links the badge detected on the profile page.
+    // Shape: [{ platform: 'instagram', url: 'https://...' }, ...]
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS socials_json JSONB').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).
