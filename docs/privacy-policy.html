@@ -256,7 +256,7 @@
             <p class="subtitle">Profile Stats — Chrome Extension</p>
             <span class="updated">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Last Updated: February 3, 2026
+                Last Updated: May 20, 2026
             </span>
         </section>
 
@@ -268,20 +268,20 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                     Privacy at a Glance
                 </h3>
-                <p>Profile Stats is designed with your privacy in mind. We operate on a minimal data principle — we only collect what's absolutely necessary for the extension to function (email for authentication). All statistics editing happens locally in your browser and is never transmitted anywhere.</p>
+                <p>Profile Stats reads only the publicly visible data on the OnlyFans profile page you have open — the same numbers any visitor sees. We store an email for your account, the public metrics (fans, posts, likes, etc.) of every profile you score so the leaderboard works, and any private notes you write inside the extension. No DMs, no paid content, no credentials.</p>
             </div>
 
             <!-- Section 1 -->
             <section class="section">
                 <h2><span class="num">1</span> Introduction</h2>
-                <p>Welcome to the Profile Stats Privacy Policy. This document explains how we handle information when you use our Chrome extension. We are committed to protecting your privacy and being transparent about our practices.</p>
-                <p>Profile Stats is a browser extension that provides visual editing capabilities for statistics displays on OnlyFans pages. All modifications are purely cosmetic, temporary, and occur locally within your browser.</p>
+                <p>Welcome to the Profile Stats Privacy Policy. This document explains exactly what data Profile Stats reads, what we store on our servers, who we share with, and what control you have. Profile Stats is a Chrome extension built around a single idea: the OnlyFans profile page already shows everything you need to evaluate a creator — we just package it into a score, a leaderboard and useful analytics.</p>
+                <p>The extension does <strong>not</strong> log into your OnlyFans account, read DMs, decrypt paid content, or interact with anything that isn't publicly visible on the profile page you have open.</p>
             </section>
 
             <!-- Section 2 -->
             <section class="section">
                 <h2><span class="num">2</span> Data We Collect</h2>
-                <p>We collect minimal data required for the extension to function:</p>
+                <p>Three categories of data — account, public profile metrics, and user-generated content:</p>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -292,19 +292,39 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Email Address</strong></td>
-                            <td>Account authentication & license management</td>
+                            <td><strong>Email address</strong></td>
+                            <td>Sign-in, password reset, receipt delivery</td>
                             <td><span class="badge-local">Secure Server</span></td>
                         </tr>
                         <tr>
-                            <td><strong>Extension Settings</strong></td>
-                            <td>Your preferences & custom values</td>
+                            <td><strong>Password (hashed)</strong></td>
+                            <td>One-way bcrypt — we never see the plaintext</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Public profile metrics</strong></td>
+                            <td>Handle, avatar URL, fans, likes, posts/videos/photos/streams counts, subscribe price, join date, comments-enabled flag, detected social links — for every profile you score. Powers the Top Models leaderboard.</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Notes &amp; tags</strong></td>
+                            <td>Private text and coloured tags you write inside the extension — only you can read them</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Alerts history</strong></td>
+                            <td>Anomaly notifications (fan surge/drop, score change) generated locally and synced to your account</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Subscription state</strong></td>
+                            <td>Active plan, expiry date, payment provider used</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extension settings &amp; UI state</strong></td>
+                            <td>Language, filter preferences, sort order, draft notes</td>
                             <td><span class="badge-local">Local Only</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>License Status</strong></td>
-                            <td>Verify subscription/premium access</td>
-                            <td><span class="badge-local">Secure Server</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -313,15 +333,16 @@
             <!-- Section 3 -->
             <section class="section">
                 <h2><span class="num">3</span> Data We DO NOT Collect</h2>
-                <p>We want to be absolutely clear about data we never access:</p>
+                <p>We never see, request, or store any of the following:</p>
                 <ul class="not-collected">
-                    <li>Your OnlyFans login credentials or passwords</li>
-                    <li>Your actual earnings, balance, or financial data</li>
-                    <li>Your subscriber/fan lists or personal information</li>
-                    <li>Your messages, content, or media files</li>
-                    <li>Your browsing history outside OnlyFans</li>
-                    <li>Any personally identifiable information beyond email</li>
-                    <li>Screenshots or visual content you create</li>
+                    <li>Your OnlyFans login credentials or session cookies</li>
+                    <li>DMs, mass messages, or any chat content</li>
+                    <li>Paid PPV / locked content, photos, or videos</li>
+                    <li>Earnings, payouts, or any creator-side financial figures</li>
+                    <li>Subscriber lists, fan emails, or follower personal data</li>
+                    <li>Browsing history outside the OnlyFans profile pages you open</li>
+                    <li>Tracking pixels, behavioural fingerprints, or third-party analytics</li>
+                    <li>Card information (we accept crypto only via NOWPayments)</li>
                 </ul>
             </section>
 
@@ -382,13 +403,20 @@
 
             <!-- Section 6 -->
             <section class="section">
-                <h2><span class="num">6</span> Data Sharing & Third Parties</h2>
-                <p>We do not sell, trade, or share your personal information with third parties, except:</p>
-                <ul>
-                    <li>Payment processors (for subscription management only)</li>
-                    <li>When required by law or legal process</li>
-                    <li>To protect our rights or prevent fraud</li>
-                </ul>
+                <h2><span class="num">6</span> Third Parties We Share With</h2>
+                <p>We do not sell, trade, or share your personal data with advertisers. The only sub-processors we use are operational vendors required to deliver the service:</p>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Provider</th><th>Purpose</th><th>Data shared</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Railway</strong></td><td>Backend hosting &amp; PostgreSQL database</td><td>All account &amp; usage data above</td></tr>
+                        <tr><td><strong>Resend</strong></td><td>Transactional email (welcome, password reset)</td><td>Email address only</td></tr>
+                        <tr><td><strong>NOWPayments</strong></td><td>Crypto payment processing (USDT)</td><td>Invoice metadata — we never see your wallet</td></tr>
+                        <tr><td><strong>xAI</strong></td><td>AI-written verdict for the profile being viewed</td><td>Public profile metrics of the model being viewed</td></tr>
+                    </tbody>
+                </table>
+                <p style="margin-top:14px;">No data is shared with any other party except when legally compelled by valid legal process.</p>
             </section>
 
             <!-- Section 7 -->
