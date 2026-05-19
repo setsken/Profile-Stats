@@ -3125,10 +3125,11 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
-        // Lock current rendered badge height before swapping content so
-        // the CSS transition has a starting value to animate from.
-        var startH = badge.offsetHeight;
-        badge.style.minHeight = startH + 'px';
+        // Keep the badge at its current rendered height — Alerts should
+        // not collapse the wrapper down to its (typically small) content,
+        // which felt jarring when switching from the main view.
+        var keepH = badge.offsetHeight;
+        badge.style.minHeight = keepH + 'px';
         flipInner.style.display = 'none';
         // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
@@ -3136,17 +3137,13 @@
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          ap.style.minHeight = '';
+          // Make sure the alerts panel can fill the locked badge so
+          // the inner background looks intentional, not empty.
+          ap.style.minHeight = (keepH - 32) + 'px';
           _alertsRebuildPanel();
-          // Animate badge to the alerts panel's natural height.
-          requestAnimationFrame(function () {
-            badge.style.minHeight = (ap.scrollHeight + 32) + 'px'; // +padding
-          });
           _alertsFetchFromServer(_notesUsername, function () {
             _alertsRebuildPanel();
             _alertsUpdateBadge();
-            // Server data may have grown/shrunk the list — re-sync.
-            badge.style.minHeight = (ap.scrollHeight + 32) + 'px';
           });
         }
       }
@@ -4315,6 +4312,13 @@
           if (el) el.style.display = (k === active) ? '' : 'none';
         });
         adjustFlipHeight(true);
+        // Trend chart canvas renders asynchronously — its real height
+        // isn't known on the first sync measurement. Re-measure once
+        // after the canvas has had a chance to paint so we don't end
+        // up locked to a too-small height with content overflowing.
+        if (active === 'trend') {
+          setTimeout(function () { adjustFlipHeight(true); }, 250);
+        }
       }
       tabRadar.addEventListener('click', function() { _switchBackTab('radar'); });
       tabTrend.addEventListener('click', function() { _switchBackTab('trend'); });
@@ -4654,24 +4658,16 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
-        // CSS now keeps the active side in flow (position:relative)
-        // and the inactive side absolute — so the active side's
-        // scrollHeight is its natural content height. No more
-        // temporary position-toggling needed.
+        // CSS keeps the active side in flow and the inactive side
+        // absolute, so we can read the active side's scrollHeight
+        // directly without any temporary style swaps.
         var activeSide = toBack ? flipBack : flipFront;
-        // Pin current badge wrapper height as the transition start.
-        var start = badge.offsetHeight;
-        badge.style.minHeight = start + 'px';
-        // Read the target side's natural height. We have to briefly
-        // clear flipInner.minHeight to avoid it propping the
-        // measurement up to the previous side's locked height.
-        var savedMin = flipInner.style.minHeight;
-        flipInner.style.minHeight = '';
-        void flipInner.offsetHeight; // force layout
+        // Pin current rendered heights as the transition start so
+        // both wrappers glide from the previous value to the new one.
+        flipInner.style.minHeight = flipInner.offsetHeight + 'px';
+        badge.style.minHeight = badge.offsetHeight + 'px';
         var target = activeSide.scrollHeight;
-        flipInner.style.minHeight = savedMin || (start + 'px');
-        // Animate to the new target on next frame so the transition
-        // starts from the pinned values rather than snapping.
+        // Animate on next frame.
         requestAnimationFrame(function () {
           flipInner.style.minHeight = target + 'px';
           badge.style.minHeight = (target + 32) + 'px'; // +badge padding
