@@ -1352,6 +1352,50 @@
     }
 
     // Scan DOM for social media links (OF renders them via Vue as .m-tab-social links)
+    // Detect an active "first period at a discount" promo on a paid OF
+    // profile. Tries two well-known shapes:
+    //   1) profileData.promotions = [{ price, duration|days|durationDays }, ...]
+    //   2) profileData.currentSubscribePrice — a single discounted rate
+    // Returns { price: '8.25', label: '1 mo' } or null when no promo.
+    function _detectActivePromo(profileData, baseN) {
+      var fmt = function (n) {
+        var s = Number(n).toFixed(2);
+        return s.replace(/\.00$/, '');
+      };
+      var labelForDays = function (days) {
+        var d = Number(days) || 0;
+        if (d <= 0) return '1 mo';
+        if (d <= 27) return d + 'd';
+        if (d >= 28 && d <= 31) return '1 mo';
+        var months = Math.round(d / 30);
+        return months + ' mo';
+      };
+      try {
+        // promotions array
+        if (Array.isArray(profileData.promotions) && profileData.promotions.length > 0) {
+          var subs = profileData.promotions
+            .map(function (p) {
+              if (!p) return null;
+              var price = Number(p.price);
+              if (!Number.isFinite(price) || price <= 0 || price >= baseN) return null;
+              var days = Number(p.duration || p.days || p.durationDays || p.duration_days || 0);
+              return { price: price, days: days };
+            })
+            .filter(Boolean);
+          if (subs.length > 0) {
+            subs.sort(function (a, b) { return a.price - b.price; });
+            return { price: fmt(subs[0].price), label: labelForDays(subs[0].days) };
+          }
+        }
+        // currentSubscribePrice fallback
+        var cur = Number(profileData.currentSubscribePrice);
+        if (Number.isFinite(cur) && cur > 0 && cur < baseN) {
+          return { price: fmt(cur), label: '1 mo' };
+        }
+      } catch (e) {}
+      return null;
+    }
+
     function scanSocialLinksFromDOM() {
       var socials = [];
       try {
@@ -1907,15 +1951,28 @@
         `);
       }
       
-      // Subscription price
+      // Subscription price — when a promo is active, append the first
+      // period at the discounted rate so users see both the regular
+      // price and the actual cost they'll pay on first purchase.
+      // Example: "Price: $15 (1 mo/$8.25)".
       if (profileData.subscribePrice !== undefined && profileData.subscribePrice !== null) {
-        const priceText = profileData.subscribePrice === 0 ? 'FREE' : '$' + profileData.subscribePrice;
-        const priceColor = profileData.subscribePrice === 0 ? '#10b981' : '#f59e0b';
+        const baseN = Number(profileData.subscribePrice) || 0;
+        const isFree = baseN === 0;
+        const priceText = isFree ? 'FREE' : '$' + baseN;
+        const priceColor = isFree ? '#10b981' : '#f59e0b';
+        var promoSuffix = '';
+        if (!isFree) {
+          var promo = _detectActivePromo(profileData, baseN);
+          if (promo) {
+            promoSuffix = ' <span style="color:#10b981;font-weight:600;font-size:12px;">('
+              + promo.label + '/$' + promo.price + ')</span>';
+          }
+        }
         badgeItems.push(`
           <div style="display:flex;align-items:center;gap:8px;">
             ${svgIcons.price}
             <span style="color:#8a96a3;font-size:12px;">Price:</span>
-            <span style="color:${priceColor};font-weight:600;font-size:13px;">${priceText}</span>
+            <span style="color:${priceColor};font-weight:600;font-size:13px;">${priceText}</span>${promoSuffix}
           </div>
         `);
       }
