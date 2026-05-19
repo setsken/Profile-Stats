@@ -2554,7 +2554,7 @@ function renderModelsView(content) {
       ${notesState.tags.length > 0 ? `
         <div class="notes-tag-dots" role="group" aria-label="Filter by tag">
           <button class="notes-tag-dot notes-tag-dot-all${allActive}" data-tag-id="" title="${escapeHtml(t('all'))}" aria-label="${escapeHtml(t('all'))}">
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></svg>
           </button>
           ${dots}
         </div>
