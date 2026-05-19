@@ -2115,7 +2115,20 @@
       if (!document.getElementById('of-stats-flip-styles')) {
         var flipStyleEl = document.createElement('style');
         flipStyleEl.id = 'of-stats-flip-styles';
-        flipStyleEl.textContent = '#of-stats-profile-badge .of-flip-inner{position:relative;z-index:1;width:100%;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1),min-height 0.4s ease;transform-style:preserve-3d}#of-stats-profile-badge .of-flip-inner.flipped{transform:rotateY(180deg)}#of-stats-profile-badge .of-flip-front{position:relative;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:flat}#of-stats-profile-badge .of-flip-back{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);transform-style:flat}#of-stats-profile-badge .of-flip-inner.flipped .of-flip-front{pointer-events:none}#of-stats-profile-badge .of-flip-inner:not(.flipped) .of-flip-back{pointer-events:none}';
+        // The active side stays in flow so flipInner sizes naturally to
+        // it; the inactive side is position:absolute so it doesn't
+        // inflate the height. Toggling the .flipped class swaps which
+        // is which — that's the only way to keep the badge tight on
+        // the back side without a separate measurement.
+        flipStyleEl.textContent = ''
+          + '#of-stats-profile-badge .of-flip-inner{position:relative;z-index:1;width:100%;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1),min-height 0.35s cubic-bezier(0.4,0,0.2,1);transform-style:preserve-3d}'
+          + '#of-stats-profile-badge .of-flip-inner.flipped{transform:rotateY(180deg)}'
+          + '#of-stats-profile-badge .of-flip-front,#of-stats-profile-badge .of-flip-back{width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:flat}'
+          // Inactive side absolute-positioned so it doesn't add to flow.
+          + '#of-stats-profile-badge .of-flip-inner:not(.flipped) .of-flip-front{position:relative}'
+          + '#of-stats-profile-badge .of-flip-inner:not(.flipped) .of-flip-back{position:absolute;top:0;left:0;height:100%;overflow:hidden;pointer-events:none;transform:rotateY(180deg)}'
+          + '#of-stats-profile-badge .of-flip-inner.flipped .of-flip-front{position:absolute;top:0;left:0;height:100%;overflow:hidden;pointer-events:none}'
+          + '#of-stats-profile-badge .of-flip-inner.flipped .of-flip-back{position:relative;transform:rotateY(180deg)}';
         document.head.appendChild(flipStyleEl);
       }
 
@@ -4641,34 +4654,27 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
-        // Lock current badge wrapper height so its own transition has
-        // a starting value to animate from. flipInner has its own
-        // min-height transition; pinning badge keeps both in lockstep.
-        if (!badge.style.minHeight) {
-          badge.style.minHeight = badge.offsetHeight + 'px';
-        }
-        var target;
-        if (toBack) {
-          // flipBack is normally position:absolute + height:100% — pull
-          // it inline briefly so its real content height becomes
-          // scrollHeight (otherwise we'd just read 100% of flipInner).
-          flipBack.style.position = 'relative';
-          flipBack.style.height = 'auto';
-          void flipBack.offsetHeight; // force layout
-          target = flipBack.scrollHeight;
-          flipBack.style.position = '';
-          flipBack.style.height = '';
-        } else {
-          void flipFront.offsetHeight;
-          target = flipFront.scrollHeight;
-        }
-        flipInner.style.minHeight = target + 'px';
-        // Match badge wrapper too so its own transition animates in
-        // parallel with flipInner — otherwise the outer rounded
-        // background snaps to its new size while the inner content
-        // glides, which feels broken.
+        // CSS now keeps the active side in flow (position:relative)
+        // and the inactive side absolute — so the active side's
+        // scrollHeight is its natural content height. No more
+        // temporary position-toggling needed.
+        var activeSide = toBack ? flipBack : flipFront;
+        // Pin current badge wrapper height as the transition start.
+        var start = badge.offsetHeight;
+        badge.style.minHeight = start + 'px';
+        // Read the target side's natural height. We have to briefly
+        // clear flipInner.minHeight to avoid it propping the
+        // measurement up to the previous side's locked height.
+        var savedMin = flipInner.style.minHeight;
+        flipInner.style.minHeight = '';
+        void flipInner.offsetHeight; // force layout
+        var target = activeSide.scrollHeight;
+        flipInner.style.minHeight = savedMin || (start + 'px');
+        // Animate to the new target on next frame so the transition
+        // starts from the pinned values rather than snapping.
         requestAnimationFrame(function () {
-          badge.style.minHeight = (target + 32) + 'px';
+          flipInner.style.minHeight = target + 'px';
+          badge.style.minHeight = (target + 32) + 'px'; // +badge padding
         });
       }
       
