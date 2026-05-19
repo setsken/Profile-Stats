@@ -2108,6 +2108,7 @@
         position: relative;
         overflow: visible;
         perspective: 800px;
+        transition: min-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       `;
 
       // Inject flip card styles once
@@ -3111,6 +3112,10 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
+        // Lock current rendered badge height before swapping content so
+        // the CSS transition has a starting value to animate from.
+        var startH = badge.offsetHeight;
+        badge.style.minHeight = startH + 'px';
         flipInner.style.display = 'none';
         // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
@@ -3118,14 +3123,17 @@
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          // Same fix as Notes — don't inherit the (possibly taller)
-          // back-side badge height. Alerts panel sizes to its content.
           ap.style.minHeight = '';
-          // Show local data immediately, then refresh from server
           _alertsRebuildPanel();
-          _alertsFetchFromServer(_notesUsername, function() {
+          // Animate badge to the alerts panel's natural height.
+          requestAnimationFrame(function () {
+            badge.style.minHeight = (ap.scrollHeight + 32) + 'px'; // +padding
+          });
+          _alertsFetchFromServer(_notesUsername, function () {
             _alertsRebuildPanel();
             _alertsUpdateBadge();
+            // Server data may have grown/shrunk the list — re-sync.
+            badge.style.minHeight = (ap.scrollHeight + 32) + 'px';
           });
         }
       }
@@ -3137,6 +3145,10 @@
         flipInner.style.display = '';
         flipInner.classList.remove('flipped');
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
+        // Snap badge wrapper back to natural front-side height.
+        requestAnimationFrame(function () {
+          badge.style.minHeight = (flipFront.scrollHeight + 32) + 'px';
+        });
       }
 
       // Init badge count (deferred — see after scoreResult)
@@ -3272,6 +3284,10 @@
         }
         _notesDraftText = '';
         _notesDraftTagName = '';
+        // Lock current badge height so the CSS transition has a
+        // starting value to animate from.
+        var startH = badge.offsetHeight;
+        badge.style.minHeight = startH + 'px';
         flipInner.style.display = 'none';
         // Hide alerts panel if open
         var ap = badge.querySelector('#of-stats-alerts-panel');
@@ -3279,17 +3295,18 @@
         var np = badge.querySelector('#of-stats-notes-panel');
         if (np) {
           np.style.display = '';
-          // Notes panel sizes itself to its own content. Previously we
-          // inherited the badge's current flipInner.offsetHeight which —
-          // after the X-Ray padding bump — was the (taller) back-side
-          // height, leaving a huge empty area below the Save button.
+          // Notes panel sizes itself to its own content (don't inherit
+          // the possibly-taller back-side height).
           np.style.minHeight = '';
-          // Show local data immediately
           _notesRebuildPanel();
-          // Then refresh from server
-          _notesSyncFromServer(function() {
+          // Animate badge to the notes panel's natural height.
+          requestAnimationFrame(function () {
+            badge.style.minHeight = (np.scrollHeight + 32) + 'px';
+          });
+          _notesSyncFromServer(function () {
             _notesRebuildPanel();
             _notesRenderStrip();
+            badge.style.minHeight = (np.scrollHeight + 32) + 'px';
           });
         }
       }
@@ -3302,6 +3319,10 @@
         // Ensure we're on front side
         flipInner.classList.remove('flipped');
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
+        // Snap badge wrapper back to natural front-side height (animated).
+        requestAnimationFrame(function () {
+          badge.style.minHeight = (flipFront.scrollHeight + 32) + 'px';
+        });
         var frontLabel = document.getElementById('of-flip-label');
         var backLabel = document.getElementById('of-flip-label-back');
         if (frontLabel) frontLabel.textContent = t('details');
@@ -4620,44 +4641,35 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
-        // Capture the requested side so a stale re-measure can't pivot
-        // to the wrong target if the user flips again before we settle.
-        var requested = toBack ? 'back' : 'front';
-        function measure() {
-          // Bail if the user has flipped to the other side since the
-          // initial click — otherwise we'd shrink/expand to the wrong
-          // side's height while mid-transition.
-          var current = flipInner.classList.contains('flipped') ? 'back' : 'front';
-          if (current !== requested) return;
-
-          if (toBack) {
-            // flipBack is normally position:absolute + height:100% — pull
-            // it inline briefly so its real content height becomes
-            // scrollHeight (otherwise we'd just read 100% of flipInner).
-            flipBack.style.position = 'relative';
-            flipBack.style.height = 'auto';
-            void flipBack.offsetHeight; // force layout
-            var hb = flipBack.scrollHeight;
-            flipBack.style.position = '';
-            flipBack.style.height = '';
-            flipInner.style.minHeight = hb + 'px';
-          } else {
-            void flipFront.offsetHeight;
-            flipInner.style.minHeight = flipFront.scrollHeight + 'px';
-          }
+        // Lock current badge wrapper height so its own transition has
+        // a starting value to animate from. flipInner has its own
+        // min-height transition; pinning badge keeps both in lockstep.
+        if (!badge.style.minHeight) {
+          badge.style.minHeight = badge.offsetHeight + 'px';
         }
-        // First measurement — synchronous so the flip starts animating
-        // toward roughly the right target right away.
-        measure();
-        // Re-measure on subsequent frames AND after the flip transition
-        // has had time to settle. Radar SVG / percentile bar / late
-        // layouts can change the back-side height after first paint;
-        // these passes catch any drift and snap the badge to the right
-        // height by the time the flip animation finishes (~600ms).
-        requestAnimationFrame(function () { requestAnimationFrame(measure); });
-        setTimeout(measure, 120);
-        setTimeout(measure, 350);
-        setTimeout(measure, 700);
+        var target;
+        if (toBack) {
+          // flipBack is normally position:absolute + height:100% — pull
+          // it inline briefly so its real content height becomes
+          // scrollHeight (otherwise we'd just read 100% of flipInner).
+          flipBack.style.position = 'relative';
+          flipBack.style.height = 'auto';
+          void flipBack.offsetHeight; // force layout
+          target = flipBack.scrollHeight;
+          flipBack.style.position = '';
+          flipBack.style.height = '';
+        } else {
+          void flipFront.offsetHeight;
+          target = flipFront.scrollHeight;
+        }
+        flipInner.style.minHeight = target + 'px';
+        // Match badge wrapper too so its own transition animates in
+        // parallel with flipInner — otherwise the outer rounded
+        // background snaps to its new size while the inner content
+        // glides, which feels broken.
+        requestAnimationFrame(function () {
+          badge.style.minHeight = (target + 32) + 'px';
+        });
       }
       
       // Flip button handler (in header)
