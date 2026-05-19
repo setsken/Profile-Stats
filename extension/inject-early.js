@@ -2409,9 +2409,10 @@
           '#of-stats-tab-notes .nv-model-row:hover .nv-model-arrow{color:#00b4ff;}',
           '#of-stats-tab-notes .nv-empty{text-align:center;padding:16px;color:#445566;font-size:10px;}',
           '#of-stats-tab-notes .nv-models-scroll{max-height:350px;overflow-y:auto;}',
-          '#of-stats-tab-notes .nv-models-scroll::-webkit-scrollbar{width:3px;}',
-          '#of-stats-tab-notes .nv-models-scroll::-webkit-scrollbar-track{background:transparent;}',
-          '#of-stats-tab-notes .nv-models-scroll::-webkit-scrollbar-thumb{background:#1e2d3d;border-radius:2px;}',
+          '.nv-models-scroll::-webkit-scrollbar{width:3px;}',
+          '.nv-models-scroll::-webkit-scrollbar-track{background:transparent;}',
+          '.nv-models-scroll::-webkit-scrollbar-thumb{background:#1e2d3d;border-radius:2px;}',
+          '.nv-models-scroll{scrollbar-width:thin;scrollbar-color:#1e2d3d transparent;}',
           '#of-stats-tab-notes .nv-sep{height:1px;background:#1a2535;margin:10px 0;}',
           '@keyframes ofAlertSlide{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}',
         ].join('\n');
@@ -3160,23 +3161,21 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
-        // Floor the badge at its current rendered height so opening
-        // Alerts doesn't collapse the wrapper, but DON'T cap it — the
-        // panel should grow naturally if there are many alerts so we
-        // never need an ugly native scrollbar inside the wrapper.
+        // Hard-lock badge to current rendered height — Alerts must
+        // neither grow nor shrink the wrapper. If alerts content
+        // overflows, the inner scroll container handles it with a
+        // 3px custom scrollbar (matched to .nv-models-scroll).
         var keepH = badge.offsetHeight;
         badge.style.minHeight = keepH + 'px';
+        badge.style.maxHeight = keepH + 'px';
         flipInner.style.display = 'none';
-        // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
         if (np) np.style.display = 'none';
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          ap.style.minHeight = (keepH - 32) + 'px';
-          ap.style.height = '';
-          ap.style.maxHeight = '';
-          ap.style.overflowY = '';
+          ap.style.height = (keepH - 32) + 'px';
+          ap.style.overflowY = 'auto';
           _alertsRebuildPanel();
           _alertsFetchFromServer(_notesUsername, function () {
             _alertsRebuildPanel();
@@ -3192,6 +3191,8 @@
         flipInner.style.display = '';
         flipInner.classList.remove('flipped');
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
+        // Release the hard lock so wrapper can animate to front size.
+        badge.style.maxHeight = '';
         requestAnimationFrame(function () {
           badge.style.minHeight = (flipFront.scrollHeight + 32) + 'px';
         });
@@ -4629,6 +4630,7 @@
       // === INDEPENDENT ALERTS PANEL (Feature #8) ===
       var alertsPanel = document.createElement('div');
       alertsPanel.id = 'of-stats-alerts-panel';
+      alertsPanel.className = 'nv-models-scroll'; // custom thin scrollbar
       alertsPanel.style.cssText = 'display:none;transition:min-height 0.3s ease;';
       // Alerts panel header
       var alertsPanelHeader = document.createElement('div');
