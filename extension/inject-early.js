@@ -2616,7 +2616,10 @@
           inner.appendChild(sep);
 
           var createLabel = document.createElement('div');
-          createLabel.style.cssText = 'font-size:9px;color:#556677;margin-bottom:4px;';
+          // Inline styles here previously hard-coded font-size:9px and a
+          // slate-700 colour, which overrode the .nv-create-label CSS
+          // class and made 'Create tag' nearly invisible on the dark bg.
+          createLabel.style.cssText = 'font-size:12px;color:#ffffff;font-weight:700;letter-spacing:0.02em;margin-bottom:6px;';
           createLabel.textContent = t('notesCreateTag');
           inner.appendChild(createLabel);
 
