@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /icons/
+Disallow: /ofstats.zip
+
+Sitemap: https://profilestats.pro/sitemap.xml
+
+# Profile Stats - https://profilestats.pro
+# Chrome Extension for OnlyFans Statistics Real-time Analytics

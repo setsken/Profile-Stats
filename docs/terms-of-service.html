@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service — Profile Stats</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2'><path d='M12 2L2 7l10 5 10-5-10-5z'/><path d='M2 17l10 5 10-5'/><path d='M2 12l10 5 10-5'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a12;
+            --surface: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06);
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #8b5cf6;
+            --accent-dark: #6d28d9;
+            --danger: #ff6b6b;
+            --success: #00d4aa;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .bg-glow {
+            position: fixed; top: -40%; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 800px; border-radius: 50%; z-index: 0; pointer-events: none;
+            background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+        }
+
+        .page-content { position: relative; z-index: 1; }
+
+        /* Nav */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(10,10,18,0.8);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.1rem; color: #fff; text-decoration: none;
+        }
+        .nav-logo svg { width: 28px; height: 28px; color: var(--accent); }
+        .nav-links { display: flex; gap: 24px; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+            transition: color .2s;
+        }
+        .nav-links a:hover { color: #fff; }
+
+        /* Hero */
+        .hero {
+            text-align: center; padding: 140px 32px 60px;
+            background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, transparent 60%);
+        }
+        .hero h1 { font-size: clamp(2rem,5vw,3rem); font-weight: 800; margin-bottom: 12px; }
+        .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero .subtitle { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 8px; }
+        .hero .updated {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-dim); font-size: 0.85rem;
+            background: var(--surface); border: 1px solid var(--border);
+            padding: 6px 16px; border-radius: 20px; margin-top: 16px;
+        }
+        .hero .updated svg { width: 14px; height: 14px; color: var(--accent); }
+
+        /* Container */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 32px 80px; }
+
+        /* Summary box */
+        .summary-box {
+            background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.15);
+            border-radius: 16px; padding: 28px 32px; margin-bottom: 48px;
+        }
+        .summary-box h3 {
+            font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .summary-box h3 svg { width: 20px; height: 20px; color: var(--accent); }
+        .summary-box p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.7; }
+
+        /* Sections */
+        .section {
+            margin-bottom: 48px; padding-bottom: 48px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section:last-of-type { border-bottom: none; }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .section h2 .num {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 10px;
+            background: rgba(139,92,246,0.1); color: var(--accent);
+            font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+        }
+        .section p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 16px; }
+        .section ul {
+            list-style: none; padding: 0; margin: 16px 0;
+        }
+        .section ul li {
+            padding: 10px 0 10px 32px; position: relative;
+            color: var(--text-dim); font-size: 0.95rem;
+        }
+        .section ul li::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: contain; background-repeat: no-repeat;
+        }
+
+        /* Prohibited items */
+        .section ul li.prohibited::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b6b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
+        }
+
+        /* Feature grid */
+        .feature-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin: 20px 0;
+        }
+        .feature-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; text-align: center;
+        }
+        .feature-card .icon {
+            width: 44px; height: 44px; margin: 0 auto 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(139,92,246,0.1); border-radius: 10px;
+        }
+        .feature-card .icon svg { width: 22px; height: 22px; color: var(--accent); }
+        .feature-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+        .feature-card p { color: var(--text-dim); font-size: 0.82rem; line-height: 1.5; margin-bottom: 0; }
+
+        /* Warning box */
+        .warning-box {
+            background: rgba(255,107,107,0.06); border: 1px solid rgba(255,107,107,0.2);
+            border-radius: 12px; padding: 20px 24px; margin: 24px 0;
+        }
+        .warning-box h4 {
+            color: var(--danger); font-size: 0.95rem; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .warning-box h4 svg { width: 18px; height: 18px; }
+        .warning-box p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 0; }
+
+        /* Contact section */
+        .contact-section {
+            text-align: center; padding: 48px 32px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; margin-top: 48px;
+        }
+        .contact-section h2 { justify-content: center; font-size: 1.3rem; margin-bottom: 12px; }
+        .contact-section p { color: var(--text-dim); }
+        .contact-btns { display: flex; gap: 16px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .contact-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 10px; text-decoration: none;
+            font-weight: 600; font-size: 0.9rem; transition: all .2s;
+        }
+        .contact-btn svg { width: 18px; height: 18px; }
+        .contact-btn.primary { background: var(--accent); color: #000; }
+        .contact-btn.primary:hover { background: #33c3e0; }
+        .contact-btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .contact-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Footer */
+        .footer {
+            text-align: center; padding: 40px 32px; margin-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+        .footer p { color: var(--text-dim); font-size: 0.85rem; }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding: 120px 20px 40px; }
+            .container { padding: 0 20px 60px; }
+            .feature-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="page-content">
+        <!-- Nav -->
+        <nav class="nav">
+            <div class="nav-inner">
+                <a href="https://profilestats.pro" class="nav-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Profile Stats
+                </a>
+                <div class="nav-links">
+                    <a href="https://profilestats.pro">Home</a>
+                    <a href="https://profilestats.pro/privacy-policy.html">Privacy</a>
+                    <a href="https://profilestats.pro/terms-of-service.html" style="color:var(--accent)">Terms</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Terms of <span>Service</span></h1>
+            <p class="subtitle">Profile Stats — Chrome Extension</p>
+            <span class="updated">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Last Updated: February 3, 2026
+            </span>
+        </section>
+
+        <!-- Content -->
+        <div class="container">
+            <!-- Summary -->
+            <div class="summary-box">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Agreement Overview
+                </h3>
+                <p>By installing Profile Stats, you agree to these terms. The extension provides visual editing of statistics displays for screenshots and marketing purposes. All edits are cosmetic only and do not affect actual data.</p>
+            </div>
+
+            <!-- Section 1 -->
+            <section class="section">
+                <h2><span class="num">1</span> Acceptance of Terms</h2>
+                <p>By installing, accessing, or using the Profile Stats Chrome extension ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not install or use the Service.</p>
+            </section>
+
+            <!-- Section 2 -->
+            <section class="section">
+                <h2><span class="num">2</span> Description of Service</h2>
+                <p>Profile Stats is a browser extension that allows users to visually customize the display of statistics on OnlyFans pages. The extension provides:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 10H18a2 2 0 000 4h4"/></svg>
+                        </div>
+                        <h4>Earnings Editor</h4>
+                        <p>Visually modify displayed earnings amounts</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                        </div>
+                        <h4>Subscriber Count</h4>
+                        <p>Customize subscriber and fan count displays</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                        </div>
+                        <h4>Chart Customization</h4>
+                        <p>Modify chart visualizations and data points</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </div>
+                        <h4>Screenshot Ready</h4>
+                        <p>Create professional promotional materials</p>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <h4>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Important Disclaimer
+                    </h4>
+                    <p>All edits made by this extension are <strong>purely visual and temporary</strong>. They do not modify any actual data on OnlyFans servers or affect your real statistics in any way. Refreshing the page will reset all changes.</p>
+                </div>
+            </section>
+
+            <!-- Section 3 -->
+            <section class="section">
+                <h2><span class="num">3</span> Intended Use</h2>
+                <p>This extension is designed for legitimate purposes:</p>
+                <ul>
+                    <li>Creating promotional screenshots and marketing materials</li>
+                    <li>Demonstrating potential earnings for educational content</li>
+                    <li>Personal visualization and goal-setting motivation</li>
+                    <li>Creating analytics for presentations or courses</li>
+                    <li>Testing UI layouts with different data scenarios</li>
+                </ul>
+            </section>
+
+            <!-- Section 4 -->
+            <section class="section">
+                <h2><span class="num">4</span> Prohibited Uses</h2>
+                <p>You agree <strong>NOT</strong> to use this extension for:</p>
+                <ul>
+                    <li class="prohibited">Fraudulent activities or deceiving others about actual earnings</li>
+                    <li class="prohibited">Misleading potential investors or business partners with fake data</li>
+                    <li class="prohibited">Creating fake proof of income for loans, mortgages, or financial applications</li>
+                    <li class="prohibited">Deceiving tax authorities or government agencies</li>
+                    <li class="prohibited">Any illegal activities or purposes</li>
+                    <li class="prohibited">Violating OnlyFans Terms of Service</li>
+                    <li class="prohibited">Harming, defaming, or misleading any person or entity</li>
+                </ul>
+                <p style="color: var(--danger); font-size: 0.9rem; margin-top: 4px;">Violation of these terms may result in immediate termination of your account without refund.</p>
+            </section>
+
+            <!-- Section 5 -->
+            <section class="section">
+                <h2><span class="num">5</span> Account & Registration</h2>
+                <p>To access premium features, you must:</p>
+                <ul>
+                    <li>Create an account with a valid email address</li>
+                    <li>Provide accurate and complete information</li>
+                    <li>Maintain the security of your account credentials</li>
+                    <li>Accept full responsibility for all activities under your account</li>
+                    <li>Not share your account or license with others</li>
+                </ul>
+            </section>
+
+            <!-- Section 6 -->
+            <section class="section">
+                <h2><span class="num">6</span> Subscription & Payments</h2>
+                <ul>
+                    <li>Premium features require a paid subscription</li>
+                    <li>Subscription fees are billed according to your chosen plan (monthly/lifetime)</li>
+                    <li>Payments are processed securely through our third-party payment providers</li>
+                    <li>Lifetime licenses are valid indefinitely for personal use</li>
+                    <li>We reserve the right to modify pricing with 30 days advance notice</li>
+                    <li>Refunds are provided according to our refund policy (7-day money-back guarantee)</li>
+                </ul>
+            </section>
+
+            <!-- Section 7 -->
+            <section class="section">
+                <h2><span class="num">7</span> Intellectual Property</h2>
+                <p>The Service, including all content, features, functionality, code, and design, is owned by Profile Stats and is protected by international copyright, trademark, and other intellectual property laws. You may not:</p>
+                <ul>
+                    <li class="prohibited">Copy, modify, or distribute the extension code</li>
+                    <li class="prohibited">Reverse engineer or decompile the software</li>
+                    <li class="prohibited">Create derivative works based on the extension</li>
+                    <li class="prohibited">Use our trademarks without written permission</li>
+                </ul>
+            </section>
+
+            <!-- Section 8 -->
+            <section class="section">
+                <h2><span class="num">8</span> User Responsibilities</h2>
+                <p>You are solely responsible for:</p>
+                <ul>
+                    <li>Using the extension in compliance with all applicable laws</li>
+                    <li>Any content you create or share using the extension</li>
+                    <li>Ensuring viewers understand that edited statistics are not real</li>
+                    <li>Any consequences arising from misuse of the extension</li>
+                </ul>
+            </section>
+
+            <!-- Section 9 -->
+            <section class="section">
+                <h2><span class="num">9</span> Disclaimer of Warranties</h2>
+                <p>The Service is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, express or implied. We do not guarantee:</p>
+                <ul>
+                    <li>Uninterrupted or error-free operation</li>
+                    <li>Compatibility with all browser versions or systems</li>
+                    <li>Continued compatibility with OnlyFans website updates</li>
+                    <li>That the extension will meet your specific requirements</li>
+                </ul>
+            </section>
+
+            <!-- Section 10 -->
+            <section class="section">
+                <h2><span class="num">10</span> Limitation of Liability</h2>
+                <p>To the maximum extent permitted by law, Profile Stats and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from:</p>
+                <ul>
+                    <li>Your use or inability to use the Service</li>
+                    <li>Any unauthorized access to your account</li>
+                    <li>Any third-party conduct or content</li>
+                    <li>Any content obtained from the Service</li>
+                </ul>
+            </section>
+
+            <!-- Section 11 -->
+            <section class="section">
+                <h2><span class="num">11</span> Termination</h2>
+                <p>We may terminate or suspend your access to the Service:</p>
+                <ul>
+                    <li>Immediately for violations of these Terms</li>
+                    <li>If we detect fraudulent or illegal activities</li>
+                    <li>At our sole discretion with reasonable notice</li>
+                    <li>If you request account deletion</li>
+                </ul>
+                <p>Upon termination, your right to use the Service will immediately cease.</p>
+            </section>
+
+            <!-- Section 12 -->
+            <section class="section">
+                <h2><span class="num">12</span> Modifications</h2>
+                <p>We reserve the right to modify these Terms at any time. Changes will be posted on this page with an updated revision date. Your continued use of the Service after changes constitutes acceptance of the modified Terms.</p>
+            </section>
+
+            <!-- Section 13 -->
+            <section class="section">
+                <h2><span class="num">13</span> Governing Law</h2>
+                <p>These Terms shall be governed by and construed in accordance with applicable international laws, without regard to conflict of law principles. Any disputes shall be resolved through binding arbitration.</p>
+            </section>
+
+            <!-- Contact -->
+            <div class="contact-section">
+                <h2>Questions About These Terms?</h2>
+                <p>We're here to help clarify any concerns.</p>
+                <div class="contact-btns">
+                    <a href="mailto:support@profilestats.pro" class="contact-btn primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+                        support@profilestats.pro
+                    </a>
+                    <a href="https://profilestats.pro" class="contact-btn secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                        Visit Website
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 Profile Stats. All rights reserved.</p>
+            <p style="margin-top: 10px;">
+                <a href="https://profilestats.pro/privacy-policy.html">Privacy Policy</a> ·
+                <a href="https://profilestats.pro/terms-of-service.html">Terms of Service</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

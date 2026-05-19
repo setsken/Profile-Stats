@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Profile Stats</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2'><path d='M12 2L2 7l10 5 10-5-10-5z'/><path d='M2 17l10 5 10-5'/><path d='M2 12l10 5 10-5'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a12;
+            --surface: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.06);
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #8b5cf6;
+            --accent-dark: #6d28d9;
+            --danger: #ff6b6b;
+            --success: #00d4aa;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* Background grid */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .bg-glow {
+            position: fixed; top: -40%; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 800px; border-radius: 50%; z-index: 0; pointer-events: none;
+            background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);
+        }
+
+        .page-content { position: relative; z-index: 1; }
+
+        /* Nav */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(10,10,18,0.8);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 32px;
+            display: flex; align-items: center; justify-content: space-between; height: 64px;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 1.1rem; color: #fff; text-decoration: none;
+        }
+        .nav-logo svg { width: 28px; height: 28px; color: var(--accent); }
+        .nav-links { display: flex; gap: 24px; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+            transition: color .2s;
+        }
+        .nav-links a:hover { color: #fff; }
+
+        /* Hero */
+        .hero {
+            text-align: center; padding: 140px 32px 60px;
+            background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.08) 0%, transparent 60%);
+        }
+        .hero h1 { font-size: clamp(2rem,5vw,3rem); font-weight: 800; margin-bottom: 12px; }
+        .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero .subtitle { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 8px; }
+        .hero .updated {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-dim); font-size: 0.85rem;
+            background: var(--surface); border: 1px solid var(--border);
+            padding: 6px 16px; border-radius: 20px; margin-top: 16px;
+        }
+        .hero .updated svg { width: 14px; height: 14px; color: var(--accent); }
+
+        /* Container */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 32px 80px; }
+
+        /* Summary box */
+        .summary-box {
+            background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.15);
+            border-radius: 16px; padding: 28px 32px; margin-bottom: 48px;
+        }
+        .summary-box h3 {
+            font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .summary-box h3 svg { width: 20px; height: 20px; color: var(--accent); }
+        .summary-box p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.7; }
+
+        /* Sections */
+        .section {
+            margin-bottom: 48px; padding-bottom: 48px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section:last-of-type { border-bottom: none; }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .section h2 .num {
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 10px;
+            background: rgba(139,92,246,0.1); color: var(--accent);
+            font-size: 0.9rem; font-weight: 700; flex-shrink: 0;
+        }
+        .section p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 16px; }
+        .section ul {
+            list-style: none; padding: 0; margin: 16px 0;
+        }
+        .section ul li {
+            padding: 10px 0 10px 32px; position: relative;
+            color: var(--text-dim); font-size: 0.95rem;
+        }
+        .section ul li::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 20px; height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300b4d8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+            background-size: contain; background-repeat: no-repeat;
+        }
+
+        /* Data tables */
+        .data-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+            margin: 20px 0; border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .data-table th {
+            background: rgba(139,92,246,0.08); color: var(--accent);
+            padding: 14px 20px; text-align: left; font-size: 0.85rem;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 14px 20px; border-top: 1px solid var(--border);
+            font-size: 0.9rem; color: var(--text-dim);
+        }
+        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .badge-local {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(139,92,246,0.12); color: var(--accent);
+            padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+        }
+
+        /* Not-collected list */
+        .not-collected li::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d4aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpolyline points='9 12 12 15 15 9'/%3E%3C/svg%3E") !important;
+        }
+
+        /* Permissions grid */
+        .perm-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px; margin: 20px 0;
+        }
+        .perm-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px;
+        }
+        .perm-card h4 {
+            font-size: 0.95rem; font-weight: 600; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .perm-card h4 svg { width: 18px; height: 18px; color: var(--accent); }
+        .perm-card p { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+
+        /* Rights grid */
+        .rights-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin: 20px 0;
+        }
+        .right-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; text-align: center;
+        }
+        .right-card svg { width: 28px; height: 28px; color: var(--accent); margin-bottom: 10px; }
+        .right-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+        .right-card p { color: var(--text-dim); font-size: 0.82rem; line-height: 1.5; }
+
+        /* Contact */
+        .contact-section {
+            text-align: center; padding: 48px 32px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; margin-top: 48px;
+        }
+        .contact-section h2 { justify-content: center; font-size: 1.3rem; margin-bottom: 12px; }
+        .contact-section p { color: var(--text-dim); }
+        .contact-btns { display: flex; gap: 16px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .contact-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 10px; text-decoration: none;
+            font-weight: 600; font-size: 0.9rem; transition: all .2s;
+        }
+        .contact-btn svg { width: 18px; height: 18px; }
+        .contact-btn.primary {
+            background: var(--accent); color: #000;
+        }
+        .contact-btn.primary:hover { background: #33c3e0; }
+        .contact-btn.secondary {
+            background: var(--surface); color: var(--text); border: 1px solid var(--border);
+        }
+        .contact-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Footer */
+        .footer {
+            text-align: center; padding: 40px 32px; margin-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+        .footer p { color: var(--text-dim); font-size: 0.85rem; }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding: 120px 20px 40px; }
+            .container { padding: 0 20px 60px; }
+            .perm-grid, .rights-grid { grid-template-columns: 1fr; }
+            .data-table { font-size: 0.82rem; }
+            .data-table th, .data-table td { padding: 10px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="page-content">
+        <!-- Nav -->
+        <nav class="nav">
+            <div class="nav-inner">
+                <a href="https://profilestats.pro" class="nav-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Profile Stats
+                </a>
+                <div class="nav-links">
+                    <a href="https://profilestats.pro">Home</a>
+                    <a href="https://profilestats.pro/privacy-policy.html" style="color:var(--accent)">Privacy</a>
+                    <a href="https://profilestats.pro/terms-of-service.html">Terms</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Privacy <span>Policy</span></h1>
+            <p class="subtitle">Profile Stats — Chrome Extension</p>
+            <span class="updated">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Last Updated: February 3, 2026
+            </span>
+        </section>
+
+        <!-- Content -->
+        <div class="container">
+            <!-- Summary -->
+            <div class="summary-box">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    Privacy at a Glance
+                </h3>
+                <p>Profile Stats is designed with your privacy in mind. We operate on a minimal data principle — we only collect what's absolutely necessary for the extension to function (email for authentication). All statistics editing happens locally in your browser and is never transmitted anywhere.</p>
+            </div>
+
+            <!-- Section 1 -->
+            <section class="section">
+                <h2><span class="num">1</span> Introduction</h2>
+                <p>Welcome to the Profile Stats Privacy Policy. This document explains how we handle information when you use our Chrome extension. We are committed to protecting your privacy and being transparent about our practices.</p>
+                <p>Profile Stats is a browser extension that provides visual editing capabilities for statistics displays on OnlyFans pages. All modifications are purely cosmetic, temporary, and occur locally within your browser.</p>
+            </section>
+
+            <!-- Section 2 -->
+            <section class="section">
+                <h2><span class="num">2</span> Data We Collect</h2>
+                <p>We collect minimal data required for the extension to function:</p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Purpose</th>
+                            <th>Storage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Email Address</strong></td>
+                            <td>Account authentication & license management</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Extension Settings</strong></td>
+                            <td>Your preferences & custom values</td>
+                            <td><span class="badge-local">Local Only</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>License Status</strong></td>
+                            <td>Verify subscription/premium access</td>
+                            <td><span class="badge-local">Secure Server</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Section 3 -->
+            <section class="section">
+                <h2><span class="num">3</span> Data We DO NOT Collect</h2>
+                <p>We want to be absolutely clear about data we never access:</p>
+                <ul class="not-collected">
+                    <li>Your OnlyFans login credentials or passwords</li>
+                    <li>Your actual earnings, balance, or financial data</li>
+                    <li>Your subscriber/fan lists or personal information</li>
+                    <li>Your messages, content, or media files</li>
+                    <li>Your browsing history outside OnlyFans</li>
+                    <li>Any personally identifiable information beyond email</li>
+                    <li>Screenshots or visual content you create</li>
+                </ul>
+            </section>
+
+            <!-- Section 4 -->
+            <section class="section">
+                <h2><span class="num">4</span> How We Use Your Information</h2>
+                <p>The limited data we collect is used exclusively for:</p>
+                <ul>
+                    <li>Authenticating your account and verifying license status</li>
+                    <li>Providing customer support when you contact us</li>
+                    <li>Sending important service-related notifications</li>
+                    <li>Improving extension functionality and user experience</li>
+                </ul>
+            </section>
+
+            <!-- Section 5 -->
+            <section class="section">
+                <h2><span class="num">5</span> Chrome Extension Permissions</h2>
+                <p>Our extension requires specific browser permissions to function. Here's what each permission does:</p>
+                <div class="perm-grid">
+                    <div class="perm-card">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+                            activeTab
+                        </h4>
+                        <p>Access the current tab's content only when you click the extension. We only interact with OnlyFans pages.</p>
+                    </div>
+                    <div class="perm-card">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            storage
+                        </h4>
+                        <p>Store your extension preferences and custom values locally in your browser. Data never leaves your device.</p>
+                    </div>
+                    <div class="perm-card">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                            scripting
+                        </h4>
+                        <p>Inject visual modifications into the page DOM. This is how we change displayed values on the page.</p>
+                    </div>
+                    <div class="perm-card">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            alarms
+                        </h4>
+                        <p>Schedule periodic license checks to verify your subscription status. Runs in the background with minimal resource usage.</p>
+                    </div>
+                    <div class="perm-card">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                            Host Permission
+                        </h4>
+                        <p>Limited to onlyfans.com only. The extension cannot access or modify any other websites.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 6 -->
+            <section class="section">
+                <h2><span class="num">6</span> Data Sharing & Third Parties</h2>
+                <p>We do not sell, trade, or share your personal information with third parties, except:</p>
+                <ul>
+                    <li>Payment processors (for subscription management only)</li>
+                    <li>When required by law or legal process</li>
+                    <li>To protect our rights or prevent fraud</li>
+                </ul>
+            </section>
+
+            <!-- Section 7 -->
+            <section class="section">
+                <h2><span class="num">7</span> Data Security</h2>
+                <p>We implement industry-standard security measures to protect your data:</p>
+                <ul>
+                    <li>All communications are encrypted using HTTPS/TLS</li>
+                    <li>Passwords are hashed using bcrypt with salt rounds</li>
+                    <li>Server infrastructure is secured with modern security practices</li>
+                    <li>Regular security audits and vulnerability assessments</li>
+                    <li>Rate limiting to prevent brute-force attacks</li>
+                </ul>
+            </section>
+
+            <!-- Section 8 -->
+            <section class="section">
+                <h2><span class="num">8</span> Your Rights (GDPR & CCPA)</h2>
+                <p>You have the following rights regarding your personal data:</p>
+                <div class="rights-grid">
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <h4>Right to Access</h4>
+                        <p>Request a copy of your personal data</p>
+                    </div>
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <h4>Right to Rectification</h4>
+                        <p>Correct inaccurate personal data</p>
+                    </div>
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        <h4>Right to Erasure</h4>
+                        <p>Request deletion of your data</p>
+                    </div>
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        <h4>Right to Restrict</h4>
+                        <p>Limit processing of your data</p>
+                    </div>
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <h4>Right to Portability</h4>
+                        <p>Export your data in standard format</p>
+                    </div>
+                    <div class="right-card">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <h4>Right to Object</h4>
+                        <p>Object to processing of your data</p>
+                    </div>
+                </div>
+                <p>To exercise any of these rights, please contact us at <a href="mailto:support@profilestats.pro" style="color:var(--accent)">support@profilestats.pro</a>.</p>
+            </section>
+
+            <!-- Section 9 -->
+            <section class="section">
+                <h2><span class="num">9</span> Children's Privacy</h2>
+                <p>Our Service is not directed to individuals under the age of 18. We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal data, please contact us immediately.</p>
+            </section>
+
+            <!-- Section 10 -->
+            <section class="section">
+                <h2><span class="num">10</span> Changes to This Policy</h2>
+                <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision date. We encourage you to review this policy periodically. Your continued use of the extension after any changes constitutes acceptance of those changes.</p>
+            </section>
+
+            <!-- Contact -->
+            <div class="contact-section">
+                <h2>Questions or Concerns?</h2>
+                <p>We're here to help with any privacy-related questions.</p>
+                <div class="contact-btns">
+                    <a href="mailto:support@profilestats.pro" class="contact-btn primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+                        support@profilestats.pro
+                    </a>
+                    <a href="https://profilestats.pro" class="contact-btn secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                        Visit Website
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 Profile Stats. All rights reserved.</p>
+            <p style="margin-top: 10px;">
+                <a href="https://profilestats.pro/privacy-policy.html">Privacy Policy</a> ·
+                <a href="https://profilestats.pro/terms-of-service.html">Terms of Service</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
