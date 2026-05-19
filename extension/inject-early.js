@@ -4617,34 +4617,44 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
+        // Capture the requested side so a stale re-measure can't pivot
+        // to the wrong target if the user flips again before we settle.
+        var requested = toBack ? 'back' : 'front';
         function measure() {
-          var targetSide = toBack ? flipBack : flipFront;
-          // flipBack is normally position:absolute; height:100% — temporarily
-          // flow it inline to read its real content height.
-          if (toBack) { flipBack.style.position = 'relative'; flipBack.style.height = 'auto'; }
-          // Force layout so scrollHeight reflects the just-applied styles.
-          void targetSide.offsetHeight;
-          var h = targetSide.scrollHeight;
-          if (toBack) { flipBack.style.position = ''; flipBack.style.height = ''; }
-          // Lock current height first so transition can animate from it.
-          if (!flipInner.style.minHeight) {
+          // Bail if the user has flipped to the other side since the
+          // initial click — otherwise we'd shrink/expand to the wrong
+          // side's height while mid-transition.
+          var current = flipInner.classList.contains('flipped') ? 'back' : 'front';
+          if (current !== requested) return;
+
+          if (toBack) {
+            // flipBack is normally position:absolute + height:100% — pull
+            // it inline briefly so its real content height becomes
+            // scrollHeight (otherwise we'd just read 100% of flipInner).
+            flipBack.style.position = 'relative';
+            flipBack.style.height = 'auto';
+            void flipBack.offsetHeight; // force layout
+            var hb = flipBack.scrollHeight;
+            flipBack.style.position = '';
+            flipBack.style.height = '';
+            flipInner.style.minHeight = hb + 'px';
+          } else {
+            void flipFront.offsetHeight;
             flipInner.style.minHeight = flipFront.scrollHeight + 'px';
-            flipInner.offsetHeight;
           }
-          // Only grow, never shrink mid-flip — avoids the badge clipping
-          // its own content when a later measurement comes in smaller
-          // than an earlier one (e.g. lazy SVG render adds rows).
-          var current = parseInt(flipInner.style.minHeight, 10) || 0;
-          if (h > current) flipInner.style.minHeight = h + 'px';
-          else if (!toBack) flipInner.style.minHeight = h + 'px';
         }
+        // First measurement — synchronous so the flip starts animating
+        // toward roughly the right target right away.
         measure();
-        // Some back-side content (radar SVG, percentile bar) settles after
-        // first paint. Re-measure on the next two frames so the badge
-        // catches up if the initial reading was short.
-        requestAnimationFrame(function() {
-          requestAnimationFrame(measure);
-        });
+        // Re-measure on subsequent frames AND after the flip transition
+        // has had time to settle. Radar SVG / percentile bar / late
+        // layouts can change the back-side height after first paint;
+        // these passes catch any drift and snap the badge to the right
+        // height by the time the flip animation finishes (~600ms).
+        requestAnimationFrame(function () { requestAnimationFrame(measure); });
+        setTimeout(measure, 120);
+        setTimeout(measure, 350);
+        setTimeout(measure, 700);
       }
       
       // Flip button handler (in header)
