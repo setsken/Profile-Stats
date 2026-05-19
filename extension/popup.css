@@ -1616,7 +1616,7 @@ html.booting .screen { display: none !important; }
 .list-item.rank-3 .list-item-rank { color: #fb923c; }
 
 /* Custom dropdown (replaces native select) */
-.custom-dropdown { position: relative; }
+.custom-dropdown { position: relative; flex-shrink: 0; }
 .custom-dropdown-btn {
   display: inline-flex; align-items: center; gap: 6px;
   height: 38px; padding: 0 12px;
@@ -1624,8 +1624,13 @@ html.booting .screen { display: none !important; }
   border: 1px solid var(--border-color); border-radius: 10px;
   color: var(--text-primary); font-size: 12px; font-weight: 600;
   cursor: pointer; user-select: none;
+  /* Keep label + sort-direction arrow + caret on one line even when
+     the localised label is long (RU "Качество", "Возраст" etc.). */
+  white-space: nowrap;
+  min-width: 108px;
   transition: all 0.18s;
 }
+.custom-dropdown-btn #sortDropdownLabel { white-space: nowrap; }
 .custom-dropdown-btn:hover { border-color: var(--border-soft); background: var(--bg-card-hover); }
 .custom-dropdown-btn.open {
   border-color: var(--accent);
