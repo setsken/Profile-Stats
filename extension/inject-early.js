@@ -1353,9 +1353,10 @@
 
     // Scan DOM for social media links (OF renders them via Vue as .m-tab-social links)
     // Detect an active "first period at a discount" promo on a paid OF
-    // profile. Tries two well-known shapes:
+    // profile. Tries three sources in order:
     //   1) profileData.promotions = [{ price, duration|days|durationDays }, ...]
     //   2) profileData.currentSubscribePrice — a single discounted rate
+    //   3) DOM scrape of the Subscribe button text "$N.NN for N days"
     // Returns { price: '8.25', label: '1 mo' } or null when no promo.
     function _detectActivePromo(profileData, baseN) {
       var fmt = function (n) {
@@ -1371,7 +1372,7 @@
         return months + ' mo';
       };
       try {
-        // promotions array
+        // 1) promotions array on profileData
         if (Array.isArray(profileData.promotions) && profileData.promotions.length > 0) {
           var subs = profileData.promotions
             .map(function (p) {
@@ -1387,10 +1388,46 @@
             return { price: fmt(subs[0].price), label: labelForDays(subs[0].days) };
           }
         }
-        // currentSubscribePrice fallback
+        // 2) currentSubscribePrice fallback
         var cur = Number(profileData.currentSubscribePrice);
         if (Number.isFinite(cur) && cur > 0 && cur < baseN) {
           return { price: fmt(cur), label: '1 mo' };
+        }
+        // 3) DOM fallback — OF renders "$3.25 for 31 days" inside the
+        //    Subscribe CTA. Scan a small set of likely containers and
+        //    look for the first "$N(.NN)? for N day(s)" occurrence.
+        var domRes = _scrapePromoFromDom(baseN);
+        if (domRes) {
+          return { price: fmt(domRes.price), label: labelForDays(domRes.days) };
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // DOM scrape helper: walks plausible subscribe-CTA containers and
+    // returns { price, days } when a promo string is found, else null.
+    function _scrapePromoFromDom(baseN) {
+      try {
+        // Cast a wide net: subscribe buttons live under different class
+        // names depending on the OF layout variant in play.
+        var nodes = document.querySelectorAll(
+          'a.b-btn-subscribe, button.b-btn-subscribe, ' +
+          'a[href*="subscribe"], button[class*="subscribe"], ' +
+          '[class*="b-offer-join"], [class*="m-subscribe"], ' +
+          '[class*="b-subscribtion"], [class*="subscription"]'
+        );
+        var re = /\$\s*(\d+(?:\.\d+)?)\s+for\s+(\d+)\s+day/i;
+        for (var i = 0; i < nodes.length; i++) {
+          var txt = (nodes[i].textContent || '').trim();
+          if (!txt) continue;
+          var m = txt.match(re);
+          if (m) {
+            var price = Number(m[1]);
+            var days = Number(m[2]);
+            if (Number.isFinite(price) && price > 0 && price < baseN && days > 0) {
+              return { price: price, days: days };
+            }
+          }
         }
       } catch (e) {}
       return null;
