@@ -3111,7 +3111,6 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
-        var badgeHeight = flipInner.offsetHeight || flipFront.scrollHeight;
         flipInner.style.display = 'none';
         // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
@@ -3119,7 +3118,9 @@
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          ap.style.minHeight = badgeHeight + 'px';
+          // Same fix as Notes — don't inherit the (possibly taller)
+          // back-side badge height. Alerts panel sizes to its content.
+          ap.style.minHeight = '';
           // Show local data immediately, then refresh from server
           _alertsRebuildPanel();
           _alertsFetchFromServer(_notesUsername, function() {
@@ -3271,8 +3272,6 @@
         }
         _notesDraftText = '';
         _notesDraftTagName = '';
-        // Capture current badge height before hiding
-        var badgeHeight = flipInner.offsetHeight || flipFront.scrollHeight;
         flipInner.style.display = 'none';
         // Hide alerts panel if open
         var ap = badge.querySelector('#of-stats-alerts-panel');
@@ -3280,7 +3279,11 @@
         var np = badge.querySelector('#of-stats-notes-panel');
         if (np) {
           np.style.display = '';
-          np.style.minHeight = badgeHeight + 'px';
+          // Notes panel sizes itself to its own content. Previously we
+          // inherited the badge's current flipInner.offsetHeight which —
+          // after the X-Ray padding bump — was the (taller) back-side
+          // height, leaving a huge empty area below the Save button.
+          np.style.minHeight = '';
           // Show local data immediately
           _notesRebuildPanel();
           // Then refresh from server
