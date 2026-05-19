@@ -3186,7 +3186,7 @@
         contentDiv.style.cssText = 'flex:1;min-width:0;';
         if (note.text) {
           var textDiv = document.createElement('div');
-          textDiv.style.cssText = 'font-size:10px;color:#8899aa;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;';
+          textDiv.style.cssText = 'font-size:12px;color:#ffffff;font-weight:500;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;';
           textDiv.textContent = note.text;
           contentDiv.appendChild(textDiv);
         }
@@ -3197,7 +3197,7 @@
             var tg = tags.find(function(t2){return t2.id===tid;});
             if (!tg) return;
             var sp = document.createElement('span');
-            sp.style.cssText = 'font-size:7px;padding:1px 5px;border-radius:6px;font-weight:600;' + _notesTagStyle(tg.ci);
+            sp.style.cssText = 'font-size:10px;padding:2px 7px;border-radius:7px;font-weight:700;letter-spacing:0.02em;' + _notesTagStyle(tg.ci);
             sp.textContent = tg.name;
             tagsDiv.appendChild(sp);
           });
@@ -3210,7 +3210,7 @@
         rightDiv.style.cssText = 'display:flex;align-items:center;gap:6px;flex-shrink:0;';
         if (note.date) {
           var dateSpan = document.createElement('span');
-          dateSpan.style.cssText = 'font-size:9px;color:#8899aa;white-space:nowrap;font-weight:600;';
+          dateSpan.style.cssText = 'font-size:11px;color:#ffffff;white-space:nowrap;font-weight:600;';
           var nd = new Date(note.date);
           var dd = ('0'+nd.getDate()).slice(-2), mm = ('0'+(nd.getMonth()+1)).slice(-2), yy = String(nd.getFullYear()).slice(-2);
           dateSpan.textContent = dd+'.'+mm+'.'+yy;
@@ -3594,7 +3594,7 @@
       var _vGradeLabel = (t('verdictGrade') || {})[scoreResult.grade] || '';
 
       const verdictDiv = document.createElement('div');
-      verdictDiv.style.cssText = 'margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid ' + _vGradeColor + '20;background:linear-gradient(135deg,' + _vGradeColor + '08,' + _vGradeColor + '03);';
+      verdictDiv.style.cssText = 'margin-top:8px;border-radius:8px;overflow:hidden;border:1.5px solid ' + _vGradeColor + '66;background:linear-gradient(135deg,' + _vGradeColor + '14,' + _vGradeColor + '05);box-shadow:0 0 0 1px ' + _vGradeColor + '14;';
       // Hide verdict if disabled in settings OR subscription expired
       if (settings.ofStatsVerdictEnabled === false || _subExpired) {
         verdictDiv.style.display = 'none';
@@ -3621,7 +3621,7 @@
         } else if (state === 'error') {
           html += '<span style="color:#64748b;font-size:11px;font-style:italic;">' + t('unavailable') + '</span>';
         } else {
-          html += '<span style="color:#c9d1d9;font-size:11px;line-height:1.5;">' + text + '</span>';
+          html += '<span style="color:#ffffff;font-size:11px;line-height:1.55;">' + text + '</span>';
         }
         html += '</div>';
         return html;
@@ -4323,9 +4323,9 @@
       var compareBtn = document.createElement('button');
       compareBtn.id = 'of-stats-compare-btn';
       var swordsIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="5" cy="6" r="3"/><path d="M12 6h5a2 2 0 0 1 2 2v7"/><path d="m15 9-3-3 3-3"/><circle cx="19" cy="18" r="3"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m9 15 3 3-3 3"/></svg>';
-      compareBtn.style.cssText = 'flex:1;padding:7px 10px;border-radius:8px;border:1px solid rgba(0,180,255,0.15);background:rgba(0,180,255,0.06);color:#00b4ff;font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;letter-spacing:0.3px;';
-      compareBtn.onmouseenter = function() { if (!this.dataset.locked) { this.style.background = 'rgba(0,180,255,0.12)'; this.style.borderColor = 'rgba(0,180,255,0.3)'; this.style.boxShadow = '0 0 8px rgba(0,180,255,0.1)'; } };
-      compareBtn.onmouseleave = function() { if (!this.dataset.locked) { this.style.background = 'rgba(0,180,255,0.06)'; this.style.borderColor = 'rgba(0,180,255,0.15)'; this.style.boxShadow = 'none'; } };
+      compareBtn.style.cssText = 'flex:1;padding:7px 10px;border-radius:8px;border:1.5px solid rgba(0,180,255,0.55);background:rgba(0,180,255,0.10);color:#00b4ff;font-size:10px;font-weight:700;cursor:pointer;text-align:center;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;letter-spacing:0.3px;box-shadow:0 0 0 1px rgba(0,180,255,0.10);';
+      compareBtn.onmouseenter = function() { if (!this.dataset.locked) { this.style.background = 'rgba(0,180,255,0.18)'; this.style.borderColor = 'rgba(0,180,255,0.8)'; this.style.boxShadow = '0 0 12px rgba(0,180,255,0.25)'; } };
+      compareBtn.onmouseleave = function() { if (!this.dataset.locked) { this.style.background = 'rgba(0,180,255,0.10)'; this.style.borderColor = 'rgba(0,180,255,0.55)'; this.style.boxShadow = '0 0 0 1px rgba(0,180,255,0.10)'; } };
 
       // X button to clear saved model (shows only when model is saved)
       var clearXBtn = document.createElement('div');
@@ -4377,8 +4377,8 @@
           if (!saved || saved.username === currentModelSnap.username) {
             // No saved model or same model — show "Сравнить"
             compareBtn.innerHTML = swordsIcon + '<span>' + t('compareBtn') + '</span>';
-            compareBtn.style.borderColor = 'rgba(0,180,255,0.15)';
-            compareBtn.style.background = 'rgba(0,180,255,0.06)';
+            compareBtn.style.borderColor = 'rgba(0,180,255,0.55)';
+            compareBtn.style.background = 'rgba(0,180,255,0.10)';
             compareBtn.style.color = '#00b4ff';
             compareBtn.dataset.locked = '';
             clearXBtn.style.display = 'none';
@@ -4398,9 +4398,9 @@
           } else {
             // Different model saved — show "vs @saved_model"
             compareBtn.innerHTML = swordsIcon + '<span>vs @' + saved.username + '</span>';
-            compareBtn.style.background = 'rgba(0,180,255,0.08)';
+            compareBtn.style.background = 'rgba(0,180,255,0.12)';
             compareBtn.style.color = '#00b4ff';
-            compareBtn.style.borderColor = 'rgba(0,180,255,0.18)';
+            compareBtn.style.borderColor = 'rgba(0,180,255,0.6)';
             compareBtn.dataset.locked = '';
             compareBtn.onmouseenter = function() { this.style.background = 'rgba(0,180,255,0.15)'; this.style.borderColor = 'rgba(0,180,255,0.35)'; this.style.boxShadow = '0 0 10px rgba(0,180,255,0.12)'; };
             compareBtn.onmouseleave = function() { this.style.background = 'rgba(0,180,255,0.08)'; this.style.borderColor = 'rgba(0,180,255,0.18)'; this.style.boxShadow = 'none'; };
