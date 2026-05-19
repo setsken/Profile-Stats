@@ -153,6 +153,7 @@ const I18N = {
     filterMin: 'Min',
     filterMax: 'Max',
     filterAny: 'Any',
+    all: 'All',
     filterMinScore: 'Min score',
     filterMaxScore: 'Max score',
     filterMinFans: 'Min fans',
@@ -443,6 +444,7 @@ const I18N = {
     filterMin: 'Мин',
     filterMax: 'Макс',
     filterAny: 'Любая',
+    all: 'Все',
     filterMinScore: 'Мин. скор',
     filterMaxScore: 'Макс. скор',
     filterMinFans: 'Мин. фанов',
@@ -784,7 +786,8 @@ const notesState = {
   draftText: '',
   draftTagName: '',
   newTagColorIndex: 0,
-  modelsSearch: ''
+  modelsSearch: '',
+  modelsTagFilter: null  // null = All; otherwise tag id to filter by
 };
 
 // Persist the active editor session so a closed popup does not eat the draft.
@@ -2530,20 +2533,56 @@ async function deleteTag(tagId) {
 
 // ---- Models view ----
 function renderModelsView(content) {
+  // Tag-color dot filter row to the right of the search field. Click a
+  // dot to keep only models tagged with that colour; click again to
+  // clear. Up to 6 dots fit comfortably; extras spill below.
+  const dots = notesState.tags.map(tag => {
+    const active = notesState.modelsTagFilter === tag.id ? ' active' : '';
+    return `<button class="notes-tag-dot${active}" data-tag-id="${escapeHtml(String(tag.id))}" `
+      + `style="background:${tagColor(tag.ci)};" title="${escapeHtml(tag.name)}" `
+      + `aria-label="${escapeHtml(tag.name)}"></button>`;
+  }).join('');
+  const allActive = !notesState.modelsTagFilter ? ' active' : '';
   content.innerHTML = `
-    <div class="notes-search-wrap">
+    <div class="notes-search-wrap notes-search-row">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
         </svg>
         <input type="search" id="modelsSearch" class="search-input" placeholder="${escapeHtml(t('searchUsername'))}" value="${escapeHtml(notesState.modelsSearch || '')}">
       </div>
+      ${notesState.tags.length > 0 ? `
+        <div class="notes-tag-dots" role="group" aria-label="Filter by tag">
+          <button class="notes-tag-dot notes-tag-dot-all${allActive}" data-tag-id="" title="${escapeHtml(t('all'))}" aria-label="${escapeHtml(t('all'))}">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+          </button>
+          ${dots}
+        </div>
+      ` : ''}
     </div>
     <div class="notes-models-list" id="notesModelsList"></div>
   `;
   document.getElementById('modelsSearch').addEventListener('input', (e) => {
-    notesState.modelsSearch = e.target.value.trim().toLowerCase();
+    // Accept '@handle' and 'onlyfans.com/handle' alongside the bare
+    // username — strip the @ and any URL prefix, then lowercase.
+    notesState.modelsSearch = _normaliseUsernameQuery(e.target.value).toLowerCase();
+    if (e.target.value !== notesState.modelsSearch) e.target.value = notesState.modelsSearch;
     renderModelsListBody();
+  });
+  // Tag dot click — toggle filter. Active dot clears to All.
+  content.querySelectorAll('.notes-tag-dot').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tid = btn.dataset.tagId;
+      const current = notesState.modelsTagFilter || '';
+      if (!tid) {
+        notesState.modelsTagFilter = null;
+      } else {
+        notesState.modelsTagFilter = (String(current) === tid) ? null : (Number(tid) || tid);
+      }
+      // Re-render the whole view so the active class on dots updates.
+      renderModelsView(content);
+    });
   });
   renderModelsListBody();
 }
@@ -2553,9 +2592,11 @@ function renderModelsListBody() {
   if (!wrap) return;
   const tagsById = new Map(notesState.tags.map(tag => [tag.id, tag]));
   const q = notesState.modelsSearch || '';
+  const tagFilter = notesState.modelsTagFilter;
   const entries = Object.entries(notesState.notes)
     .filter(([u, n]) => n && ((n.text && n.text.trim()) || (Array.isArray(n.tags) && n.tags.length)))
     .filter(([u]) => !q || u.toLowerCase().includes(q))
+    .filter(([, n]) => !tagFilter || (Array.isArray(n.tags) && n.tags.includes(tagFilter)))
     .sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
 
   if (entries.length === 0) {

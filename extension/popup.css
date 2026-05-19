@@ -1765,6 +1765,37 @@ html.booting .screen { display: none !important; }
 
 /* Models list rows */
 .notes-search-wrap { margin-bottom: 10px; }
+/* Search input + tag-colour filter dots on the same row. */
+.notes-search-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.notes-search-row .search-wrap { flex: 1 1 auto; min-width: 140px; max-width: none; }
+.notes-tag-dots {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+.notes-tag-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s;
+}
+.notes-tag-dot:hover { transform: scale(1.12); }
+.notes-tag-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+.notes-tag-dot-all {
+  background: var(--bg-primary) !important;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+.notes-tag-dot-all.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 
 .notes-models-list { display: flex; flex-direction: column; gap: 6px; }
 .notes-model-row {
