@@ -146,6 +146,9 @@ async function runMigrations() {
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS has_socials BOOLEAN').catch(() => {});
     // Comments open/closed marker derived from the badge's _farmedStatus.
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS comments_enabled BOOLEAN').catch(() => {});
+    // Exact join date — account_months remains for fast filtering, but
+    // joined_date is what we display and sort by in Top Models.
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS joined_date DATE').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).

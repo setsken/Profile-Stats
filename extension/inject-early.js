@@ -3679,7 +3679,12 @@
               };
               if (profileData.joined) {
                 var t = Date.parse(profileData.joined);
-                if (!isNaN(t)) m.accountMonths = Math.max(1, Math.floor((Date.now() - t) / (1000*60*60*24*30)));
+                if (!isNaN(t)) {
+                  m.accountMonths = Math.max(1, Math.floor((Date.now() - t) / (1000*60*60*24*30)));
+                  // Send the exact ISO date so the backend can also expose
+                  // it for sort-by-date / display in Top Models rows.
+                  m.joinedDate = new Date(t).toISOString().slice(0, 10);
+                }
               }
               if (typeof scoreResult.fansVisible === 'boolean') m.fansVisible = scoreResult.fansVisible;
               else if (typeof profileData.subscribers === 'number') m.fansVisible = profileData.subscribers > 0;

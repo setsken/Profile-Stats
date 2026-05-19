@@ -143,7 +143,7 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     const offset    = Math.max(0, parseInt(req.query.offset) || 0);
     const limit     = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
     const search    = (typeof req.query.search === 'string' && req.query.search.trim()) ? req.query.search.trim() : null;
-    const sort      = ['score', 'fans', 'quality', 'recent'].includes(req.query.sort) ? req.query.sort : 'score';
+    const sort      = ['score', 'fans', 'quality', 'recent', 'date', 'videos', 'posts', 'streams', 'likes', 'price'].includes(req.query.sort) ? req.query.sort : 'score';
     const minScore  = Math.max(0, Math.min(100, Number(req.query.minScore) || 0));
     const maxScore  = Math.max(0, Math.min(100, Number(req.query.maxScore) || 100));
     const minQuality = Math.max(0, Math.min(1, Number(req.query.minQuality) || 0));
@@ -201,9 +201,17 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     // so users can search a single model and still see its true position.
     // After unwrapping into a CTE all the helper columns (last_fans etc.) are
     // plain names — drop the ms. prefix from every order/where expression.
+    // sort=date defaults to oldest accounts first — that's what the user
+    // expects when they want to see longest-running models.
     const orderBy = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC'
                   : sort === 'quality' ? 'quality_score DESC, score DESC'
                   : sort === 'recent'  ? 'updated_at DESC, score DESC'
+                  : sort === 'date'    ? 'joined_date ASC NULLS LAST, score DESC'
+                  : sort === 'videos'  ? 'videos_count DESC NULLS LAST, score DESC'
+                  : sort === 'posts'   ? 'posts_count DESC NULLS LAST, score DESC'
+                  : sort === 'streams' ? 'streams_count DESC NULLS LAST, score DESC'
+                  : sort === 'likes'   ? 'likes_count DESC NULLS LAST, score DESC'
+                  : sort === 'price'   ? 'subscribe_price DESC NULLS LAST, score DESC'
                   :                      'score DESC, quality_score DESC';
 
     params.push(limit, offset);
@@ -230,9 +238,11 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
           ms.streams_count,
           ms.subscribe_price,
           ms.account_months,
+          ms.likes_count,
           ms.fans_visible,
           ms.has_socials,
           ms.comments_enabled,
+          ms.joined_date,
           ms.updated_at,
           (
             SELECT mfh.fans_count
@@ -295,9 +305,11 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
         streamsCount: r.streams_count,
         subscribePrice: r.subscribe_price != null ? Number(r.subscribe_price) : null,
         accountMonths: r.account_months,
+        likesCount: r.likes_count,
         fansVisible: r.fans_visible,
         hasSocials: r.has_socials,
         commentsEnabled: r.comments_enabled,
+        joinedDate: r.joined_date,
         updatedAt: r.updated_at,
         globalRank: Number(r.global_rank)
       }))
