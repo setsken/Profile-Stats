@@ -701,14 +701,19 @@
             likesCount: Number(profileData.favoritedCount) || 0,
             subscribePrice: Number(profileData.subscribePrice) || 0
           };
-          if (profileData.joined) {
-            var jt = Date.parse(profileData.joined);
+          // Real OF field is profileData.joinDate (we previously read
+          // 'joined' which is undefined → joined_date column stayed NULL).
+          if (profileData.joinDate) {
+            var jt = Date.parse(profileData.joinDate);
             if (!isNaN(jt)) {
               snapshotMetrics.accountMonths = Math.max(1, Math.floor((Date.now() - jt) / (1000*60*60*24*30)));
               snapshotMetrics.joinedDate = new Date(jt).toISOString().slice(0, 10);
             }
           }
-          if (typeof profileData.subscribers === 'number') snapshotMetrics.fansVisible = profileData.subscribers > 0;
+          // fansVisible mirrors what the badge uses internally — OF sets
+          // showSubscribersCount=false when the model hides their fan
+          // count. Anything else (true / undefined) means fans are public.
+          snapshotMetrics.fansVisible = profileData.showSubscribersCount !== false;
           if (Array.isArray(profileData._detectedSocials)) snapshotMetrics.hasSocials = profileData._detectedSocials.length > 0;
           if (typeof profileData._farmedStatus === 'string') snapshotMetrics.commentsEnabled = profileData._farmedStatus === 'ready';
           if (typeof profileData._isBotted === 'boolean') snapshotMetrics.isBotted = profileData._isBotted;
@@ -3752,17 +3757,16 @@
                 likesCount: Number(profileData.favoritedCount) || 0,
                 subscribePrice: Number(profileData.subscribePrice) || 0
               };
-              if (profileData.joined) {
-                var t = Date.parse(profileData.joined);
+              // Real OF field is profileData.joinDate, not 'joined'.
+              if (profileData.joinDate) {
+                var t = Date.parse(profileData.joinDate);
                 if (!isNaN(t)) {
                   m.accountMonths = Math.max(1, Math.floor((Date.now() - t) / (1000*60*60*24*30)));
-                  // Send the exact ISO date so the backend can also expose
-                  // it for sort-by-date / display in Top Models rows.
                   m.joinedDate = new Date(t).toISOString().slice(0, 10);
                 }
               }
               if (typeof scoreResult.fansVisible === 'boolean') m.fansVisible = scoreResult.fansVisible;
-              else if (typeof profileData.subscribers === 'number') m.fansVisible = profileData.subscribers > 0;
+              else m.fansVisible = profileData.showSubscribersCount !== false;
               // _detectedSocials is populated by the badge's late social-link scan.
               if (Array.isArray(profileData._detectedSocials)) m.hasSocials = profileData._detectedSocials.length > 0;
               try {
