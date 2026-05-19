@@ -156,6 +156,7 @@ const I18N = {
     filterMinPosts: 'Min posts',
     filterMinVideos: 'Min videos',
     filterMinStreams: 'Min streams',
+    filterMinLikes: 'Min likes',
     filterMinAge: 'Min age (months)',
     filterMinPrice: 'Min price ($)',
     filterMaxPrice: 'Max price ($)',
@@ -432,6 +433,7 @@ const I18N = {
     filterMinPosts: 'Мин. постов',
     filterMinVideos: 'Мин. видео',
     filterMinStreams: 'Мин. стримов',
+    filterMinLikes: 'Мин. лайков',
     filterMinAge: 'Мин. возраст (мес.)',
     filterMinPrice: 'Мин. цена ($)',
     filterMaxPrice: 'Макс. цена ($)',
@@ -1516,7 +1518,7 @@ const lbState = {
   filters: {
     search: '', sort: 'score',
     minScore: '', maxScore: '', minFans: '', minQuality: '',
-    minPosts: '', minVideos: '', minStreams: '', minAge: '',
+    minPosts: '', minVideos: '', minStreams: '', minLikes: '', minAge: '',
     minPrice: '', maxPrice: '',
     // Tri-state: '' = any, 'open' = open only, 'closed' = closed only
     comments: ''
@@ -1544,7 +1546,7 @@ function applyRestoredFiltersToDom() {
     filterMinScore: 'minScore', filterMaxScore: 'maxScore',
     filterMinFans: 'minFans', filterMinQuality: 'minQuality',
     filterMinPosts: 'minPosts', filterMinVideos: 'minVideos',
-    filterMinStreams: 'minStreams', filterMinAge: 'minAge',
+    filterMinStreams: 'minStreams', filterMinLikes: 'minLikes', filterMinAge: 'minAge',
     filterMinPrice: 'minPrice', filterMaxPrice: 'maxPrice'
   };
   for (const [inputId, key] of Object.entries(map)) {
@@ -1593,6 +1595,7 @@ function currentLeaderboardParams() {
   if (f.minPosts !== '')   params.minPosts   = f.minPosts;
   if (f.minVideos !== '')  params.minVideos  = f.minVideos;
   if (f.minStreams !== '') params.minStreams = f.minStreams;
+  if (f.minLikes !== '')   params.minLikes   = f.minLikes;
   if (f.minAge !== '')     params.minAgeMonths = f.minAge;
   if (f.minPrice !== '')   params.minPrice   = f.minPrice;
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
@@ -1619,6 +1622,7 @@ const FILTER_DEFS = [
   { kind: 'single', key: 'minPosts',   inputId: 'filterMinPosts',   labelEn: 'Min posts',        labelRu: 'Мин. постов' },
   { kind: 'single', key: 'minVideos',  inputId: 'filterMinVideos',  labelEn: 'Min videos',       labelRu: 'Мин. видео' },
   { kind: 'single', key: 'minStreams', inputId: 'filterMinStreams', labelEn: 'Min streams',      labelRu: 'Мин. стримов' },
+  { kind: 'single', key: 'minLikes',   inputId: 'filterMinLikes',   labelEn: 'Min likes',        labelRu: 'Мин. лайков' },
   { kind: 'single', key: 'minAge',     inputId: 'filterMinAge',     labelEn: 'Min age (months)', labelRu: 'Мин. возраст (мес.)' },
   // Pill: value is 'open' or 'closed', rendered as a translated label.
   { kind: 'pill', key: 'comments', groupId: 'filterCommentsGroup',
@@ -3287,6 +3291,7 @@ const FILTER_FIELD_MAP = {
   filterMinPosts:   'minPosts',
   filterMinVideos:  'minVideos',
   filterMinStreams: 'minStreams',
+  filterMinLikes:   'minLikes',
   filterMinAge:     'minAge',
   filterMinPrice:   'minPrice',
   filterMaxPrice:   'maxPrice'
