@@ -8,7 +8,7 @@ const router = express.Router();
 // rather than stored, so a future bug in the scraper can't leak weird
 // keys into the JSONB column.
 const ALLOWED_SOCIAL_PLATFORMS = new Set([
-  'instagram', 'tiktok', 'twitter'
+  'instagram', 'tiktok', 'twitter', 'snapchat', 'twitch'
 ]);
 
 // Validate and clamp an array of {platform, url} entries from the badge.

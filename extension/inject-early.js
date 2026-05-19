@@ -1355,14 +1355,15 @@
     function scanSocialLinksFromDOM() {
       var socials = [];
       try {
-        // Only the three platforms we surface as row icons. YouTube etc.
-        // intentionally ignored — see SOCIAL_GLYPHS in popup.js.
-        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"]');
+        // Surface five platforms as row icons. Anything else is ignored.
+        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"], a[href*="snapchat.com"], a[href*="twitch.tv"]');
         socialLinks.forEach(function(link) {
           var h = (link.href || '').toLowerCase();
           if (h.indexOf('instagram.com') !== -1 || h.indexOf('instagr.am') !== -1) socials.push('instagram');
           else if (h.indexOf('tiktok.com') !== -1) socials.push('tiktok');
           else if (h.indexOf('twitter.com') !== -1 || h.indexOf('x.com/') !== -1) socials.push('twitter');
+          else if (h.indexOf('snapchat.com') !== -1) socials.push('snapchat');
+          else if (h.indexOf('twitch.tv') !== -1) socials.push('twitch');
         });
       } catch (e) {}
       // Deduplicate
@@ -1376,7 +1377,7 @@
       var out = [];
       var seen = {};
       try {
-        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"]');
+        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"], a[href*="snapchat.com"], a[href*="twitch.tv"]');
         socialLinks.forEach(function(link) {
           var href = link.href || '';
           var h = href.toLowerCase();
@@ -1384,6 +1385,8 @@
           if (h.indexOf('instagram.com') !== -1 || h.indexOf('instagr.am') !== -1) platform = 'instagram';
           else if (h.indexOf('tiktok.com') !== -1) platform = 'tiktok';
           else if (h.indexOf('twitter.com') !== -1 || h.indexOf('x.com/') !== -1) platform = 'twitter';
+          else if (h.indexOf('snapchat.com') !== -1) platform = 'snapchat';
+          else if (h.indexOf('twitch.tv') !== -1) platform = 'twitch';
           if (platform && !seen[platform] && href) {
             seen[platform] = true;
             out.push({ platform: platform, url: href.slice(0, 500) });
