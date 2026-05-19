@@ -125,7 +125,7 @@ const I18N = {
     subtabTags: 'Tags',
     subtabModels: 'Models',
     // Top Models / leaderboard
-    searchUsername: 'Search @username…',
+    searchUsername: '@username…',
     sortBy: 'Sort by',
     sortScore: 'Score',
     sortFans: 'Fans',
@@ -415,7 +415,7 @@ const I18N = {
     subtabNote: 'Заметка',
     subtabTags: 'Теги',
     subtabModels: 'Модели',
-    searchUsername: 'Поиск по @username…',
+    searchUsername: '@username…',
     sortBy: 'Сортировка',
     sortScore: 'Скор',
     sortFans: 'Фаны',
