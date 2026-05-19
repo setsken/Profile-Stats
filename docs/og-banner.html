@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Profile Stats — OG Banner (1200×630)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{
+    background:#08080f;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;
+    color:#fff;
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* The OG banner: exactly 1200x630 */
+  .banner{
+    width:1200px;height:630px;
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 0%, rgba(139,92,246,0.45) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 100%, rgba(109,40,217,0.35) 0%, transparent 60%),
+      linear-gradient(135deg, #0a0a18 0%, #110a1f 100%);
+    display:grid;
+    grid-template-columns: 1fr 1.05fr;
+    align-items:center;
+    padding:0 56px;
+    gap:40px;
+  }
+
+  /* Subtle grid overlay */
+  .banner::before{
+    content:'';position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(139,92,246,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events:none;
+  }
+
+  /* Left side: logo + text */
+  .text-side{position:relative;z-index:2}
+  .brand{display:flex;align-items:center;gap:18px;margin-bottom:36px}
+  .brand-icon{
+    width:72px;height:72px;border-radius:18px;
+    background:linear-gradient(135deg, #8b5cf6, #6d28d9);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 12px 32px rgba(139,92,246,0.45);
+  }
+  .brand-icon svg{width:48px;height:48px}
+  .brand-name{font-size:30px;font-weight:800;letter-spacing:-0.02em}
+  .brand-sub{font-size:12px;font-weight:700;letter-spacing:6px;color:#a78bfa;text-transform:uppercase;margin-top:2px}
+
+  .headline{
+    font-size:54px;font-weight:800;line-height:1.08;letter-spacing:-0.025em;
+    margin-bottom:20px;
+  }
+  .headline .grad{
+    background:linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 60%, #6d28d9 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .sub{
+    font-size:19px;font-weight:500;line-height:1.5;color:#a4a8bf;
+    margin-bottom:30px;max-width:520px;
+  }
+  .pills{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{
+    padding:8px 16px;border-radius:999px;
+    background:rgba(139,92,246,0.12);
+    border:1px solid rgba(139,92,246,0.35);
+    color:#c4b5fd;font-size:13px;font-weight:600;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:#a78bfa}
+
+  /* Right side: badge mockup */
+  .mock-side{position:relative;z-index:2;display:flex;justify-content:flex-end;align-items:center}
+  .badge-mock{
+    width:430px;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(139,92,246,0.30) 0%, rgba(139,92,246,0.08) 35%, transparent 70%),
+      #07080f;
+    border:1px solid rgba(139,92,246,0.30);
+    border-top:1px solid rgba(139,92,246,0.55);
+    border-radius:18px;
+    padding:18px 20px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(139,92,246,0.1);
+    transform:rotate(-1.5deg) translateY(4px) translateZ(0);
+    -webkit-transform:rotate(-1.5deg) translateY(4px) translateZ(0);
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    -webkit-font-smoothing:subpixel-antialiased;
+    will-change:transform;
+    /* Promote to GPU layer for crisp sub-pixel rendering on rotated borders */
+    filter:blur(0);
+    outline:1px solid transparent;
+    image-rendering:-webkit-optimize-contrast;
+  }
+  .bm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(139,92,246,0.18)}
+  .bm-title{display:flex;align-items:center;gap:8px;color:#8b5cf6;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+  .bm-title svg{width:14px;height:14px}
+  .bm-actions{display:flex;gap:6px}
+  .bm-actions .bm-pill{font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;background:rgba(139,92,246,0.15);color:#a78bfa;letter-spacing:0.5px}
+  .bm-name-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .bm-name{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700}
+  .bm-verified{width:13px;height:13px;border-radius:50%;background:#3b82f6;display:inline-flex;align-items:center;justify-content:center}
+  .bm-verified svg{width:9px;height:9px;color:#fff}
+  .bm-socials{display:flex;gap:4px}
+  .bm-soc{width:18px;height:18px;border-radius:5px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+  .bm-soc svg{width:11px;height:11px;color:#a78bfa}
+  .bm-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+  .bm-stat{padding:7px 9px;border-radius:7px;background:rgba(139,92,246,0.06);display:flex;flex-direction:column;gap:2px}
+  .bm-stat-k{font-size:9px;color:#7a8599;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+  .bm-stat-v{font-size:12px;font-weight:800;color:#fff}
+  .bm-stat-v.purple{color:#a78bfa}
+  .bm-stat-v.pink{color:#ec4899}
+  .bm-stat-v.green{color:#10b981}
+  .bm-stat-v.amber{color:#f59e0b}
+
+  /* Score + radar in one row */
+  .bm-mid{display:grid;grid-template-columns:1fr 130px;gap:14px;margin-bottom:12px;align-items:center}
+  .bm-score-block{}
+  .bm-score-top{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#facc15;margin-bottom:3px}
+  .bm-score-top svg{width:13px;height:13px}
+  .bm-score-line{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+  .bm-score-val{font-size:36px;font-weight:900;color:#facc15;line-height:1;letter-spacing:-0.02em}
+  .bm-score-max{font-size:14px;color:#7a8599;font-weight:600}
+  .bm-grade{display:inline-block;margin-left:8px;padding:2px 7px;border-radius:5px;background:rgba(139,92,246,0.18);color:#a78bfa;font-size:11px;font-weight:800}
+  .bm-bar{height:5px;border-radius:3px;background:rgba(139,92,246,0.12);overflow:hidden}
+  .bm-bar-fill{height:100%;width:87%;background:linear-gradient(90deg, #8b5cf6, #facc15);border-radius:3px}
+  .bm-axes{display:flex;gap:6px;margin-top:6px;font-size:9px;font-weight:700;color:#7a8599}
+  .bm-axes span b{color:#a78bfa;font-weight:800}
+
+  .bm-radar{width:130px;height:120px;position:relative}
+  .bm-radar svg{width:100%;height:100%}
+
+  /* Achievements row */
+  .bm-achiev{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+  .bm-ach{font-size:9.5px;font-weight:700;padding:4px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
+  .bm-ach.green{background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25)}
+  .bm-ach.purple{background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3)}
+  .bm-ach.pink{background:rgba(236,72,153,0.12);color:#f9a8d4;border:1px solid rgba(236,72,153,0.25)}
+  .bm-ach.amber{background:rgba(245,158,11,0.12);color:#fcd34d;border:1px solid rgba(245,158,11,0.25)}
+
+  .bm-verdict{
+    background:rgba(16,185,129,0.08);
+    border:1px solid rgba(16,185,129,0.22);
+    border-radius:9px;padding:10px 12px;
+  }
+  .bm-verdict-head{display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;color:#10b981;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+  .bm-verdict-head svg{width:11px;height:11px}
+  .bm-verdict-text{font-size:10.5px;color:#cbd5e1;line-height:1.5}
+
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <!-- Text side -->
+  <div class="text-side">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 512 512" fill="white">
+          <rect x="120" y="248" width="64" height="148" rx="10"/>
+          <rect x="224" y="120" width="64" height="276" rx="10"/>
+          <rect x="328" y="184" width="64" height="212" rx="10"/>
+          <rect x="84" y="408" width="344" height="14" rx="7" opacity=".75"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Profile Stats</div>
+        <div class="brand-sub">Chrome Extension</div>
+      </div>
+    </div>
+
+    <div class="headline">
+      Score Every<br>
+      OnlyFans Profile<br>
+      <span class="grad">You Open</span>
+    </div>
+
+    <div class="sub">
+      Live score, AI verdict, 90-day fan trend and a community-fed leaderboard of thousands of models — sortable by any metric.
+    </div>
+
+    <div class="pills">
+      <span class="pill"><span class="dot"></span>AI Verdict</span>
+      <span class="pill"><span class="dot"></span>Top Models</span>
+      <span class="pill"><span class="dot"></span>Bot Detection</span>
+      <span class="pill"><span class="dot"></span>7-Day Trial</span>
+    </div>
+  </div>
+
+  <!-- Badge mockup -->
+  <div class="mock-side">
+    <div class="badge-mock">
+      <!-- Header -->
+      <div class="bm-header">
+        <div class="bm-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="7 14 11 10 15 14 21 8"/></svg>
+          Profile Stats
+        </div>
+        <div class="bm-actions">
+          <span class="bm-pill">A+</span>
+          <span class="bm-pill" style="background:rgba(16,185,129,0.18);color:#34d399">ACTIVE</span>
+        </div>
+      </div>
+
+      <!-- Name + socials -->
+      <div class="bm-name-row">
+        <div class="bm-name">
+          @julianaherrera
+          <span class="bm-verified">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+        </div>
+        <div class="bm-socials">
+          <span class="bm-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span>
+          <span class="bm-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 01-1.38-.9 3.72 3.72 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63a5.88 5.88 0 00-2.13 1.38A5.88 5.88 0 00.63 4.14C.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.32.79.74 1.46 1.38 2.13.67.64 1.34 1.06 2.13 1.38.76.3 1.64.5 2.91.56 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56a5.88 5.88 0 002.13-1.38c.64-.67 1.06-1.34 1.38-2.13.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91a5.88 5.88 0 00-1.38-2.13A5.88 5.88 0 0019.86.63C19.1.33 18.22.13 16.95.07 15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.41-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg></span>
+          <span class="bm-soc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43V8.49a8.16 8.16 0 004.77 1.52V6.59a4.85 4.85 0 01-1.84-.1z"/></svg></span>
+        </div>
+      </div>
+
+      <!-- 6 stats -->
+      <div class="bm-stats">
+        <div class="bm-stat"><span class="bm-stat-k">Fans</span><span class="bm-stat-v purple">39.8K</span></div>
+        <div class="bm-stat"><span class="bm-stat-k">Likes</span><span class="bm-stat-v pink">76.5K</span></div>
+        <div class="bm-stat"><span class="bm-stat-k">Posts</span><span class="bm-stat-v">340</span></div>
+        <div class="bm-stat"><span class="bm-stat-k">Videos</span><span class="bm-stat-v">45</span></div>
+        <div class="bm-stat"><span class="bm-stat-k">Joined</span><span class="bm-stat-v purple">Jun 2024</span></div>
+        <div class="bm-stat"><span class="bm-stat-k">Price</span><span class="bm-stat-v green">FREE</span></div>
+      </div>
+
+      <!-- Score + radar side-by-side -->
+      <div class="bm-mid">
+        <div class="bm-score-block">
+          <div class="bm-score-top">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 8.5 22 9.5 17 14.5 18 21.5 12 18 6 21.5 7 14.5 2 9.5 9 8.5"/></svg>
+            TOP 8%
+          </div>
+          <div class="bm-score-line">
+            <span class="bm-score-val">87</span>
+            <span class="bm-score-max">/100</span>
+            <span class="bm-grade">A+</span>
+          </div>
+          <div class="bm-bar"><div class="bm-bar-fill"></div></div>
+          <div class="bm-axes">
+            <span>MAT <b>20</b></span><span>POP <b>22</b></span><span>ORG <b>25</b></span>
+          </div>
+        </div>
+        <div class="bm-radar">
+          <svg viewBox="-100 -85 200 170">
+            <g opacity="0.18" stroke="#8b5cf6" fill="none">
+              <polygon points="0,-70 66.6,-21.6 41.1,56.7 -41.1,56.7 -66.6,-21.6"/>
+              <polygon points="0,-47 44.7,-14.5 27.6,38.0 -27.6,38.0 -44.7,-14.5"/>
+              <polygon points="0,-23 22.3,-7.2 13.8,19.0 -13.8,19.0 -22.3,-7.2"/>
+            </g>
+            <polygon points="0,-56 53.3,-17.3 35,48.2 -32.9,45.4 -47.6,-15.4" fill="rgba(139,92,246,0.25)" stroke="#8b5cf6" stroke-width="2"/>
+            <circle cx="0" cy="-56" r="3" fill="#8b5cf6"/>
+            <circle cx="53.3" cy="-17.3" r="3" fill="#8b5cf6"/>
+            <circle cx="35" cy="48.2" r="3" fill="#8b5cf6"/>
+            <circle cx="-32.9" cy="45.4" r="3" fill="#8b5cf6"/>
+            <circle cx="-47.6" cy="-15.4" r="3" fill="#8b5cf6"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Achievements -->
+      <div class="bm-achiev">
+        <span class="bm-ach green">✓ Verified</span>
+        <span class="bm-ach purple">★ Star Power</span>
+        <span class="bm-ach green">🍯 Organic</span>
+        <span class="bm-ach amber">🎬 Video Master</span>
+        <span class="bm-ach pink">💎 Content+</span>
+      </div>
+
+      <!-- AI Verdict -->
+      <div class="bm-verdict">
+        <div class="bm-verdict-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5Z"/></svg>
+          AI Verdict — Excellent Creator
+        </div>
+        <div class="bm-verdict-text">
+          High-quality verified creator with strong organic growth. Excellent engagement, active posting and transparent profile. Recommended.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
