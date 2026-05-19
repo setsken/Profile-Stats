@@ -1660,13 +1660,20 @@ function _renderRowSocials(socials) {
   return parts.length ? `<span class="row-socials">${parts.join('')}</span>` : '';
 }
 
+// Single delegated click handler on #topList — installed once on the
+// container, handles note buttons, social icons and row-opens for all
+// current AND future rows. Previously we attached per-element listeners
+// inside bindRowClicks(), which got called every Load more and every
+// language-flip re-render — so older rows accumulated 2+ handlers and
+// a single click opened the OF profile multiple times.
 function bindRowClicks(container) {
-  // Note button — must come first so stopPropagation prevents the row from
-  // also opening the profile.
-  container.querySelectorAll('.row-note-btn[data-note-username]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  if (!container || container.dataset.delegatedClicks === '1') return;
+  container.dataset.delegatedClicks = '1';
+  container.addEventListener('click', (e) => {
+    const noteBtn = e.target.closest('.row-note-btn[data-note-username]');
+    if (noteBtn && container.contains(noteBtn)) {
       e.stopPropagation();
-      const u = btn.dataset.noteUsername;
+      const u = noteBtn.dataset.noteUsername;
       if (!u) return;
       notesState.editingUsername = u;
       notesState.draftText = '';
@@ -1674,22 +1681,20 @@ function bindRowClicks(container) {
       notesState.activeView = 'editor';
       persistDraft();
       activateTab('notes');
-    });
-  });
-  // Social icon — open the URL in a new tab. stopPropagation so the row
-  // click handler does not also open the OF profile.
-  container.querySelectorAll('.row-social[data-url]').forEach(el => {
-    el.addEventListener('click', (e) => {
+      return;
+    }
+    const social = e.target.closest('.row-social[data-url]');
+    if (social && container.contains(social)) {
       e.stopPropagation();
-      const url = el.dataset.url;
+      const url = social.dataset.url;
       if (url) chrome.tabs.create({ url });
-    });
-  });
-  container.querySelectorAll('.list-item[data-username]').forEach(el => {
-    el.addEventListener('click', () => {
-      const u = el.dataset.username;
+      return;
+    }
+    const row = e.target.closest('.list-item[data-username]');
+    if (row && container.contains(row)) {
+      const u = row.dataset.username;
       if (u) chrome.tabs.create({ url: `https://onlyfans.com/${encodeURIComponent(u)}` });
-    });
+    }
   });
 }
 
