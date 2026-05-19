@@ -3910,7 +3910,7 @@
         var icon = r.cls === 'good' ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>'
                  : r.cls === 'bad' ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
                  : '<svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" style="flex-shrink:0"><path d="M12 2L1 21h22L12 2zm0 4l7.5 13h-15L12 6z"/><rect x="11" y="10" width="2" height="5" rx="1"/><rect x="11" y="16" width="2" height="2" rx="1"/></svg>';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;' + (r !== xrayRows[xrayRows.length - 1] ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : '') + '"><span style="color:#64748b;">' + r.key + '</span><span style="display:flex;align-items:center;gap:4px;color:' + valColor + ';font-weight:600;">' + r.val + icon + '</span></div>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;' + (r !== xrayRows[xrayRows.length - 1] ? 'border-bottom:1px solid rgba(255,255,255,0.06);' : '') + '"><span style="color:#ffffff;font-weight:600;letter-spacing:0.01em;">' + r.key + '</span><span style="display:flex;align-items:center;gap:4px;color:' + valColor + ';font-weight:700;">' + r.val + icon + '</span></div>';
       }).join('');
       radarTabContent.appendChild(xrayPanel);
 
