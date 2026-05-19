@@ -2380,8 +2380,8 @@
           '#of-stats-tab-notes .nv-create-row{display:flex;gap:6px;margin-top:10px;align-items:center;}',
           '#of-stats-tab-notes .nv-create-input{flex:1;padding:7px 10px;border-radius:8px;background:rgba(0,0,0,0.3) !important;border:1px solid #1e2d3d !important;color:#e0e6ef !important;-webkit-text-fill-color:#e0e6ef !important;font-size:11px;font-family:inherit;outline:none;min-width:0;box-sizing:border-box;transition:border-color 0.2s;}',
           '#of-stats-tab-notes .nv-create-input:focus{border-color:rgba(0,180,255,0.4) !important;box-shadow:0 0 8px rgba(0,180,255,0.08);}',
-          '#of-stats-tab-notes .nv-create-input::placeholder{color:#445566 !important;-webkit-text-fill-color:#445566 !important;font-style:italic;}',
-          '#of-stats-tab-notes .nv-create-label{font-size:10px;color:#556677;margin-bottom:6px;}',
+          '#of-stats-tab-notes .nv-create-input::placeholder{color:#94a3b8 !important;-webkit-text-fill-color:#94a3b8 !important;font-style:italic;}',
+          '#of-stats-tab-notes .nv-create-label{font-size:11px;color:#cbd5e1;font-weight:600;margin-bottom:6px;}',
           '#of-stats-tab-notes .nv-cdots{display:flex;gap:3px;align-items:center;}',
           '#of-stats-tab-notes .nv-cdot{width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s;}',
           '#of-stats-tab-notes .nv-cdot:hover{transform:scale(1.2);}',
@@ -2402,7 +2402,7 @@
           '#of-stats-tab-notes .nv-model-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;}',
           '#of-stats-tab-notes .nv-model-info{flex:1;min-width:0;}',
           '#of-stats-tab-notes .nv-model-name{font-size:11px;font-weight:600;color:#fff;}',
-          '#of-stats-tab-notes .nv-model-note{font-size:10px;color:#556677;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
+          '#of-stats-tab-notes .nv-model-note{font-size:11px;color:#cbd5e1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}',
           '#of-stats-tab-notes .nv-model-tags{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;}',
           '#of-stats-tab-notes .nv-mtag{font-size:8px;padding:2px 7px;border-radius:5px;font-weight:700;}',
           '#of-stats-tab-notes .nv-model-arrow{font-size:11px;color:#445566;flex-shrink:0;transition:color 0.15s;}',
@@ -2861,24 +2861,54 @@
 
       // Server sync: fetch alerts from server for a model
       var _alertsServerCache = {};
+      // Content-based dedup key: id alone wasn't enough because each
+      // visit minted a new alert id for the same event (same model,
+      // same metric, same day, same delta), so the list grew with
+      // exact duplicates. Key by username + type + day + delta.
+      function _alertDedupKey(a) {
+        if (!a) return '';
+        var day = '';
+        if (a.date) {
+          var d = new Date(a.date);
+          if (!isNaN(d.getTime())) day = d.toISOString().slice(0, 10);
+          else day = String(a.date).slice(0, 10);
+        }
+        var val = a.diff || a.pct || (a.oldScore + '>' + a.newScore) || '';
+        return [a.username || '', a.type || '', day, val].join('|');
+      }
+
       function _alertsFetchFromServer(username, callback) {
         try {
-          chrome.runtime.sendMessage({ action: 'getAlerts', username: username }, function(resp) {
+          chrome.runtime.sendMessage({ action: 'getAlerts', username: username }, function (resp) {
             if (resp && resp.success && Array.isArray(resp.alerts)) {
               _alertsServerCache[username] = resp.alerts;
-              // Merge server alerts into local storage
+              // Merge server alerts into local storage with
+              // content-based dedup so revisits don't double up.
               var local = _alertsLoadAll();
-              var localIds = {};
-              local.forEach(function(a) { localIds[a.id] = true; });
+              var seen = {};
+              local.forEach(function (a) { seen[_alertDedupKey(a)] = true; });
               var merged = false;
-              resp.alerts.forEach(function(a) {
-                if (!localIds[a.id]) {
+              resp.alerts.forEach(function (a) {
+                var k = _alertDedupKey(a);
+                if (!seen[k]) {
+                  seen[k] = true;
                   local.unshift(a);
                   merged = true;
                 }
               });
+              // Drop any existing duplicates in local (one-time cleanup
+              // for users whose storage already filled with dups).
+              var cleaned = [];
+              var cleanedSeen = {};
+              for (var i = 0; i < local.length; i++) {
+                var key = _alertDedupKey(local[i]);
+                if (cleanedSeen[key]) continue;
+                cleanedSeen[key] = true;
+                cleaned.push(local[i]);
+              }
+              if (cleaned.length !== local.length) { merged = true; local = cleaned; }
               if (merged) {
-                local.sort(function(a,b) { return (b.date||0) - (a.date||0); });
+                local.sort(function (a, b) { return (b.date || 0) - (a.date || 0); });
                 if (local.length > 100) local = local.slice(0, 100);
                 _alertsSave(local);
               }
@@ -2887,7 +2917,7 @@
               if (callback) callback(null);
             }
           });
-        } catch(e) {
+        } catch (e) {
           if (callback) callback(null);
         }
       }
@@ -3057,7 +3087,9 @@
         }
 
         var scroll = document.createElement('div');
-        scroll.style.cssText = 'max-height:380px;overflow-y:auto;';
+        // No max-height — let alerts grow naturally and the badge
+        // expand to fit. Avoids the ugly native scrollbar.
+        scroll.style.cssText = '';
         scroll.className = 'nv-models-scroll';
 
         modelAlerts.forEach(function(a) {
@@ -3125,12 +3157,12 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
-        // Hard-lock badge height to its current rendered value so
-        // Alerts neither shrinks nor grows the wrapper, no matter what
-        // the alerts content's natural height is.
+        // Floor the badge at its current rendered height so opening
+        // Alerts doesn't collapse the wrapper, but DON'T cap it — the
+        // panel should grow naturally if there are many alerts so we
+        // never need an ugly native scrollbar inside the wrapper.
         var keepH = badge.offsetHeight;
         badge.style.minHeight = keepH + 'px';
-        badge.style.maxHeight = keepH + 'px';
         flipInner.style.display = 'none';
         // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
@@ -3138,8 +3170,10 @@
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          ap.style.height = (keepH - 32) + 'px';
-          ap.style.overflowY = 'auto';
+          ap.style.minHeight = (keepH - 32) + 'px';
+          ap.style.height = '';
+          ap.style.maxHeight = '';
+          ap.style.overflowY = '';
           _alertsRebuildPanel();
           _alertsFetchFromServer(_notesUsername, function () {
             _alertsRebuildPanel();
@@ -3155,9 +3189,6 @@
         flipInner.style.display = '';
         flipInner.classList.remove('flipped');
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
-        // Release the hard lock so the wrapper can animate back to the
-        // natural front-side height.
-        badge.style.maxHeight = '';
         requestAnimationFrame(function () {
           badge.style.minHeight = (flipFront.scrollHeight + 32) + 'px';
         });
