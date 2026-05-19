@@ -2381,7 +2381,7 @@
           '#of-stats-tab-notes .nv-create-input{flex:1;padding:7px 10px;border-radius:8px;background:rgba(0,0,0,0.3) !important;border:1px solid #1e2d3d !important;color:#e0e6ef !important;-webkit-text-fill-color:#e0e6ef !important;font-size:11px;font-family:inherit;outline:none;min-width:0;box-sizing:border-box;transition:border-color 0.2s;}',
           '#of-stats-tab-notes .nv-create-input:focus{border-color:rgba(0,180,255,0.4) !important;box-shadow:0 0 8px rgba(0,180,255,0.08);}',
           '#of-stats-tab-notes .nv-create-input::placeholder{color:#94a3b8 !important;-webkit-text-fill-color:#94a3b8 !important;font-style:italic;}',
-          '#of-stats-tab-notes .nv-create-label{font-size:11px;color:#cbd5e1;font-weight:600;margin-bottom:6px;}',
+          '#of-stats-tab-notes .nv-create-label{font-size:12px;color:#ffffff;font-weight:700;letter-spacing:0.02em;margin-bottom:6px;}',
           '#of-stats-tab-notes .nv-cdots{display:flex;gap:3px;align-items:center;}',
           '#of-stats-tab-notes .nv-cdot{width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all 0.15s;}',
           '#of-stats-tab-notes .nv-cdot:hover{transform:scale(1.2);}',
