@@ -1189,11 +1189,32 @@ html.booting .screen { display: none !important; }
 .search-wrap:focus-within svg { color: var(--accent); }
 .search-wrap svg { transition: color 0.18s; }
 .search-input {
-  flex: 1; height: 100%;
+  flex: 1; height: 100%; min-width: 0;
   border: none; background: transparent; outline: none;
   color: var(--text-primary); font-size: 12px; font-weight: 500;
 }
 .search-input::placeholder { color: var(--text-muted); }
+/* Native clear button (Chrome's ::-webkit-search-cancel-button) sits
+   flush against the right edge by default. Replace with a custom
+   white "x" mask and give it room to breathe. */
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  margin-left: 6px;
+  cursor: pointer;
+  background-color: var(--text-muted);
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
+          mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: contain;   mask-size: contain;
+  transition: background-color 0.15s, transform 0.1s;
+}
+.search-input::-webkit-search-cancel-button:hover { background-color: var(--text-primary); }
+.search-input::-webkit-search-cancel-button:active { transform: scale(0.9); }
 
 .sort-select {
   height: 38px; padding: 0 28px 0 12px;
