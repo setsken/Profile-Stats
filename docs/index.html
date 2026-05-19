@@ -1282,6 +1282,38 @@
         .reveal-delay-5 { transition-delay: 0.5s; }
         .reveal-delay-6 { transition-delay: 0.6s; }
 
+        /* ===== MOBILE: kill decorative infinite animations =====
+           On phones, scroll-driven repaints + transform reveals make
+           text-shadow/border-glow pulses look like elements are "twitching".
+           Replace pulsing glows with a single static value. */
+        @media (max-width: 768px) {
+            .hero h1 span,
+            .section-title span,
+            .tc-text h2 span,
+            .showcase-text h2 span,
+            .ftool-text h2 span,
+            .cta h2 span {
+                animation: none !important;
+                text-shadow: 0 0 24px rgba(139, 92, 246, 0.22);
+            }
+            .hero-badge,
+            .section-badge {
+                animation: none !important;
+            }
+            .section-divider {
+                animation: none !important;
+            }
+            .particles { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
         /* Floating particles */
         .particles {
             position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
