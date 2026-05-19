@@ -688,6 +688,10 @@ function applyLanguage() {
   // Open filter modal: pill labels live inside the modal — refresh them
   // explicitly too in case data-i18n walk missed the modal subtree.
   try { syncFilterModalLabels(); } catch {}
+  // Top Models row metas are baked into HTML at fetch time via t(),
+  // so a language flip doesn't repaint them. Re-render in place from
+  // the cached (model, rank) tuples — no backend call.
+  try { rerenderTopRows(); } catch {}
 }
 
 // Pull the currently-selected sort option's i18n key and render the
@@ -720,6 +724,20 @@ function syncFilterModalLabels() {
     if (v.includes('<')) el.innerHTML = v;
     else el.textContent = v;
   });
+}
+
+// Re-render every Top Models row in place from the cached (model, rank)
+// tuples — used when the user flips language so meta strings like
+// 'Age: 6y 6mo · Quality: 63%' flip without a backend refetch.
+function rerenderTopRows() {
+  const list = document.getElementById('topList');
+  if (!list) return;
+  const rows = Array.isArray(lbState.renderedRows) ? lbState.renderedRows : null;
+  if (!rows || rows.length === 0) return;
+  list.querySelectorAll('.list-item').forEach(n => n.remove());
+  const html = rows.map(({ model, rank }) => modelRowHtml(model, { rank })).join('');
+  list.insertAdjacentHTML('beforeend', html);
+  bindRowClicks(list);
 }
 
 async function setLanguage(lang) {
@@ -1924,6 +1942,9 @@ async function loadTopTab(reset = true) {
 
   if (reset) {
     lbState.offset = 0;
+    // Drop cached rows so a fresh fetch isn't mixed with stale entries
+    // during a re-render (e.g. on language switch).
+    lbState.renderedRows = [];
     list.querySelectorAll('.list-item').forEach(n => n.remove());
     empty.textContent = t('loading');
     empty.style.display = '';
@@ -1959,6 +1980,14 @@ async function loadTopTab(reset = true) {
   }
 
   empty.style.display = 'none';
+
+  // Cache each rendered (model, rank) pair so we can re-render every
+  // currently-visible row in place when the user flips language without
+  // refetching from the backend. Append for both reset and load-more.
+  if (!Array.isArray(lbState.renderedRows)) lbState.renderedRows = [];
+  models.forEach((m, i) => {
+    lbState.renderedRows.push({ model: m, rank: m.globalRank || (startRank + i) });
+  });
 
   const html = models.map((m, i) => modelRowHtml(m, { rank: m.globalRank || (startRank + i) })).join('');
   list.insertAdjacentHTML('beforeend', html);
