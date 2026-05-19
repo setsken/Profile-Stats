@@ -3406,8 +3406,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // Leaderboard filters
 let searchDebounce = null;
+// Accept three input formats and normalise to the bare OF handle:
+//   "aariianaaaaaa"                          -> "aariianaaaaaa"
+//   "@aariianaaaaaa"                         -> "aariianaaaaaa"
+//   "https://onlyfans.com/aariianaaaaaa"     -> "aariianaaaaaa"
+// Trailing slashes and any "?query"/"#frag" are dropped. Anything that
+// doesn't look like an OF URL falls back to the trimmed/at-stripped
+// input so users can keep typing without losing characters.
+function _normaliseUsernameQuery(raw) {
+  if (!raw) return '';
+  let s = String(raw).trim();
+  if (!s) return '';
+  // Strip protocol + onlyfans.com prefix if present.
+  const m = s.match(/(?:https?:\/\/)?(?:www\.)?onlyfans\.com\/([^/?#\s]+)/i);
+  if (m) s = m[1];
+  // Drop a leading @ if the user typed it.
+  if (s.startsWith('@')) s = s.slice(1);
+  return s.trim();
+}
 wire('topSearch', 'input', (e) => {
-  lbState.filters.search = e.target.value.trim();
+  const normalised = _normaliseUsernameQuery(e.target.value);
+  lbState.filters.search = normalised;
+  // Reflect the cleaned value back so the field always shows the bare
+  // handle the backend will actually receive. Skipped while the user is
+  // mid-paste of the same string to avoid caret jumps.
+  if (e.target.value !== normalised) e.target.value = normalised;
   persistLbFilters();
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => loadTopTab(true), 300);
