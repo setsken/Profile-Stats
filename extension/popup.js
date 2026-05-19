@@ -680,6 +680,46 @@ function applyLanguage() {
   // language switch updates them in place without waiting for the next
   // leaderboard reload.
   try { renderFilterChips(); } catch {}
+  // Sort dropdown label is built dynamically (innerHTML mutated on each
+  // pick), and Chrome's i18n attribute walk doesn't always re-run on
+  // mutated children in time. Force-sync it so the visible label flips
+  // language immediately instead of waiting for a popup reopen.
+  try { syncSortDropdownLabel(); } catch {}
+  // Open filter modal: pill labels live inside the modal — refresh them
+  // explicitly too in case data-i18n walk missed the modal subtree.
+  try { syncFilterModalLabels(); } catch {}
+}
+
+// Pull the currently-selected sort option's i18n key and render the
+// label button accordingly. Idempotent — safe to call any time.
+function syncSortDropdownLabel() {
+  const wrap = document.getElementById('sortDropdown');
+  const label = document.getElementById('sortDropdownLabel');
+  if (!wrap || !label) return;
+  const selected = wrap.querySelector('.custom-dropdown-option.selected') ||
+                   wrap.querySelector('.custom-dropdown-option');
+  if (!selected) return;
+  const inner = selected.querySelector('[data-i18n]');
+  const key = inner && inner.getAttribute('data-i18n');
+  if (key) {
+    label.innerHTML =
+      `<span data-i18n="${key}">${escapeHtml(t(key))}</span> <span class="opt-arrow">↓</span>`;
+  }
+}
+
+// Re-translate every [data-i18n] node inside the filter modal. The
+// general applyLanguage walk does this too, but the filter modal
+// sometimes carries cached labels because parts of it are rebuilt by
+// JS. Cheap re-walk guarantees a clean flip.
+function syncFilterModalLabels() {
+  const root = document.getElementById('filterOverlay') || document.querySelector('.filter-advanced');
+  if (!root) return;
+  root.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    const v = t(k);
+    if (v.includes('<')) el.innerHTML = v;
+    else el.textContent = v;
+  });
 }
 
 async function setLanguage(lang) {
