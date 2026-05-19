@@ -3125,11 +3125,12 @@
       function _alertsOpenPanel() {
         _alertsMarkRead(_notesUsername);
         _alertsUpdateBadge();
-        // Keep the badge at its current rendered height — Alerts should
-        // not collapse the wrapper down to its (typically small) content,
-        // which felt jarring when switching from the main view.
+        // Hard-lock badge height to its current rendered value so
+        // Alerts neither shrinks nor grows the wrapper, no matter what
+        // the alerts content's natural height is.
         var keepH = badge.offsetHeight;
         badge.style.minHeight = keepH + 'px';
+        badge.style.maxHeight = keepH + 'px';
         flipInner.style.display = 'none';
         // Hide notes panel if open
         var np = badge.querySelector('#of-stats-notes-panel');
@@ -3137,9 +3138,8 @@
         var ap = badge.querySelector('#of-stats-alerts-panel');
         if (ap) {
           ap.style.display = '';
-          // Make sure the alerts panel can fill the locked badge so
-          // the inner background looks intentional, not empty.
-          ap.style.minHeight = (keepH - 32) + 'px';
+          ap.style.height = (keepH - 32) + 'px';
+          ap.style.overflowY = 'auto';
           _alertsRebuildPanel();
           _alertsFetchFromServer(_notesUsername, function () {
             _alertsRebuildPanel();
@@ -3155,7 +3155,9 @@
         flipInner.style.display = '';
         flipInner.classList.remove('flipped');
         flipInner.style.minHeight = flipFront.scrollHeight + 'px';
-        // Snap badge wrapper back to natural front-side height.
+        // Release the hard lock so the wrapper can animate back to the
+        // natural front-side height.
+        badge.style.maxHeight = '';
         requestAnimationFrame(function () {
           badge.style.minHeight = (flipFront.scrollHeight + 32) + 'px';
         });
@@ -4312,13 +4314,6 @@
           if (el) el.style.display = (k === active) ? '' : 'none';
         });
         adjustFlipHeight(true);
-        // Trend chart canvas renders asynchronously — its real height
-        // isn't known on the first sync measurement. Re-measure once
-        // after the canvas has had a chance to paint so we don't end
-        // up locked to a too-small height with content overflowing.
-        if (active === 'trend') {
-          setTimeout(function () { adjustFlipHeight(true); }, 250);
-        }
       }
       tabRadar.addEventListener('click', function() { _switchBackTab('radar'); });
       tabTrend.addEventListener('click', function() { _switchBackTab('trend'); });
@@ -4720,9 +4715,26 @@
           if (document.getElementById('of-stats-profile-badge')) return true;
           sidebar.insertBefore(badge, sidebar.firstChild);
           log('OF Stats: Badge inserted into sidebar!');
+          _initBadgeMinHeight();
           return true;
         }
         return false;
+      }
+      // Once the badge is in the DOM and has its natural front-side
+      // size, pin that as a numeric min-height on both wrappers.
+      // Without this, the very first flip transition jumps because
+      // min-height was 'auto' (no value to transition from).
+      function _initBadgeMinHeight() {
+        // Two rAFs to ensure layout has stabilised after insertion.
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            var h = flipFront.scrollHeight || flipInner.offsetHeight;
+            if (h > 0) {
+              flipInner.style.minHeight = h + 'px';
+              badge.style.minHeight = (h + 32) + 'px';
+            }
+          });
+        });
       }
       
       // Try to insert immediately
