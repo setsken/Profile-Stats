@@ -155,6 +155,11 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     const maxPrice   = req.query.maxPrice   != null && req.query.maxPrice !== ''   ? Math.max(0, Number(req.query.maxPrice))   : null;
     const hasSocials = req.query.hasSocials === '1' ? true : req.query.hasSocials === '0' ? false : null;
     const minAgeMonths = req.query.minAgeMonths != null && req.query.minAgeMonths !== '' ? Math.max(0, parseInt(req.query.minAgeMonths)) : null;
+    // comments=open → only profiles with open comments, comments=closed → only closed,
+    // anything else (any/null/missing) → no filter.
+    const commentsFilter = req.query.comments === 'open' ? true
+                         : req.query.comments === 'closed' ? false
+                         : null;
 
     const params = [];
     const where = [];
@@ -177,6 +182,10 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     if (hasSocials !== null) {
       params.push(hasSocials);
       where.push(`COALESCE(ms.has_socials, false) = $${params.length}`);
+    }
+    if (commentsFilter !== null) {
+      params.push(commentsFilter);
+      where.push(`COALESCE(ms.comments_enabled, false) = $${params.length}`);
     }
 
     // Min-fans filter is applied against the `last_fans` column from the
@@ -223,6 +232,7 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
           ms.account_months,
           ms.fans_visible,
           ms.has_socials,
+          ms.comments_enabled,
           ms.updated_at,
           (
             SELECT mfh.fans_count
@@ -287,6 +297,7 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
         accountMonths: r.account_months,
         fansVisible: r.fans_visible,
         hasSocials: r.has_socials,
+        commentsEnabled: r.comments_enabled,
         updatedAt: r.updated_at,
         globalRank: Number(r.global_rank)
       }))

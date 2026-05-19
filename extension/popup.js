@@ -136,6 +136,10 @@ const I18N = {
     filterSectionAudience: 'Audience',
     filterSectionActivity: 'Activity',
     filterSectionPrice: 'Subscription price ($)',
+    filterSectionComments: 'Comments',
+    filterCommentsOpen: 'Open',
+    filterCommentsClosed: 'Closed',
+    filterCommentsLabel: 'Comments',
     filterMin: 'Min',
     filterMax: 'Max',
     filterAny: 'Any',
@@ -402,6 +406,10 @@ const I18N = {
     filterSectionAudience: 'Аудитория',
     filterSectionActivity: 'Активность',
     filterSectionPrice: 'Цена подписки ($)',
+    filterSectionComments: 'Комментарии',
+    filterCommentsOpen: 'Открыты',
+    filterCommentsClosed: 'Закрыты',
+    filterCommentsLabel: 'Комментарии',
     filterMin: 'Мин',
     filterMax: 'Макс',
     filterAny: 'Любая',
@@ -1497,7 +1505,9 @@ const lbState = {
     search: '', sort: 'score',
     minScore: '', maxScore: '', minFans: '', minQuality: '',
     minPosts: '', minVideos: '', minStreams: '', minAge: '',
-    minPrice: '', maxPrice: ''
+    minPrice: '', maxPrice: '',
+    // Tri-state: '' = any, 'open' = open only, 'closed' = closed only
+    comments: ''
   }
 };
 function persistLbFilters() { _saveLbPersisted({ filters: { ...lbState.filters } }); }
@@ -1528,6 +1538,14 @@ function applyRestoredFiltersToDom() {
   for (const [inputId, key] of Object.entries(map)) {
     const el = document.getElementById(inputId);
     if (el) el.value = lbState.filters[key] || '';
+  }
+  // Comments pill group — sync .active to the saved value (default '' = Any)
+  const commentsGroup = document.getElementById('filterCommentsGroup');
+  if (commentsGroup) {
+    const current = lbState.filters.comments || '';
+    commentsGroup.querySelectorAll('.filter-pill').forEach(p => {
+      p.classList.toggle('active', (p.dataset.value || '') === current);
+    });
   }
   // Search field
   const search = document.getElementById('topSearch');
@@ -1566,6 +1584,7 @@ function currentLeaderboardParams() {
   if (f.minAge !== '')     params.minAgeMonths = f.minAge;
   if (f.minPrice !== '')   params.minPrice   = f.minPrice;
   if (f.maxPrice !== '')   params.maxPrice   = f.maxPrice;
+  if (f.comments === 'open' || f.comments === 'closed') params.comments = f.comments;
   return params;
 }
 
@@ -1588,7 +1607,11 @@ const FILTER_DEFS = [
   { kind: 'single', key: 'minPosts',   inputId: 'filterMinPosts',   labelEn: 'Min posts',        labelRu: 'Мин. постов' },
   { kind: 'single', key: 'minVideos',  inputId: 'filterMinVideos',  labelEn: 'Min videos',       labelRu: 'Мин. видео' },
   { kind: 'single', key: 'minStreams', inputId: 'filterMinStreams', labelEn: 'Min streams',      labelRu: 'Мин. стримов' },
-  { kind: 'single', key: 'minAge',     inputId: 'filterMinAge',     labelEn: 'Min age (months)', labelRu: 'Мин. возраст (мес.)' }
+  { kind: 'single', key: 'minAge',     inputId: 'filterMinAge',     labelEn: 'Min age (months)', labelRu: 'Мин. возраст (мес.)' },
+  // Pill: value is 'open' or 'closed', rendered as a translated label.
+  { kind: 'pill', key: 'comments', groupId: 'filterCommentsGroup',
+    labelKey: 'filterCommentsLabel',
+    valueLabels: { open: 'filterCommentsOpen', closed: 'filterCommentsClosed' } }
 ];
 
 function _chipHtml(label, value) {
@@ -1605,8 +1628,27 @@ function renderFilterChips() {
   wrap.innerHTML = '';
   let any = false;
   for (const d of FILTER_DEFS) {
-    const lbl = (currentLang === 'ru' ? d.labelRu : d.labelEn);
-    if (d.kind === 'range') {
+    const lbl = d.labelKey ? t(d.labelKey) : (currentLang === 'ru' ? d.labelRu : d.labelEn);
+    if (d.kind === 'pill') {
+      const v = f[d.key];
+      if (!v) continue;
+      const valueLabel = d.valueLabels && d.valueLabels[v] ? t(d.valueLabels[v]) : v;
+      const chip = document.createElement('span');
+      chip.className = 'filter-chip';
+      chip.innerHTML = _chipHtml(lbl, valueLabel);
+      chip.querySelector('.filter-chip-x').addEventListener('click', () => {
+        lbState.filters[d.key] = '';
+        // Reset the pill group to "Any" so the modal reflects state too.
+        const grp = document.getElementById(d.groupId);
+        if (grp) grp.querySelectorAll('.filter-pill').forEach(p => {
+          p.classList.toggle('active', !p.dataset.value);
+        });
+        persistLbFilters();
+        loadTopTab(true);
+      });
+      wrap.appendChild(chip);
+      any = true;
+    } else if (d.kind === 'range') {
       const lo = f[d.keyMin], hi = f[d.keyMax];
       if (lo === '' && hi === '') continue;
       const px = d.prefix || '';
@@ -3237,10 +3279,28 @@ const FILTER_FIELD_MAP = {
   filterMinPrice:   'minPrice',
   filterMaxPrice:   'maxPrice'
 };
+// Single-select pill group inside the filter modal — clicking one
+// deactivates the others. The selected `data-value` is read on Apply.
+document.querySelectorAll('.filter-pill-group').forEach(group => {
+  group.addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-pill');
+    if (!btn || !group.contains(btn)) return;
+    group.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p === btn));
+  });
+});
+
+function _activePillValue(groupId) {
+  const grp = document.getElementById(groupId);
+  if (!grp) return '';
+  const active = grp.querySelector('.filter-pill.active');
+  return (active && active.dataset.value) || '';
+}
+
 wire('filterApplyBtn', 'click', () => {
   for (const [inputId, key] of Object.entries(FILTER_FIELD_MAP)) {
     lbState.filters[key] = document.getElementById(inputId)?.value || '';
   }
+  lbState.filters.comments = _activePillValue('filterCommentsGroup');
   persistLbFilters();
   _closeFilterPanel();
   loadTopTab(true);
@@ -3250,6 +3310,11 @@ wire('filterResetBtn', 'click', () => {
     const el = document.getElementById(inputId); if (el) el.value = '';
     lbState.filters[key] = '';
   }
+  // Reset every pill group back to its "Any" (empty data-value) option.
+  document.querySelectorAll('.filter-pill-group').forEach(grp => {
+    grp.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', !p.dataset.value));
+  });
+  lbState.filters.comments = '';
   persistLbFilters();
   loadTopTab(true);
 });

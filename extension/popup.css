@@ -1347,6 +1347,35 @@ html.booting .screen { display: none !important; }
   user-select: none;
 }
 
+/* Single-select pill group used for tri-state filters (Any / Open / Closed). */
+.filter-pill-group {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 4px;
+}
+.filter-pill {
+  flex: 1;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.filter-pill:hover:not(.active) { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+.filter-pill.active {
+  background: var(--gradient-accent);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+
 /* Sticky footer with Apply / Reset — always reachable without scrolling. */
 .filter-actions {
   display: flex; gap: 10px;

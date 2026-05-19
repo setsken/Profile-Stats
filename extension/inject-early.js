@@ -3685,6 +3685,12 @@
               else if (typeof profileData.subscribers === 'number') m.fansVisible = profileData.subscribers > 0;
               // _detectedSocials is populated by the badge's late social-link scan.
               if (Array.isArray(profileData._detectedSocials)) m.hasSocials = profileData._detectedSocials.length > 0;
+              // Comments open/closed: _farmedStatus === 'ready' is the badge's
+              // own signal that comments are open on this profile, available
+              // regardless of whether the user is subscribed.
+              if (typeof profileData._farmedStatus === 'string') {
+                m.commentsEnabled = profileData._farmedStatus === 'ready';
+              }
               return m;
             })()
           }).then(function(resp) {

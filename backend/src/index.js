@@ -144,6 +144,8 @@ async function runMigrations() {
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS account_months INTEGER').catch(() => {});
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS fans_visible BOOLEAN').catch(() => {});
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS has_socials BOOLEAN').catch(() => {});
+    // Comments open/closed marker derived from the badge's _farmedStatus.
+    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS comments_enabled BOOLEAN').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
 
     // farmed_models is already present in this database (was previously the only table).

@@ -143,6 +143,7 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
     const accountMonths = intOrNull(req.body?.accountMonths, 600);
     const fansVisible   = boolOrNull(req.body?.fansVisible);
     const hasSocials    = boolOrNull(req.body?.hasSocials);
+    const commentsEnabled = boolOrNull(req.body?.commentsEnabled);
 
     const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : null;
     const organicity = Number.isFinite(rawOrganicity) ? Math.max(0, Math.min(25, rawOrganicity)) : null;
@@ -163,8 +164,8 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
       `INSERT INTO model_quality_snapshots
         (model_username, quality_score, score, organicity, engagement_rate, negative_flags,
          avatar_url, posts_count, videos_count, photos_count, streams_count, likes_count,
-         subscribe_price, account_months, fans_visible, has_socials, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+         subscribe_price, account_months, fans_visible, has_socials, comments_enabled, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
        ON CONFLICT (model_username)
        DO UPDATE SET
          quality_score = EXCLUDED.quality_score,
@@ -182,11 +183,12 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
          account_months = COALESCE(EXCLUDED.account_months, model_quality_snapshots.account_months),
          fans_visible = COALESCE(EXCLUDED.fans_visible, model_quality_snapshots.fans_visible),
          has_socials = COALESCE(EXCLUDED.has_socials, model_quality_snapshots.has_socials),
+         comments_enabled = COALESCE(EXCLUDED.comments_enabled, model_quality_snapshots.comments_enabled),
          updated_at = NOW()`,
       [
         cleanUsername, qualityScore, score, organicity, engagementRate, negativeFlagsCount,
         avatarUrl, postsCount, videosCount, photosCount, streamsCount, likesCount,
-        subscribePrice, accountMonths, fansVisible, hasSocials
+        subscribePrice, accountMonths, fansVisible, hasSocials, commentsEnabled
       ]
     );
 
