@@ -175,6 +175,13 @@ const I18N = {
     fansLabel: 'Fans',
     qualityLabel: 'Quality',
     metaFansQuality: 'Fans: {fans} · Quality: {quality}%',
+    metaVideosQuality: 'Videos: {value} · Quality: {quality}%',
+    metaPostsQuality: 'Posts: {value} · Quality: {quality}%',
+    metaStreamsQuality: 'Streams: {value} · Quality: {quality}%',
+    metaLikesQuality: 'Likes: {value} · Quality: {quality}%',
+    metaPriceQuality: 'Price: {value} · Quality: {quality}%',
+    metaDateQuality: 'Joined: {value} · Quality: {quality}%',
+    metaUnknown: '—',
     gradeTitle: 'Grade {grade}',
     writeNote: 'Write a note',
     editNote: 'Edit your note',
@@ -452,6 +459,13 @@ const I18N = {
     fansLabel: 'Фаны',
     qualityLabel: 'Качество',
     metaFansQuality: 'Фаны: {fans} · Качество: {quality}%',
+    metaVideosQuality: 'Видео: {value} · Качество: {quality}%',
+    metaPostsQuality: 'Посты: {value} · Качество: {quality}%',
+    metaStreamsQuality: 'Стримы: {value} · Качество: {quality}%',
+    metaLikesQuality: 'Лайки: {value} · Качество: {quality}%',
+    metaPriceQuality: 'Цена: {value} · Качество: {quality}%',
+    metaDateQuality: 'Рег.: {value} · Качество: {quality}%',
+    metaUnknown: '—',
     gradeTitle: 'Оценка {grade}',
     writeNote: 'Написать заметку',
     editNote: 'Редактировать заметку',
@@ -1434,6 +1448,49 @@ function formatFans(model) {
   return String(c);
 }
 
+// Compact K/M formatter for plain integer metrics in row meta.
+function _compactInt(n) {
+  const c = Number(n);
+  if (!Number.isFinite(c) || c <= 0) return '—';
+  if (c >= 1_000_000) return (c / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (c >= 1_000) return (c / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(c));
+}
+
+// Picks the row meta line based on the current sort key. The user wanted
+// the row to surface whichever metric they sorted by — sort by Videos →
+// videos shown, sort by Streams → streams shown, etc. Quality and Score
+// remain in their respective slots; only the first column changes.
+function _rowMetaForSort(model, sort, lang) {
+  const qPct = Math.round((Number(model.qualityScore) || 0) * 100);
+  const unknown = '—';
+  switch (sort) {
+    case 'videos':
+      return t('metaVideosQuality', { value: _compactInt(model.videosCount), quality: qPct });
+    case 'posts':
+      return t('metaPostsQuality', { value: _compactInt(model.postsCount), quality: qPct });
+    case 'streams':
+      return t('metaStreamsQuality', { value: _compactInt(model.streamsCount), quality: qPct });
+    case 'likes':
+      return t('metaLikesQuality', { value: _compactInt(model.likesCount), quality: qPct });
+    case 'price': {
+      const p = Number(model.subscribePrice);
+      const value = Number.isFinite(p) && p > 0 ? '$' + p.toFixed(2).replace(/\.00$/, '') : unknown;
+      return t('metaPriceQuality', { value, quality: qPct });
+    }
+    case 'date': {
+      let v = unknown;
+      if (model.joinedDate) {
+        const d = new Date(model.joinedDate);
+        if (!isNaN(d.getTime())) v = formatDate(d);
+      }
+      return t('metaDateQuality', { value: v, quality: qPct });
+    }
+    default:
+      return t('metaFansQuality', { fans: formatFans(model), quality: qPct });
+  }
+}
+
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -1447,7 +1504,7 @@ function modelRowHtml(model, extras = {}) {
     ? `<img class="list-item-avatar" src="${escapeHtml(model.avatarUrl)}" alt="" referrerpolicy="no-referrer">`
     : `<div class="list-item-avatar" style="display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:13px;">${escapeHtml((model.username || '?').charAt(0).toUpperCase())}</div>`;
   const qPct = Math.round((Number(model.qualityScore) || 0) * 100);
-  const meta = extras.meta || escapeHtml(t('metaFansQuality', { fans: formatFans(model), quality: qPct }));
+  const meta = extras.meta || escapeHtml(_rowMetaForSort(model, (lbState && lbState.filters && lbState.filters.sort) || 'score', currentLang));
   const score = Math.round(Number(model.score) || 0);
   const rank = extras.rank;
   const rankHtml = rank ? `<div class="list-item-rank">${rank}</div>` : '';
