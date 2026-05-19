@@ -1627,14 +1627,16 @@ html.booting .screen { display: none !important; }
 /* Custom dropdown (replaces native select) */
 .custom-dropdown { position: relative; flex-shrink: 0; }
 .custom-dropdown-btn {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 38px; padding: 0 12px;
   background: var(--bg-card); backdrop-filter: blur(4px);
   border: 1px solid var(--border-color); border-radius: 10px;
   color: var(--text-primary); font-size: 12px; font-weight: 600;
   cursor: pointer; user-select: none;
   /* Keep label + sort-direction arrow + caret on one line even when
-     the localised label is long (RU "Качество", "Возраст" etc.). */
+     the localised label is long (RU "Качество", "Возраст" etc.).
+     justify-content: center keeps short labels (e.g. 'Скор ↓') visually
+     centred inside the min-width 108px button. */
   white-space: nowrap;
   min-width: 108px;
   transition: all 0.18s;
