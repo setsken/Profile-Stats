@@ -1355,17 +1355,14 @@
     function scanSocialLinksFromDOM() {
       var socials = [];
       try {
-        // OF uses .m-tab-social class for social media link tabs
-        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"], a[href*="reddit.com"], a[href*="youtube.com"], a[href*="snapchat.com"], a[href*="twitch.tv"]');
+        // Only the three platforms we surface as row icons. YouTube etc.
+        // intentionally ignored — see SOCIAL_GLYPHS in popup.js.
+        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"]');
         socialLinks.forEach(function(link) {
           var h = (link.href || '').toLowerCase();
           if (h.indexOf('instagram.com') !== -1 || h.indexOf('instagr.am') !== -1) socials.push('instagram');
           else if (h.indexOf('tiktok.com') !== -1) socials.push('tiktok');
           else if (h.indexOf('twitter.com') !== -1 || h.indexOf('x.com/') !== -1) socials.push('twitter');
-          else if (h.indexOf('reddit.com') !== -1) socials.push('reddit');
-          else if (h.indexOf('youtube.com') !== -1 || h.indexOf('youtu.be') !== -1) socials.push('youtube');
-          else if (h.indexOf('snapchat.com') !== -1) socials.push('snapchat');
-          else if (h.indexOf('twitch.tv') !== -1) socials.push('twitch');
         });
       } catch (e) {}
       // Deduplicate
@@ -1379,7 +1376,7 @@
       var out = [];
       var seen = {};
       try {
-        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"], a[href*="reddit.com"], a[href*="youtube.com"], a[href*="snapchat.com"], a[href*="twitch.tv"]');
+        var socialLinks = document.querySelectorAll('a.m-tab-social, a[href*="instagram.com"], a[href*="tiktok.com"], a[href*="twitter.com"], a[href*="x.com/"]');
         socialLinks.forEach(function(link) {
           var href = link.href || '';
           var h = href.toLowerCase();
@@ -1387,10 +1384,6 @@
           if (h.indexOf('instagram.com') !== -1 || h.indexOf('instagr.am') !== -1) platform = 'instagram';
           else if (h.indexOf('tiktok.com') !== -1) platform = 'tiktok';
           else if (h.indexOf('twitter.com') !== -1 || h.indexOf('x.com/') !== -1) platform = 'twitter';
-          else if (h.indexOf('reddit.com') !== -1) platform = 'reddit';
-          else if (h.indexOf('youtube.com') !== -1 || h.indexOf('youtu.be') !== -1) platform = 'youtube';
-          else if (h.indexOf('snapchat.com') !== -1) platform = 'snapchat';
-          else if (h.indexOf('twitch.tv') !== -1) platform = 'twitch';
           if (platform && !seen[platform] && href) {
             seen[platform] = true;
             out.push({ platform: platform, url: href.slice(0, 500) });

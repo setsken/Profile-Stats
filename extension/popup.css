@@ -466,7 +466,8 @@ html.booting .screen { display: none !important; }
   border: 1px solid var(--border-soft);
 }
 .list-item-main { flex: 1; min-width: 0; }
-.list-item-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-item-name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.list-item-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
 .list-item-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 .list-item-score {
   font-size: 13px; font-weight: 700;
@@ -1753,9 +1754,9 @@ html.booting .screen { display: none !important; }
    Top Models rows. Click opens the URL in a new tab. */
 .row-socials {
   display: inline-flex;
+  align-items: center;
   gap: 4px;
-  margin-left: 6px;
-  vertical-align: middle;
+  flex-shrink: 0;
 }
 .row-social {
   display: inline-flex;
@@ -1768,9 +1769,9 @@ html.booting .screen { display: none !important; }
   /* Brand glyphs carry their own fill; tone them down slightly until
      hovered so the row reads cleanly with multiple platforms. */
   opacity: 0.85;
-  transition: opacity 0.15s, background 0.15s, transform 0.1s;
+  transition: opacity 0.15s, transform 0.1s;
 }
-.row-social:hover { opacity: 1; background: rgba(255, 255, 255, 0.06); }
+.row-social:hover { opacity: 1; }
 .row-social:active { transform: scale(0.92); }
 
 /* Shared trash button used on Tags and Models list rows. Always-on subtle
