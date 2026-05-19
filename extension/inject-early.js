@@ -4617,18 +4617,34 @@
 
       // Helper: adjust flipInner height to fit active side
       function adjustFlipHeight(toBack) {
-        var targetSide = toBack ? flipBack : flipFront;
-        // Temporarily make back visible to measure
-        if (toBack) { flipBack.style.position = 'relative'; flipBack.style.height = 'auto'; }
-        var h = targetSide.scrollHeight;
-        if (toBack) { flipBack.style.position = ''; flipBack.style.height = ''; }
-        // Lock current height first so transition can animate from it
-        if (!flipInner.style.minHeight) {
-          flipInner.style.minHeight = flipFront.scrollHeight + 'px';
-          // Force reflow so browser registers the starting value
-          flipInner.offsetHeight;
+        function measure() {
+          var targetSide = toBack ? flipBack : flipFront;
+          // flipBack is normally position:absolute; height:100% — temporarily
+          // flow it inline to read its real content height.
+          if (toBack) { flipBack.style.position = 'relative'; flipBack.style.height = 'auto'; }
+          // Force layout so scrollHeight reflects the just-applied styles.
+          void targetSide.offsetHeight;
+          var h = targetSide.scrollHeight;
+          if (toBack) { flipBack.style.position = ''; flipBack.style.height = ''; }
+          // Lock current height first so transition can animate from it.
+          if (!flipInner.style.minHeight) {
+            flipInner.style.minHeight = flipFront.scrollHeight + 'px';
+            flipInner.offsetHeight;
+          }
+          // Only grow, never shrink mid-flip — avoids the badge clipping
+          // its own content when a later measurement comes in smaller
+          // than an earlier one (e.g. lazy SVG render adds rows).
+          var current = parseInt(flipInner.style.minHeight, 10) || 0;
+          if (h > current) flipInner.style.minHeight = h + 'px';
+          else if (!toBack) flipInner.style.minHeight = h + 'px';
         }
-        flipInner.style.minHeight = h + 'px';
+        measure();
+        // Some back-side content (radar SVG, percentile bar) settles after
+        // first paint. Re-measure on the next two frames so the badge
+        // catches up if the initial reading was short.
+        requestAnimationFrame(function() {
+          requestAnimationFrame(measure);
+        });
       }
       
       // Flip button handler (in header)
