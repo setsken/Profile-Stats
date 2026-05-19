@@ -1396,29 +1396,35 @@ html.booting .screen { display: none !important; }
 }
 .filter-checkbox-mark {
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 5px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  /* Brighter background + thicker outlined border so the empty state
+     reads as a clear chip against the dark filter modal. */
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
 }
-.filter-checkbox:hover .filter-checkbox-mark { border-color: var(--accent-soft); }
+.filter-checkbox:hover .filter-checkbox-mark {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(139, 92, 246, 0.7);
+}
 .filter-checkbox input:checked + .filter-checkbox-mark {
   background: var(--gradient-accent);
-  border-color: rgba(139, 92, 246, 0.6);
-  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.35);
+  border-color: rgba(139, 92, 246, 0.9);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.45);
 }
 .filter-checkbox input:checked + .filter-checkbox-mark::after {
   content: '';
   position: absolute;
-  left: 4px;
+  left: 5px;
   top: 1px;
   width: 5px;
-  height: 9px;
+  height: 10px;
   border: solid #ffffff;
-  border-width: 0 2px 2px 0;
+  border-width: 0 2.2px 2.2px 0;
   transform: rotate(45deg);
 }
 .filter-checkbox input:focus-visible + .filter-checkbox-mark {
@@ -1755,14 +1761,16 @@ html.booting .screen { display: none !important; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 5px;
-  color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, transform 0.1s;
+  /* Brand glyphs carry their own fill; tone them down slightly until
+     hovered so the row reads cleanly with multiple platforms. */
+  opacity: 0.85;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s;
 }
-.row-social:hover { color: var(--accent); background: var(--accent-soft); }
+.row-social:hover { opacity: 1; background: rgba(255, 255, 255, 0.06); }
 .row-social:active { transform: scale(0.92); }
 
 /* Shared trash button used on Tags and Models list rows. Always-on subtle
