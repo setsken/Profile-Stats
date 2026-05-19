@@ -1166,7 +1166,12 @@ html.booting .screen { display: none !important; }
 .filter-row { display: flex; gap: 8px; }
 
 .search-wrap {
-  flex: 1;
+  /* Capped width — the search input doesn't need the full row, and
+     leaving room here lets the sort dropdown + filter button breathe
+     against the right scrollbar. */
+  flex: 1 1 auto;
+  max-width: 170px;
+  min-width: 0;
   display: flex; align-items: center; gap: 8px;
   padding: 0 12px;
   height: 38px;
