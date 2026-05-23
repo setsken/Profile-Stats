@@ -717,6 +717,17 @@
           if (Array.isArray(profileData._detectedSocials)) snapshotMetrics.hasSocials = profileData._detectedSocials.length > 0;
           if (typeof profileData._farmedStatus === 'string') snapshotMetrics.commentsEnabled = profileData._farmedStatus === 'ready';
           if (typeof profileData._isBotted === 'boolean') snapshotMetrics.isBotted = profileData._isBotted;
+          // Fresh fans count — flows through the no-throttle snapshot
+          // pipeline so the leaderboard always shows current numbers.
+          // The legacy reportFans path (throttled once per day per user)
+          // was leaving model_fans_history months out of date.
+          if (profileData.subscribersCount != null && profileData.showSubscribersCount !== false) {
+            var sc = Number(profileData.subscribersCount);
+            if (Number.isFinite(sc) && sc >= 0) {
+              snapshotMetrics.fansCount = Math.round(sc);
+              snapshotMetrics.fansText  = quickFormatNumber(sc);
+            }
+          }
           try {
             var socialsWithUrls = scanSocialLinksWithUrls();
             if (socialsWithUrls.length > 0) snapshotMetrics.socials = socialsWithUrls;

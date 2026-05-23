@@ -316,6 +316,13 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
     const hasSocials     = boolOrNull(req.body?.hasSocials);
     const commentsEnabled = boolOrNull(req.body?.commentsEnabled);
     const isBotted = boolOrNull(req.body?.isBotted);
+    // Fresh fans count — write it through this no-throttle path so the
+    // leaderboard never goes stale. The legacy /fans/report endpoint
+    // (called from inject-early.js) has a "max 1x per day per username"
+    // throttle that left model_fans_history months behind reality.
+    const fansCount = intOrNull(req.body?.fansCount, 100_000_000);
+    const fansText  = typeof req.body?.fansText === 'string'
+      ? req.body.fansText.slice(0, 50) : null;
     const joinedDate = (() => {
       const v = req.body?.joinedDate;
       if (typeof v !== 'string') return null;
@@ -361,6 +368,49 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
         socialsJson, isBotted
       ]
     );
+
+    // Also keep model_fans_history fresh. This is what the leaderboard
+    // subquery reads for fansCount/fansText. Skip if the caller didn't
+    // include fans data, or if the value matches the last recorded one
+    // (avoids touching recorded_at when nothing actually changed).
+    if (fansCount != null || fansText) {
+      try {
+        const existing = await getOne(
+          'SELECT fans_count, fans_text FROM model_fans_history WHERE model_username = $1',
+          [cleanUsername]
+        );
+        const changed = !existing
+          || existing.fans_count !== fansCount
+          || existing.fans_text  !== fansText;
+        if (changed) {
+          await query(
+            `INSERT INTO model_fans_history (model_username, fans_count, fans_text, recorded_by, recorded_at)
+             VALUES ($1, $2, $3, $4, NOW())
+             ON CONFLICT (model_username) DO UPDATE SET
+               fans_count  = EXCLUDED.fans_count,
+               fans_text   = EXCLUDED.fans_text,
+               recorded_by = EXCLUDED.recorded_by,
+               recorded_at = NOW()`,
+            [cleanUsername, fansCount, fansText, req.user?.id || null]
+          );
+          // Also keep today's trend point in sync
+          if (fansCount != null) {
+            await query(
+              `INSERT INTO model_fans_daily (model_username, day, fans_count, reporters, updated_at)
+               VALUES ($1, CURRENT_DATE, $2, 1, NOW())
+               ON CONFLICT (model_username, day) DO UPDATE SET
+                 fans_count = $2,
+                 reporters  = model_fans_daily.reporters + 1,
+                 updated_at = NOW()`,
+              [cleanUsername, fansCount]
+            );
+          }
+        }
+      } catch (fansErr) {
+        // Non-critical — snapshot still wrote successfully
+        console.error('Snapshot fans-side-write error:', fansErr.message);
+      }
+    }
 
     res.json({ ok: true });
   } catch (error) {
