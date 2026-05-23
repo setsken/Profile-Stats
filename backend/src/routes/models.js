@@ -212,16 +212,22 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
     // plain names — drop the ms. prefix from every order/where expression.
     // sort=date defaults to oldest accounts first — that's what the user
     // expects when they want to see longest-running models.
-    const orderBy = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC'
-                  : sort === 'quality' ? 'quality_score DESC, score DESC'
-                  : sort === 'recent'  ? 'updated_at DESC, score DESC'
-                  : sort === 'date'    ? 'joined_date ASC NULLS LAST, score DESC'
-                  : sort === 'videos'  ? 'videos_count DESC NULLS LAST, score DESC'
-                  : sort === 'posts'   ? 'posts_count DESC NULLS LAST, score DESC'
-                  : sort === 'streams' ? 'streams_count DESC NULLS LAST, score DESC'
-                  : sort === 'likes'   ? 'likes_count DESC NULLS LAST, score DESC'
-                  : sort === 'price'   ? 'subscribe_price DESC NULLS LAST, score DESC'
-                  :                      'score DESC, quality_score DESC';
+    // NULLS LAST on score/quality_score everywhere — the crawler creates
+    // metrics-only rows in model_quality_snapshots where score/quality
+    // are NULL until a /percentile call fills them in. PostgreSQL puts
+    // NULL FIRST on DESC by default, which would shove those empty rows
+    // to positions 1-2 of every sorted view and visually "lose" the real
+    // top creators.
+    const orderBy = sort === 'fans'    ? 'last_fans DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'quality' ? 'quality_score DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'recent'  ? 'updated_at DESC, score DESC NULLS LAST'
+                  : sort === 'date'    ? 'joined_date ASC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'videos'  ? 'videos_count DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'posts'   ? 'posts_count DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'streams' ? 'streams_count DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'likes'   ? 'likes_count DESC NULLS LAST, score DESC NULLS LAST'
+                  : sort === 'price'   ? 'subscribe_price DESC NULLS LAST, score DESC NULLS LAST'
+                  :                      'score DESC NULLS LAST, quality_score DESC NULLS LAST';
 
     params.push(limit, offset);
     const limitParamIdx = params.length - 1;
@@ -368,7 +374,7 @@ router.get('/top', authenticateToken, async (req, res) => {
           LIMIT 1
         ) AS avatar_url
       FROM model_quality_snapshots ms
-      ORDER BY ms.score DESC, ms.quality_score DESC, ms.updated_at DESC
+      ORDER BY ms.score DESC NULLS LAST, ms.quality_score DESC NULLS LAST, ms.updated_at DESC
       LIMIT $1
     `, [limit]);
 
