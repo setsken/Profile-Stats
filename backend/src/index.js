@@ -118,21 +118,33 @@ async function runMigrations() {
     // Source schema allows NULL fans_count (sometimes only fans_text is captured).
     await query('ALTER TABLE model_fans_history ALTER COLUMN fans_count DROP NOT NULL').catch(() => {});
     await query('CREATE INDEX IF NOT EXISTS idx_model_fans_history_username ON model_fans_history(model_username)').catch(() => {});
+    // UNIQUE constraint on model_username — required for the
+    // ON CONFLICT (model_username) DO UPDATE used by /fans/report and
+    // the new fans-side-write inside /fans/snapshot. Without it the
+    // upsert silently throws and the leaderboard goes stale.
+    await query('ALTER TABLE model_fans_history ADD CONSTRAINT model_fans_history_model_username_unique UNIQUE (model_username)').catch(() => {});
 
     // model_quality_snapshots — latest aggregated quality score per model.
     await query(`
       CREATE TABLE IF NOT EXISTS model_quality_snapshots (
         model_username VARCHAR(255) PRIMARY KEY,
-        quality_score NUMERIC(6,5) NOT NULL,
-        score NUMERIC(6,2) NOT NULL,
-        organicity NUMERIC(6,2) NOT NULL,
-        engagement_rate NUMERIC(12,6) NOT NULL,
+        quality_score NUMERIC(6,5),
+        score NUMERIC(6,2),
+        organicity NUMERIC(6,2),
+        engagement_rate NUMERIC(12,6),
         negative_flags INTEGER DEFAULT 0,
         avatar_url VARCHAR(500),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `).catch(() => {});
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)').catch(() => {});
+    // /fans/snapshot inserts a row WITHOUT quality_score / score / etc
+    // when a model is first seen via metrics-only path. The legacy schema
+    // had NOT NULL on those columns and silently 500'd. Idempotent drops:
+    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN quality_score DROP NOT NULL').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN score DROP NOT NULL').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN organicity DROP NOT NULL').catch(() => {});
+    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN engagement_rate DROP NOT NULL').catch(() => {});
     // Extended profile signals collected from the badge so the leaderboard can
     // filter by streams / socials / posts / subscription price etc.
     await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS posts_count INTEGER').catch(() => {});
