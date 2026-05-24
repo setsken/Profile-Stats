@@ -3,7 +3,11 @@
 // in-memory token + cache hot for content scripts and the side panel.
 
 const PROFILE_STATS_API = 'https://profile-stats-production.up.railway.app/api';
-const STATS_EDITOR_EXTENSION_ID = 'mflgdblgjakdfkjnfdkfmmobgppgjgom';
+// SE extension ID — same for both Chrome Web Store and local unpacked
+// dev install (SE's manifest pins ID via `key`). Was pointing at a
+// never-existing string in the original release, causing the friendly
+// "Stats Editor extension is not installed" error on every SSO attempt.
+const STATS_EDITOR_EXTENSION_ID = 'iphoohfhichidfeejchckmknpcfndfcl';
 
 // Persist leaderboard filters + sort + scroll across popup re-opens.
 // localStorage is sync and survives the popup teardown that async
