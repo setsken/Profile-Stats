@@ -3,11 +3,15 @@
 // in-memory token + cache hot for content scripts and the side panel.
 
 const PROFILE_STATS_API = 'https://profile-stats-production.up.railway.app/api';
-// SE extension ID — same for both Chrome Web Store and local unpacked
-// dev install (SE's manifest pins ID via `key`). Was pointing at a
-// never-existing string in the original release, causing the friendly
-// "Stats Editor extension is not installed" error on every SSO attempt.
-const STATS_EDITOR_EXTENSION_ID = 'iphoohfhichidfeejchckmknpcfndfcl';
+// SE extension IDs — CWS publication first, then the local unpacked dev
+// id (derived from the `key` field in SE's manifest.json, which DOESN'T
+// match the CWS publication because SE was originally uploaded without
+// that key — Google assigned its own). We try them in order so both
+// shipped users and devs work.
+const STATS_EDITOR_EXTENSION_IDS = [
+  'iphoohfhichidfeejchckmknpcfndfcl', // Chrome Web Store
+  'mflgdblgjakdfkjnfdkfmmobgppgjgom'  // local unpacked (key-derived)
+];
 
 // Persist leaderboard filters + sort + scroll across popup re-opens.
 // localStorage is sync and survives the popup teardown that async
@@ -1299,20 +1303,29 @@ async function doSSO() {
   setError('loginError', '');
   setLoading('loginBtn', true);
   try {
-    const resp = await new Promise((resolve) => {
-      try {
-        chrome.runtime.sendMessage(STATS_EDITOR_EXTENSION_ID, { action: 'getStatsEditorToken' }, (r) => {
-          if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
-          else resolve(r || { success: false, error: 'Empty response' });
-        });
-      } catch (e) { resolve({ success: false, error: e.message }); }
-    });
-    if (!resp.success) {
-      const msg = resp.code === 'NOT_AUTHENTICATED'
+    // Walk the candidate SE ids — only fall through to the next one if
+    // the previous one was unreachable (no extension installed at that id).
+    let resp = null;
+    for (const seId of STATS_EDITOR_EXTENSION_IDS) {
+      resp = await new Promise((resolve) => {
+        try {
+          chrome.runtime.sendMessage(seId, { action: 'getStatsEditorToken' }, (r) => {
+            if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
+            else resolve(r || { success: false, error: 'Empty response' });
+          });
+        } catch (e) { resolve({ success: false, error: e.message }); }
+      });
+      if (resp && resp.success) break;
+      const isUnreachable = (resp?.error || '').includes('Could not establish connection')
+                         || (resp?.error || '').includes('Receiving end does not exist');
+      if (!isUnreachable) break; // real result (auth/denied/timeout) — stop
+    }
+    if (!resp || !resp.success) {
+      const msg = resp?.code === 'NOT_AUTHENTICATED'
         ? t('ssoNotAuth')
-        : (resp.error && resp.error.includes('Could not establish connection'))
+        : (resp?.error && resp.error.includes('Could not establish connection'))
           ? t('ssoNoExt')
-          : (resp.error || t('ssoFailed'));
+          : (resp?.error || t('ssoFailed'));
       setError('loginError', msg);
       return;
     }
