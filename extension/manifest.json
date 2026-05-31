@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Profile Stats",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Model analytics for OnlyFans creator profiles — badges, fan trends, AI verdict, notes and alerts.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwA5EwyO+ky69t85nxsa/qfypGvdtBE81YJfWfinwRjaJ+4+4z7yX0bLM4nBnUGRMaiSZcx/gq67bgmC5S7pNvCTqZE/n7mLXU/3Su8a+MKIFF1L1MvvjXZCzTgqms6M7GJDI/k7Ah0E3205hP1AJ6Yvy1sIqDYJjxtx3wp7wBQ4Bprl5GdVTKSkwZZvUUnuk3qPKGKchLBARZJv49oMkY9vDi2QD11KRSzmJ06YR45BKw8+5HgZWX0iR1kaheOv6ok4ZTKJoiPBpQ5tIIuVD5e72OlPklt1AQ0oywZwTy+Ei2uigmysAUubhAqIusNPrinu4CFJut68S4qSLkJcO7wIDAQAB",
   "externally_connectable": {

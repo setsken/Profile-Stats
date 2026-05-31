@@ -3719,8 +3719,11 @@
       
       // analysisGroup appended to scoreSection in assembly below
       
-      // Request AI verdict from background (skip if subscription expired to save AI resources)
-      if (_subExpired) {
+      // Request AI verdict from background. Skip generation when:
+      //   - subscription expired (verdict hidden anyway, no point burning tokens)
+      //   - user disabled the Verdict-AI toggle in popup Settings
+      //     (was the source of a money-loss bug: UI hid but request still fired)
+      if (_subExpired || settings.ofStatsVerdictEnabled === false) {
         // Do nothing — verdict hidden and not generated
       } else if (profileData._aiVerdict && profileData._aiVerdictLang === _ofLang) {
         verdictDiv.innerHTML = _renderVerdict(profileData._aiVerdict, 'ready');

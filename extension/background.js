@@ -293,6 +293,13 @@ async function handleMessage(request, sender) {
 
       // ---- AI Verdict (Profile Stats backend) ----
       case 'getAIVerdict': {
+        // Defence-in-depth: if user disabled the Verdict-AI toggle, don't burn
+        // tokens even if a stale inject-early.js somehow still fires a request.
+        // (Primary guard is in inject-early.js — we never call here when off.)
+        const { ofStatsVerdictEnabled } = await chrome.storage.local.get('ofStatsVerdictEnabled');
+        if (ofStatsVerdictEnabled === false) {
+          return { success: false, error: 'Verdict disabled by user' };
+        }
         const subStatus = await apiGetSubscriptionStatus();
         if (!subStatus.success || !subStatus.subscription || subStatus.subscription.status !== 'active') {
           return { success: false, error: 'Subscription not active' };
