@@ -181,15 +181,19 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
       const email = encodeURIComponent(stored.userEmail || '');
       const W = 420;
       const H = 420;
+      // Centre the confirmation window on whichever window the user is in.
+      // This used to call chrome.system.display.getInfo(), but that permission
+      // was dropped in v1.0.6 (it needed a Web Store justification we didn't
+      // want), leaving a call that always threw. chrome.windows.getCurrent
+      // needs no permission and puts the dialog on the right monitor anyway.
       let left, top;
       try {
-        const displays = await chrome.system.display.getInfo();
-        const primary = displays.find(d => d.isPrimary) || displays[0];
-        if (primary && primary.workArea) {
-          left = Math.round(primary.workArea.left + (primary.workArea.width - W) / 2);
-          top  = Math.round(primary.workArea.top  + (primary.workArea.height - H) / 2);
+        const cur = await chrome.windows.getCurrent({});
+        if (cur && cur.width && cur.height) {
+          left = Math.max(0, Math.round((cur.left || 0) + (cur.width  - W) / 2));
+          top  = Math.max(0, Math.round((cur.top  || 0) + (cur.height - H) / 2));
         }
-      } catch (e) { /* permission missing — let Chrome pick a position */ }
+      } catch (e) { /* let Chrome pick a position */ }
 
       chrome.windows.create({
         url: chrome.runtime.getURL(`auth-confirm.html?id=${reqId}&email=${email}`),
@@ -284,7 +288,6 @@ async function handleMessage(request, sender) {
       case 'addModel':    clearCache('getModels'); return await apiAddModel(request.username, request.displayName, request.avatarUrl);
       case 'removeModel': clearCache('getModels'); return await apiRemoveModel(request.username);
       case 'checkModel':                          return await apiCheckModel(request.username);
-      case 'getTopModels':                         return await apiGetTopModels(request.limit);
       case 'getLeaderboard':                       return await apiGetLeaderboard(request.params);
       case 'getModelInfo':                         return await apiGetModelInfo(request.username);
 
@@ -342,7 +345,6 @@ async function handleMessage(request, sender) {
       // ---- Fans (Profile Stats backend) ----
       case 'reportFans':              return await apiReportFans(request.username, request.fansCount, request.fansText, request.reportDay);
       case 'getFans':                 return await apiGetFans(request.username);
-      case 'batchGetFans':            return await apiBatchGetFans(request.usernames);
       case 'getFansTrend':            return await apiGetFansTrend(request.username, request.days);
       case 'getEngagementPercentile': return await apiGetEngagementPercentile(request.username, request.metrics);
       case 'reportProfileMetrics':    return await apiReportProfileMetrics(request.username, request.metrics);
@@ -437,12 +439,27 @@ async function broadcastAuthStatus(isAuthenticated) {
 }
 
 // ==================== AUTH API (Stats Editor) ====================
+
+// A random id for this browser profile, made once and kept for good, so the
+// shared backend can tell when several accounts come from one installation.
+// Signing out leaves it in place.
+async function getInstallId() {
+  try {
+    const stored = await chrome.storage.local.get('psInstallId');
+    if (stored.psInstallId) return stored.psInstallId;
+    const id = crypto.randomUUID();
+    await chrome.storage.local.set({ psInstallId: id });
+    return id;
+  } catch (e) {
+    return null;
+  }
+}
 async function apiRegister(email, password) {
   try {
     const r = await fetch(`${STATS_EDITOR_API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, product: 'profile_stats' })
+      body: JSON.stringify({ email, password, product: 'profile_stats', installId: await getInstallId() })
     });
     const data = await r.json();
     if (r.ok) {
@@ -463,7 +480,7 @@ async function apiLogin(email, password) {
     const r = await fetch(`${STATS_EDITOR_API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, installId: await getInstallId() })
     });
     const data = await r.json();
     if (r.ok && data.token) {
@@ -541,7 +558,7 @@ async function apiVerifyEmail(email, code) {
   try {
     const r = await fetch(`${STATS_EDITOR_API}/auth/verify-email`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code })
+      body: JSON.stringify({ email, code, installId: await getInstallId() })
     });
     const data = await r.json();
     if (r.ok && data.token) {
@@ -604,16 +621,6 @@ async function apiRemoveModel(username) {
   if (!authToken) return { success: false, error: 'Not authenticated' };
   try {
     const r = await authFetch(`${PROFILE_STATS_API}/models/${encodeURIComponent(username)}`, { method: 'DELETE' });
-    const data = await r.json();
-    return { success: r.ok, ...data };
-  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
-}
-
-async function apiGetTopModels(limit = 100) {
-  if (!authToken) return { success: false, error: 'Not authenticated' };
-  try {
-    const r = await authFetch(`${PROFILE_STATS_API}/models/top?limit=${limit}`);
-    if (r.status === 401) return { success: false, error: 'Session expired', code: 'TOKEN_EXPIRED' };
     const data = await r.json();
     return { success: r.ok, ...data };
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
@@ -728,18 +735,6 @@ async function apiGetFans(username) {
   } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
 }
 
-async function apiBatchGetFans(usernames) {
-  try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const r = await fetch(`${PROFILE_STATS_API}/fans/batch`, {
-      method: 'POST', headers, body: JSON.stringify({ usernames })
-    });
-    const data = await r.json();
-    return { success: r.ok, ...data };
-  } catch (e) { logError(e); return { success: false, error: 'Network error' }; }
-}
-
 async function apiGetFansTrend(username, days) {
   try {
     const headers = {};
@@ -753,23 +748,31 @@ async function apiGetFansTrend(username, days) {
 // Non-blocking write of extended metrics on every profile view.
 // Independent of the percentile call so the DB grows even when the
 // radar panel never builds (e.g. trial expired, user closes the page).
+// Writes require a signed-in user — the endpoint used to accept anonymous
+// posts, which let anyone write arbitrary metrics for any handle. authFetch
+// (not plain fetch) so an expiring token is refreshed instead of silently
+// dropping the write.
 async function apiReportProfileMetrics(username, metrics) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const r = await fetch(`${PROFILE_STATS_API}/fans/snapshot/${encodeURIComponent(username)}`, {
-      method: 'POST', headers, body: JSON.stringify(metrics || {})
+    const r = await authFetch(`${PROFILE_STATS_API}/fans/snapshot/${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(metrics || {})
     });
     return { success: r.ok };
   } catch (e) { logError(e); return { success: false }; }
 }
 
+// Also a write (it upserts the model's quality snapshot), so same rule as
+// apiReportProfileMetrics: signed-in only, via authFetch.
 async function apiGetEngagementPercentile(username, metrics) {
+  if (!authToken) return { success: false, error: 'Not authenticated' };
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const r = await fetch(`${PROFILE_STATS_API}/fans/percentile/${encodeURIComponent(username)}`, {
-      method: 'POST', headers, body: JSON.stringify(metrics || {})
+    const r = await authFetch(`${PROFILE_STATS_API}/fans/percentile/${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(metrics || {})
     });
     const data = await r.json();
     return { success: r.ok, ...data };
