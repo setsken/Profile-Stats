@@ -16,13 +16,32 @@ const billingRoutes = require('./routes/billing');
 
 const app = express();
 
+// Postgres error codes that mean "this migration is already applied".
+// Anything else is a real problem and must not be swallowed silently —
+// the previous blanket .catch(() => {}) hid broken migrations for months.
+const MIGRATION_NOOP_CODES = new Set([
+  '42P07', // duplicate_table
+  '42710', // duplicate_object (constraint/index already exists)
+  '42701', // duplicate_column
+  '42P16'  // invalid_table_definition (e.g. DROP NOT NULL on a PK column)
+]);
+
+async function mig(sql, label) {
+  try {
+    await query(sql);
+  } catch (e) {
+    if (MIGRATION_NOOP_CODES.has(e.code)) return;
+    console.warn('[migrations] ' + (label || sql.trim().slice(0, 60)) + ' -> ' + e.message);
+  }
+}
+
 // Schema migrations — run on startup. Tables stay empty until Etap 3 (data migration).
 async function runMigrations() {
   try {
     // user_models — list of OnlyFans usernames a Profile Stats user is tracking.
     // user_id is NOT a foreign key here: users live in the Stats Editor DB.
     // Schema mirrors the Stats Editor source so migration is a straight column-by-column copy.
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS user_models (
         id SERIAL PRIMARY KEY,
         user_id INTEGER,
@@ -32,15 +51,15 @@ async function runMigrations() {
         is_deleted BOOLEAN DEFAULT FALSE,
         deleted_at TIMESTAMP
       )
-    `).catch(() => {});
+    `);
     // Drop the legacy 'added_at' column from the initial skeleton (only present on fresh deploys
     // that ran before this fix; safe no-op everywhere else).
-    await query('ALTER TABLE user_models DROP COLUMN IF EXISTS added_at').catch(() => {});
-    await query('ALTER TABLE user_models ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()').catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_user_models_user_id ON user_models(user_id)').catch(() => {});
+    await mig('ALTER TABLE user_models DROP COLUMN IF EXISTS added_at');
+    await mig('ALTER TABLE user_models ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()');
+    await mig('CREATE INDEX IF NOT EXISTS idx_user_models_user_id ON user_models(user_id)');
 
     // user_notes — personal notes per (user, model).
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS user_notes (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
@@ -53,12 +72,12 @@ async function runMigrations() {
         updated_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(user_id, model_username)
       )
-    `).catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_user_notes_user_id ON user_notes(user_id)').catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_user_notes_model ON user_notes(user_id, model_username)').catch(() => {});
+    `);
+    await mig('CREATE INDEX IF NOT EXISTS idx_user_notes_user_id ON user_notes(user_id)');
+    await mig('CREATE INDEX IF NOT EXISTS idx_user_notes_model ON user_notes(user_id, model_username)');
 
     // user_tags — personal tags for notes.
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS user_tags (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
@@ -66,11 +85,11 @@ async function runMigrations() {
         color_index INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `).catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_user_tags_user_id ON user_tags(user_id)').catch(() => {});
+    `);
+    await mig('CREATE INDEX IF NOT EXISTS idx_user_tags_user_id ON user_tags(user_id)');
 
     // model_alerts — global alerts (shared across users).
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS model_alerts (
         id SERIAL PRIMARY KEY,
         model_username VARCHAR(255) NOT NULL,
@@ -84,12 +103,19 @@ async function runMigrations() {
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(model_username, alert_type, alert_date)
       )
-    `).catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_model_alerts_username ON model_alerts(model_username)').catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_model_alerts_date ON model_alerts(alert_date)').catch(() => {});
+    `);
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_alerts_username ON model_alerts(model_username)');
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_alerts_date ON model_alerts(alert_date)');
+    // The UNIQUE triple is what /alerts/report's ON CONFLICT DO NOTHING keys
+    // on. Tables created before it was part of the CREATE statement need it
+    // added explicitly, otherwise every insert throws.
+    await mig(`ALTER TABLE model_alerts ADD CONSTRAINT model_alerts_username_type_date_unique
+               UNIQUE (model_username, alert_type, alert_date)`, 'model_alerts unique triple');
+    // Serving one model's alert list newest-first is the only read pattern.
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_alerts_username_created ON model_alerts(model_username, created_at DESC)');
 
     // model_fans_daily — aggregated daily fan count per model.
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS model_fans_daily (
         model_username VARCHAR(255) NOT NULL,
         day DATE NOT NULL,
@@ -98,12 +124,12 @@ async function runMigrations() {
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         PRIMARY KEY (model_username, day)
       )
-    `).catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_model_fans_daily_username ON model_fans_daily(model_username)').catch(() => {});
+    `);
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_fans_daily_username ON model_fans_daily(model_username)');
 
     // model_fans_history — raw fan count reports (used to backfill daily).
     // fans_count is nullable in source (sometimes only a fans_text label is captured).
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS model_fans_history (
         id SERIAL PRIMARY KEY,
         model_username VARCHAR(255) NOT NULL,
@@ -112,20 +138,20 @@ async function runMigrations() {
         recorded_at TIMESTAMP DEFAULT NOW(),
         recorded_by INTEGER
       )
-    `).catch(() => {});
-    await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS fans_text VARCHAR(255)').catch(() => {});
-    await query('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS recorded_by INTEGER').catch(() => {});
+    `);
+    await mig('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS fans_text VARCHAR(255)');
+    await mig('ALTER TABLE model_fans_history ADD COLUMN IF NOT EXISTS recorded_by INTEGER');
     // Source schema allows NULL fans_count (sometimes only fans_text is captured).
-    await query('ALTER TABLE model_fans_history ALTER COLUMN fans_count DROP NOT NULL').catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_model_fans_history_username ON model_fans_history(model_username)').catch(() => {});
+    await mig('ALTER TABLE model_fans_history ALTER COLUMN fans_count DROP NOT NULL');
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_fans_history_username ON model_fans_history(model_username)');
     // UNIQUE constraint on model_username — required for the
     // ON CONFLICT (model_username) DO UPDATE used by /fans/report and
     // the new fans-side-write inside /fans/snapshot. Without it the
     // upsert silently throws and the leaderboard goes stale.
-    await query('ALTER TABLE model_fans_history ADD CONSTRAINT model_fans_history_model_username_unique UNIQUE (model_username)').catch(() => {});
+    await mig('ALTER TABLE model_fans_history ADD CONSTRAINT model_fans_history_model_username_unique UNIQUE (model_username)');
 
     // model_quality_snapshots — latest aggregated quality score per model.
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS model_quality_snapshots (
         model_username VARCHAR(255) PRIMARY KEY,
         quality_score NUMERIC(6,5),
@@ -136,50 +162,70 @@ async function runMigrations() {
         avatar_url VARCHAR(500),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
-    `).catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)').catch(() => {});
+    `);
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)');
     // /fans/snapshot inserts a row WITHOUT quality_score / score / etc
     // when a model is first seen via metrics-only path. The legacy schema
     // had NOT NULL on those columns and silently 500'd. Idempotent drops:
-    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN quality_score DROP NOT NULL').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN score DROP NOT NULL').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN organicity DROP NOT NULL').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ALTER COLUMN engagement_rate DROP NOT NULL').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ALTER COLUMN quality_score DROP NOT NULL');
+    await mig('ALTER TABLE model_quality_snapshots ALTER COLUMN score DROP NOT NULL');
+    await mig('ALTER TABLE model_quality_snapshots ALTER COLUMN organicity DROP NOT NULL');
+    await mig('ALTER TABLE model_quality_snapshots ALTER COLUMN engagement_rate DROP NOT NULL');
     // Extended profile signals collected from the badge so the leaderboard can
     // filter by streams / socials / posts / subscription price etc.
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS posts_count INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS videos_count INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS photos_count INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS streams_count INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS likes_count INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS subscribe_price NUMERIC(8,2)').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS account_months INTEGER').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS fans_visible BOOLEAN').catch(() => {});
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS has_socials BOOLEAN').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS posts_count INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS videos_count INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS photos_count INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS streams_count INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS likes_count INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS subscribe_price NUMERIC(8,2)');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS account_months INTEGER');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS fans_visible BOOLEAN');
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS has_socials BOOLEAN');
     // Comments open/closed marker derived from the badge's _farmedStatus.
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS comments_enabled BOOLEAN').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS comments_enabled BOOLEAN');
     // Exact join date — account_months remains for fast filtering, but
     // joined_date is what we display and sort by in Top Models.
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS joined_date DATE').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS joined_date DATE');
     // Per-platform social links the badge detected on the profile page.
     // Shape: [{ platform: 'instagram', url: 'https://...' }, ...]
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS socials_json JSONB').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS socials_json JSONB');
     // Inflation/botted verdict — true when the badge's scoring fired any
     // of the "Botted Likes" / "Boosted Likes" / "Fake Fans" / "Suspect
     // Growth" achievements. Powers the Hide-botted filter.
-    await query('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS is_botted BOOLEAN').catch(() => {});
-    await query('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)').catch(() => {});
+    await mig('ALTER TABLE model_quality_snapshots ADD COLUMN IF NOT EXISTS is_botted BOOLEAN');
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_quality ON model_quality_snapshots(quality_score)');
+    // The leaderboard's default sort is score DESC, and 'recent' sorts by
+    // updated_at — both were doing a full scan + sort on every request.
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_score ON model_quality_snapshots(score DESC NULLS LAST)');
+    await mig('CREATE INDEX IF NOT EXISTS idx_model_quality_snapshots_updated ON model_quality_snapshots(updated_at DESC)');
+
+    // verdict_cache — AI verdicts keyed by (model, score, language).
+    // The badge asks for a verdict on every profile view; without this each
+    // view was a fresh (paid) xAI call, including repeat views of the same
+    // profile by the same user and views of popular profiles by everyone.
+    await mig(`
+      CREATE TABLE IF NOT EXISTS verdict_cache (
+        model_username VARCHAR(255) NOT NULL,
+        score INTEGER NOT NULL,
+        lang VARCHAR(5) NOT NULL,
+        verdict TEXT NOT NULL,
+        hits INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (model_username, score, lang)
+      )
+    `);
 
     // farmed_models is already present in this database (was previously the only table).
     // Make sure it exists so a fresh DB also boots cleanly.
-    await query(`
+    await mig(`
       CREATE TABLE IF NOT EXISTS farmed_models (
         username VARCHAR(255) PRIMARY KEY,
         of_url TEXT,
         found_at TIMESTAMP DEFAULT NOW(),
         status VARCHAR(20)
       )
-    `).catch(() => {});
+    `);
 
     console.log('[migrations] schema ready');
   } catch (error) {
@@ -195,13 +241,17 @@ app.set('trust proxy', 1);
 
 app.use(helmet());
 
+// Only the extension and OnlyFans pages talk to this API. The marketing site
+// never calls it. A missing Origin (server-to-server, curl, the extension's
+// own service worker on some Chrome builds) is allowed through — CORS is a
+// browser-side control, the real gate is the auth middleware on each route.
+const ALLOWED_ORIGIN_RE = /^(chrome-extension:\/\/[a-p]{32}|https:\/\/(www\.)?onlyfans\.com|http:\/\/localhost(:\d+)?)$/;
+
 app.use(cors({
   origin: function(origin, callback) {
     if (!origin) return callback(null, true);
-    if (origin.startsWith('chrome-extension://')) return callback(null, true);
-    if (origin.includes('onlyfans.com')) return callback(null, true);
-    if (origin.includes('localhost')) return callback(null, true);
-    callback(null, true); // permissive while we bring the service up; tighten later
+    if (ALLOWED_ORIGIN_RE.test(origin)) return callback(null, true);
+    return callback(null, false);
   },
   credentials: true
 }));
@@ -212,6 +262,30 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later' }
 });
 app.use('/api/', limiter);
+
+// Endpoints that accept writes without a JWT (older extension builds post
+// alerts anonymously) get a much tighter budget than the general limit —
+// a normal user reports a handful of alerts per browsing session.
+const publicWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Too many requests, please try again later' }
+});
+app.use('/api/alerts/report', publicWriteLimiter);
+
+// The AI verdict is the only route that costs real money per call.
+const verdictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  // Per account, not per IP: several users can share an office IP, and one
+  // user on a flaky connection shouldn't lock out the rest.
+  keyGenerator: (req) => {
+    const h = req.headers['authorization'] || '';
+    return h ? 'jwt:' + h.slice(-24) : (req.ip || 'anon');
+  },
+  message: { error: 'Verdict rate limit reached, try again in a minute' }
+});
+app.use('/api/verdict', verdictLimiter);
 
 app.use(express.json({ limit: '1mb' }));
 

@@ -283,6 +283,12 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
             )
           ) AS avatar_url
         FROM model_quality_snapshots ms
+        -- Metrics-only rows (written by /fans/snapshot before a score has
+        -- ever been computed) can never pass the score filter below, so they
+        -- must not consume rank numbers either. Leaving them in made
+        -- global_rank jump (#1, #5, #9…) on sorts where they interleave,
+        -- e.g. sort=recent.
+        WHERE ms.score IS NOT NULL
       ),
       ranked AS (
         SELECT *, ROW_NUMBER() OVER (ORDER BY ${orderBy}) AS global_rank
@@ -336,65 +342,6 @@ router.get('/leaderboard', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get leaderboard error:', error);
     res.status(500).json({ error: 'Failed to load leaderboard' });
-  }
-});
-
-// GET /top — leaderboard of models by aggregated quality_score.
-// Joins last known fan count and the best available avatar (taken from any
-// user_notes row that ever stored one).
-router.get('/top', authenticateToken, async (req, res) => {
-  try {
-    const limit = Math.min(parseInt(req.query.limit) || 100, 100);
-    const rows = await getMany(`
-      SELECT
-        ms.model_username,
-        ms.quality_score,
-        ms.score,
-        ms.organicity,
-        ms.engagement_rate,
-        ms.updated_at,
-        (
-          SELECT mfh.fans_count
-          FROM model_fans_history mfh
-          WHERE mfh.model_username = ms.model_username
-          ORDER BY mfh.recorded_at DESC
-          LIMIT 1
-        ) AS fans_count,
-        (
-          SELECT mfh.fans_text
-          FROM model_fans_history mfh
-          WHERE mfh.model_username = ms.model_username
-          ORDER BY mfh.recorded_at DESC
-          LIMIT 1
-        ) AS fans_text,
-        (
-          SELECT un.avatar_url
-          FROM user_notes un
-          WHERE un.model_username = ms.model_username AND un.avatar_url IS NOT NULL
-          LIMIT 1
-        ) AS avatar_url
-      FROM model_quality_snapshots ms
-      ORDER BY ms.score DESC NULLS LAST, ms.quality_score DESC NULLS LAST, ms.updated_at DESC
-      LIMIT $1
-    `, [limit]);
-
-    res.json({
-      count: rows.length,
-      models: rows.map(r => ({
-        username: r.model_username,
-        score: Number(r.score),
-        qualityScore: Number(r.quality_score),
-        organicity: Number(r.organicity),
-        engagementRate: Number(r.engagement_rate),
-        fansCount: r.fans_count,
-        fansText: r.fans_text,
-        avatarUrl: r.avatar_url,
-        updatedAt: r.updated_at
-      }))
-    });
-  } catch (error) {
-    console.error('Get top models error:', error);
-    res.status(500).json({ error: 'Failed to get top models' });
   }
 });
 

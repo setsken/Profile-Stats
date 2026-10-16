@@ -33,42 +33,28 @@ function sanitizeSocials(input) {
   return out.length > 0 ? JSON.stringify(out) : null;
 }
 
-// DEBUG: recent fans records (no auth)
-router.get('/debug/recent', async (req, res) => {
-  try {
-    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
-    const records = await getMany(`
-      SELECT model_username, fans_count, fans_text, recorded_at
-      FROM model_fans_history
-      ORDER BY recorded_at DESC
-      LIMIT $1
-    `, [limit]);
-    res.json({
-      count: records.length,
-      records: records.map(r => ({
-        username: r.model_username,
-        fans: r.fans_text || r.fans_count,
-        recordedAt: r.recorded_at
-      }))
-    });
-  } catch (error) {
-    console.error('Debug fans error:', error);
-    res.status(500).json({ error: 'Failed to get fans data' });
-  }
-});
+// OnlyFans handles only. Anything else is rejected before it reaches the
+// database — these usernames are primary keys in the shared model tables,
+// so a malformed one poisons the leaderboard for everyone.
+const USERNAME_RE = /^[a-z0-9._-]{1,100}$/;
+
+function normalizeUsername(raw) {
+  if (typeof raw !== 'string') return null;
+  const u = raw.trim().toLowerCase().replace(/^@/, '');
+  return USERNAME_RE.test(u) ? u : null;
+}
 
 // POST /report — record fans count for a model
 router.post('/report', authenticateToken, async (req, res) => {
   try {
     const { username, fansCount, fansText, reportDay } = req.body;
-    if (!username) {
+    const cleanUsername = normalizeUsername(username);
+    if (!cleanUsername) {
       return res.status(400).json({ error: 'Model username is required' });
     }
     if (fansCount === undefined && !fansText) {
       return res.status(400).json({ error: 'Fans count or text is required' });
     }
-
-    const cleanUsername = username.trim().toLowerCase().replace('@', '');
     let parsedFansCount = fansCount;
     if (!parsedFansCount && fansText) {
       parsedFansCount = parseFansText(fansText);
@@ -126,7 +112,8 @@ router.post('/report', authenticateToken, async (req, res) => {
 router.get('/trend/:username', optionalAuth, async (req, res) => {
   try {
     const days = Math.min(parseInt(req.query.days) || 90, 365);
-    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
+    const cleanUsername = normalizeUsername(req.params.username);
+    if (!cleanUsername) return res.status(400).json({ error: 'Invalid username' });
     const result = await getMany(
       `SELECT day, fans_count FROM model_fans_daily
        WHERE model_username = $1 AND day >= CURRENT_DATE - $2::integer
@@ -142,9 +129,10 @@ router.get('/trend/:username', optionalAuth, async (req, res) => {
 });
 
 // POST /percentile/:username — engagement percentile based on aggregated quality snapshots
-router.post('/percentile/:username', optionalAuth, async (req, res) => {
+router.post('/percentile/:username', authenticateToken, async (req, res) => {
   try {
-    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
+    const cleanUsername = normalizeUsername(req.params.username);
+    if (!cleanUsername) return res.status(400).json({ error: 'Invalid username' });
     const rawScore = Number(req.body?.score);
     const rawOrganicity = Number(req.body?.organicity);
     const rawEngagementRate = Number(req.body?.engagementRate);
@@ -289,10 +277,10 @@ router.post('/percentile/:username', optionalAuth, async (req, res) => {
 // panel is built. This endpoint guarantees the DB grows on every
 // profile view so leaderboard filters stay representative even when
 // users never open the radar tab (e.g. trial expired).
-router.post('/snapshot/:username', optionalAuth, async (req, res) => {
+router.post('/snapshot/:username', authenticateToken, async (req, res) => {
   try {
-    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
-    if (!cleanUsername) return res.status(400).json({ error: 'username required' });
+    const cleanUsername = normalizeUsername(req.params.username);
+    if (!cleanUsername) return res.status(400).json({ error: 'Invalid username' });
 
     const intOrNull = (v, max = 10_000_000) => {
       const n = Number(v);
@@ -422,7 +410,8 @@ router.post('/snapshot/:username', optionalAuth, async (req, res) => {
 // GET /:username — last known fans for a model
 router.get('/:username', optionalAuth, async (req, res) => {
   try {
-    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
+    const cleanUsername = normalizeUsername(req.params.username);
+    if (!cleanUsername) return res.status(400).json({ error: 'Invalid username' });
     const lastFans = await getOne(`
       SELECT fans_count, fans_text, recorded_at
       FROM model_fans_history
@@ -455,7 +444,8 @@ router.get('/:username', optionalAuth, async (req, res) => {
 router.get('/:username/history', authenticateToken, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 30, 100);
-    const cleanUsername = req.params.username.trim().toLowerCase().replace('@', '');
+    const cleanUsername = normalizeUsername(req.params.username);
+    if (!cleanUsername) return res.status(400).json({ error: 'Invalid username' });
     const history = await getMany(`
       SELECT fans_count, fans_text, recorded_at
       FROM model_fans_history
@@ -477,40 +467,6 @@ router.get('/:username/history', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get fans history error:', error);
     res.status(500).json({ error: 'Failed to get fans history' });
-  }
-});
-
-// POST /batch — fans for many models in one call (caps at 50)
-router.post('/batch', optionalAuth, async (req, res) => {
-  try {
-    const { usernames } = req.body;
-    if (!Array.isArray(usernames) || usernames.length === 0) {
-      return res.status(400).json({ error: 'Usernames array is required' });
-    }
-    const limitedUsernames = usernames.slice(0, 50).map(u => u.trim().toLowerCase().replace('@', ''));
-
-    const results = await getMany(`
-      SELECT DISTINCT ON (model_username)
-        model_username, fans_count, fans_text, recorded_at
-      FROM model_fans_history
-      WHERE model_username = ANY($1)
-      ORDER BY model_username, recorded_at DESC
-    `, [limitedUsernames]);
-
-    const fansMap = {};
-    results.forEach(r => {
-      fansMap[r.model_username] = {
-        count: r.fans_count,
-        text: r.fans_text,
-        recordedAt: r.recorded_at,
-        formattedDate: formatDate(r.recorded_at)
-      };
-    });
-
-    res.json({ fans: fansMap, found: results.length, requested: limitedUsernames.length });
-  } catch (error) {
-    console.error('Batch get fans error:', error);
-    res.status(500).json({ error: 'Failed to get fans data' });
   }
 });
 
