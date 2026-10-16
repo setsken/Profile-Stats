@@ -7,15 +7,17 @@ const router = express.Router();
 const XAI_API_KEY = process.env.XAI_API_KEY;
 
 // Which Grok writes the verdicts — changeable in Railway without a deploy.
-// The interesting part of a verdict now comes from the context assembled below
-// (fan trajectory, comparison with similar accounts), so the model's job is to
-// write, not to reason: a non-reasoning model answers in a few seconds, where
-// grok-4.7 — which always reasons — took 15–20.
-const XAI_MODEL = process.env.XAI_MODEL || 'grok-4.7';
+//
+// From the xAI docs: grok-4.5, 4.6 and 4.7 are coding/agentic models that
+// always reason (lowest effort "low") — 15–20 s for a short verdict. grok-4.3
+// is newer than 4.20, described as fast with strong instruction following, and
+// is the one where reasoning can be switched off ("none").
+const XAI_MODEL = process.env.XAI_MODEL || 'grok-4.3';
 
-// Only used by reasoning models (grok-4.7 always reasons and bills it as
-// output; low | medium | high | xhigh, default high).
-const XAI_REASONING_EFFORT = process.env.XAI_REASONING_EFFORT || 'low';
+// none | low | medium | high | xhigh — "none" only where the model allows it
+// (grok-4.3). Higher means slower and dearer: reasoning is billed as output.
+const XAI_REASONING_EFFORT = process.env.XAI_REASONING_EFFORT
+  || (/^grok-4\.3/.test(XAI_MODEL) ? 'none' : 'low');
 
 // Asked when the main model refuses the request or returns nothing.
 const XAI_FALLBACK_MODEL = process.env.XAI_FALLBACK_MODEL || 'grok-4.20-0309-non-reasoning';
@@ -34,6 +36,13 @@ const MIN_PEERS = 30;
 // ---------------------------------------------------------------- helpers --
 
 const isReasoningModel = (model) => !/non-reasoning/.test(model);
+
+function modelTag(model, effort) {
+  const s = model + ':' + effort;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return (h % 36).toString(36);
+}
 
 // null, undefined and '' are "unknown", not zero — Number(null) is 0.
 function num(v) {
@@ -556,7 +565,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const cacheKey = profile && profile.score !== null
       ? { username: profile.username, score: profile.score,
-          lang: safeLang + VERDICT_STYLE + (isReasoningModel(XAI_MODEL) ? 'r' : 'n') }
+          lang: safeLang + VERDICT_STYLE + modelTag(XAI_MODEL, XAI_REASONING_EFFORT) }
       : null;
     if (cacheKey) {
       const cached = await readCache(cacheKey);
