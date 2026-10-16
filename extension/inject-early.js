@@ -3660,7 +3660,26 @@
         } else if (state === 'error') {
           html += '<span style="color:#64748b;font-size:11px;font-style:italic;">' + t('unavailable') + '</span>';
         } else {
-          html += '<span style="color:#ffffff;font-size:11px;line-height:1.55;">' + text + '</span>';
+          var lines = String(text || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+          if (lines.length < 2) {
+            html += '<span style="color:#ffffff;font-size:11px;line-height:1.55;">' + _esc(lines[0] || '') + '</span>';
+          } else {
+            lines.forEach(function (line, i) {
+              if (i === 0) {
+                html += '<div style="color:#ffffff;font-size:12px;font-weight:700;line-height:1.4;margin-bottom:6px;">' + _esc(line) + '</div>';
+              } else if (line.charAt(0) === '•') {
+                html += '<div style="display:flex;gap:6px;color:#dbe4f0;font-size:11px;line-height:1.5;margin-top:3px;">'
+                  + '<span style="color:' + _vGradeColor + ';flex-shrink:0;">•</span>'
+                  + '<span>' + _esc(line.replace(/^•\s*/, '')) + '</span></div>';
+              } else if (line.charAt(0) === '→') {
+                html += '<div style="display:flex;gap:6px;margin-top:7px;padding-top:6px;border-top:1px solid ' + _vGradeColor + '22;color:#ffffff;font-size:11px;font-weight:600;line-height:1.5;">'
+                  + '<span style="color:' + _vGradeColor + ';flex-shrink:0;">→</span>'
+                  + '<span>' + _esc(line.replace(/^→\s*/, '')) + '</span></div>';
+              } else {
+                html += '<div style="color:#dbe4f0;font-size:11px;line-height:1.5;margin-top:3px;">' + _esc(line) + '</div>';
+              }
+            });
+          }
         }
         html += '</div>';
         return html;
@@ -3706,6 +3725,7 @@
               likes: profileData.favoritedCount || 0,
               posts: profileData.postsCount || 0,
               videos: profileData.videosCount || 0,
+              photos: Number(profileData.photosCount) || 0,
               streams: profileData.finishedStreamsCount || 0,
               verified: profileData.isVerified || false,
               website: profileData.website || '',

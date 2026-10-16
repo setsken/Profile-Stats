@@ -704,7 +704,29 @@ Flags: ${scoreData.flags.join(', ') || 'none'}`;
 
     const r = await authFetch(`${PROFILE_STATS_API}/verdict`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, lang: isRu ? 'ru' : 'en' })
+      body: JSON.stringify({
+        prompt,
+        lang: isRu ? 'ru' : 'en',
+        profile: {
+          username: scoreData.username,
+          score: scoreData.score,
+          grade: scoreData.grade,
+          components: scoreData.components,
+          flags: scoreData.flags,
+          fans: scoreData.fans,
+          fansVisible: scoreData.fansVisible,
+          lastKnownFans: scoreData.lastKnownFans || '',
+          likes: scoreData.likes,
+          posts: scoreData.posts,
+          videos: scoreData.videos,
+          photos: scoreData.photos,
+          streams: scoreData.streams,
+          accountMonths: scoreData.accountMonths,
+          price: scoreData.price,
+          commentsOpen: scoreData.commentsOpen,
+          commentsClosed: scoreData.commentsClosed
+        }
+      })
     });
     if (!r.ok) { logError('PS: verdict status', r.status); return { verdict: null }; }
     const data = await r.json();
